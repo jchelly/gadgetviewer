@@ -1,0 +1,548 @@
+This is /home2/jch/GadgetViewer/gadgetviewer/dev/doc/gadgetviewer.info,
+produced by makeinfo version 4.8 from
+/home2/jch/GadgetViewer/gadgetviewer/dev/doc/gadgetviewer.texi.
+
+   Manual for Gadget File Viewer version 1.0.3
+
+
+File: gadgetviewer.info,  Node: Top,  Next: Introduction,  Up: (dir)
+
+Gadget File Viewer
+******************
+
+Manual for Gadget File Viewer version 1.0.3
+
+* Menu:
+
+* Introduction::           Summary of features
+* Compilation::            How to compile the code
+* Reading simulation data::      What types of simulation data can be read in
+* Navigation controls::    How to move around the simulation
+* The displayed sample::   How the number of particles displayed is determined
+* Plot types::             Displaying the particles in different ways
+* View parameters::        Field of view, type of projection etc.
+* Selecting particles::    Follow particles between snapshots
+* Making movies::          See the particle distribution rotating or evolving
+* Plotting graphs::        Scatter plots and histograms of particle properties
+* Saved settings::         Save and restore the state of the program
+* Saving images::          Write out a PNG image of the particle distribution
+
+
+File: gadgetviewer.info,  Node: Introduction,  Next: Compilation,  Prev: Top,  Up: Top
+
+1 Introduction
+**************
+
+
+File: gadgetviewer.info,  Node: Compilation,  Next: Reading simulation data,  Prev: Introduction,  Up: Top
+
+2 Compilation
+*************
+
+* Menu:
+
+* The configure script::
+* Dependencies::
+* Specifying compilers and flags::
+* Specifying library locations::
+
+
+File: gadgetviewer.info,  Node: The configure script,  Next: Dependencies,  Up: Compilation
+
+2.1 The configure script
+========================
+
+This package uses a configure script generated using GNU Autoconf. You
+can get a summary of the available options by running
+     ./configure --help
+
+In the unlikely event that all of the dependencies are installed in
+standard locations and you don't need any special compiler flags, you
+might get away with just doing
+     ./configure --prefix=<path>
+     make
+     make install
+
+where `<path>' is the directory where the program should be installed.
+
+
+File: gadgetviewer.info,  Node: Dependencies,  Next: Specifying compilers and flags,  Prev: The configure script,  Up: Compilation
+
+2.2 Dependencies
+================
+
+In order to compile the program you need at least a C compiler, a
+Fortran 90 compiler, and the GTK+ 2.0 GUI library. The program also has
+several optional dependencies:
+
+   * HDF5  : allows reading of HDF5 snapshots. The HDF5 Fortran
+     interface is not required.
+
+   * libpng: required for writing out movie frames and screenshots
+
+   * PlPlot or Cairo: to make scatterplots and histograms of particle
+     properties. Cairo is now used by GTK so PLPlot is only necessary
+     if you have a very old version of GTK.
+
+   If any of these are missing, some features will be unavailable. The
+configure script generates a warning for each library which can't be
+found.
+
+
+File: gadgetviewer.info,  Node: Specifying compilers and flags,  Next: Specifying library locations,  Prev: Dependencies,  Up: Compilation
+
+2.3 Specifying compilers and flags
+==================================
+
+The compilers to use can be specified by setting the following
+environment variables before running the configure script:
+
+   * CC      - sets the C compiler
+
+   * CFLAGS  - sets C compiler flags to use (e.g. optimization)
+
+   * FC      - sets the Fortran 90 compiler
+
+   * FCFLAGS - sets Fortran compiler flags to use (e.g. optimization or
+     module file locations)
+
+
+File: gadgetviewer.info,  Node: Specifying library locations,  Prev: Specifying compilers and flags,  Up: Compilation
+
+2.4 Specifying library locations
+================================
+
+If libraries are installed in non-standard locations (i.e. not
+somewhere like /usr/lib), the following parameters can be used to tell
+configure where to find the libraries:
+         --with-hdf5=...           - specify path to HDF5
+         --with-plplot=...         - specify path to PlPlot
+         --with-png=...            - specify path to libpng
+
+The supplied directory should contain the 'include' and 'lib'
+subdirectories for the corresponding library. E.g. if libhdf5.so is in
+/opt/local/hdf5/current/lib/ then you would use
+     ./configure --with-hdf5=/opt/local/hdf5/current/
+
+The program can be compiled without a particular library by doing
+something like:
+     ./configure --without-hdf5
+
+If you're having problems linking a library you can use the LIBS and
+LDFLAGS environment variables to pass extra flags to the linker.
+
+
+File: gadgetviewer.info,  Node: Reading simulation data,  Next: Navigation controls,  Prev: Compilation,  Up: Top
+
+3 Reading simulation data
+*************************
+
+* Menu:
+
+* Reading snapshots::
+* Reading group catalogues::
+* Reading additional arrays::
+
+
+File: gadgetviewer.info,  Node: Reading snapshots,  Next: Reading group catalogues,  Up: Reading simulation data
+
+3.1 Reading snapshots
+=====================
+
+Snapshot files can be read in either by specifying the name of one file
+at the command line or using the "Read Gadget snapshot" option in the
+File menu. In either case, all files in the snapshot are read.
+
+   All three formats described in the documentation for the public
+version of Gadget-2 can be read.
+
+3.1.1 Gadget type 1 binary
+--------------------------
+
+Type 1 binary snapshots consist of a header followed by a series of
+Fortran records containing the particle data. Since these files contain
+very little metadata only the following quantities can be read in:
+   * Positions
+
+   * Velocities
+
+   * Masses
+
+   * Particle IDs
+
+   * Internal energy of gas particles
+
+   * Density of gas particles
+
+   The precision and endian-ness of the data is determined automatically
+from the Fortran record markers.
+
+3.1.2 Gadget type 2 binary
+--------------------------
+
+Type 2 binary snapshots include a four character "TAG" before each data
+block. By default the following blocks are recognised:
+
+   * POS
+
+   * VEL
+
+   * MASS
+
+   * ID
+
+   * U
+
+   * RHO
+
+   Additional blocks can be read in by adding them to the configuration
+file:
+     ~/.gadgetviewer_settings/gadget_binary_type2_blocks
+
+Note that only scalar quantities can be read in this way. If the
+configuration file does not exist a default file is created when the
+program is run.
+
+3.1.3 Gadget HDF5 snapshots
+---------------------------
+
+Any dataset in the PartTypeX groups of a HDF5 snapshot can be read as
+long as it has one element per particle and is of a floating point or
+integer type. By default the following datasets are read:
+   * Coordinates
+
+   * Velocity/Velocities
+
+   * Mass/Masses
+
+   * ParticleIDs
+
+   * InternalEnergy
+
+   * Density
+   Additional datasets can be read in by editing the configuration file:
+     ~/.gadgetviewer_settings/gadget_binary_type2_blocks
+
+If this file does not exist a default file is created when the program
+is run.
+
+
+File: gadgetviewer.info,  Node: Reading group catalogues,  Next: Reading additional arrays,  Prev: Reading snapshots,  Up: Reading simulation data
+
+3.2 Reading group catalogues
+============================
+
+FoF and SubFind group catalogues can be read by selecting the
+"Auxiliary data/Read groups" option in the File menu and choosing one
+file from the set. The name of this file is used as a template to
+locate the other files.
+
+   Once a  group catalogue has been read the particles will have
+additional integer properties named "FoFGroupIndex" and/or
+"SubGroupIndex".  These specify which FoF and/or SubFind group each
+particle belongs to.
+
+3.2.1 L-Gadget FoF groups
+-------------------------
+
+These consist of group_tab and group_ids files and contain FoF groups
+only.
+
+3.2.2 L-SubFind subfind groups
+------------------------------
+
+These consist of sub_tab and sub_ids files and contain SubFind groups
+only.
+
+3.2.3 P-Gadget3 FoF and SubFind
+-------------------------------
+
+These consist of subhalo_tab and subhalo_ids files and contain both FoF
+and SubFind groups.
+
+
+File: gadgetviewer.info,  Node: Reading additional arrays,  Prev: Reading group catalogues,  Up: Reading simulation data
+
+3.3 Reading additional arrays
+=============================
+
+Its possible to read in extra particle properties from ascii or HDF5
+files using the "Read additional data" option in the file menu. These
+files must follow the same naming convention as Gadget snapshots. Each
+data array can be split across any number of files as long as there is
+one element for each particle in the snapshot and the values are stored
+in the same order as in the snapshot.
+
+   Once an extra property has been read the program will look for a
+corresponding set of files whenever a new snapshot is loaded. This is
+done by replacing any instances of the snapshot number in the
+filename(s).
+
+
+File: gadgetviewer.info,  Node: Navigation controls,  Next: The displayed sample,  Prev: Reading simulation data,  Up: Top
+
+4 Navigation controls
+*********************
+
+* Menu:
+
+* Mouse controls::
+* Keyboard shortcuts::
+* The selected point::
+
+
+File: gadgetviewer.info,  Node: Mouse controls,  Next: Keyboard shortcuts,  Up: Navigation controls
+
+4.1 Mouse controls
+==================
+
+The default mouse controls are as follows:
+
+   * Rotate the view by dragging the left mouse button in the main
+     window
+
+   * Zoom in or out by dragging the right mouse button up or down or
+     using the scroll wheel
+
+   * Centre on a clump of particles by clicking on it with the middle
+     button
+
+   * Move the view in the plane of the screen by dragging with the
+     middle button
+
+   These controls can be changed using the "Customise" option in the
+"Controls" menu.
+
+
+File: gadgetviewer.info,  Node: Keyboard shortcuts,  Next: The selected point,  Prev: Mouse controls,  Up: Navigation controls
+
+4.2 Keyboard shortcuts
+======================
+
+Most of the menu items have keyboard shortcuts. The key combinations are
+displayed next to the corresponding menu items. Where buttons in the
+main window have an underlined letter the button can be activated by
+pressing Alt and that letter.
+
+
+File: gadgetviewer.info,  Node: The selected point,  Prev: Keyboard shortcuts,  Up: Navigation controls
+
+4.3 The selected point
+======================
+
+The currently selected point is highlighted with a cross and its
+coordinates are displayed at the bottom of the main window. If the view
+is rotated this point is used as the centre of rotation.
+
+   You can view the average properties of the particles closest to the
+selected point using the "Show info" button at the top of the main
+window. This locates the N nearest neighbours (N=10 by default) and
+calculates the mean of each particle property over those neighbours.
+
+   You can move the selected point to specific coordinates using "Jump
+to coordinates" in the "Options" menu.
+
+
+File: gadgetviewer.info,  Node: The displayed sample,  Next: Plot types,  Prev: Navigation controls,  Up: Top
+
+5 The displayed sample
+**********************
+
+Since it is quite easy to read in more particles than can be plotted
+while maintaining a reasonable frame rate, the program usually displays
+a random sample of the particles. By default up to 250,000 are shown.
+When a snapshot is first loaded, if there are more than 250,000
+particles a random sample is taken from the full simulation volume.
+
+   The maximum number of particles to show can be changed with the
+"View parameters" option in the "View" menu.
+
+* Menu:
+
+* Viewing a sub-region in more detail::
+* Viewing the whole volume::
+
+
+File: gadgetviewer.info,  Node: Viewing a sub-region in more detail,  Next: Viewing the whole volume,  Up: The displayed sample
+
+5.1 Viewing a sub-region in more detail
+=======================================
+
+If you zoom in on a particular region of the simulation you can make it
+draw a random sample of particles from just that region by clicking the
+resample button in the main window. Alternatively you can activate the
+automatic resampling option in the View menu. This resamples the
+particles whenever the zoom factor changes by some amount. Its best not
+to use this in conjunction with the smoothed density plot because the
+smoothing lengths are recalculated whenever the particles are resampled.
+
+   The current sampling rate is displayed at the bottom of the main
+window. If you zoom in far enough it will reach 100% and all particles
+will be visible.
+
+
+File: gadgetviewer.info,  Node: Viewing the whole volume,  Prev: Viewing a sub-region in more detail,  Up: The displayed sample
+
+5.2 Viewing the whole volume
+============================
+
+The "Show all" button at the top of the main window draws a new sample
+from the full simulation volume. Use this if you've zoomed in and
+resampled and now wish to return to viewing the whole volume.
+Alternatively, you can just zoom right out and click the Resample
+button.
+
+
+File: gadgetviewer.info,  Node: Plot types,  Next: View parameters,  Prev: The displayed sample,  Up: Top
+
+6 Plot types
+************
+
+* Menu:
+
+* Dotplots::
+* Projected density plot::
+* Colour by particle property::
+* Smoothed projected density::
+* Smoothed particle property plot::
+
+
+File: gadgetviewer.info,  Node: Dotplots,  Next: Projected density plot,  Up: Plot types
+
+6.1 Dotplots
+============
+
+
+File: gadgetviewer.info,  Node: Projected density plot,  Next: Colour by particle property,  Prev: Dotplots,  Up: Plot types
+
+6.2 Projected density plot
+==========================
+
+
+File: gadgetviewer.info,  Node: Colour by particle property,  Next: Smoothed projected density,  Prev: Projected density plot,  Up: Plot types
+
+6.3 Colour by particle property
+===============================
+
+
+File: gadgetviewer.info,  Node: Smoothed projected density,  Next: Smoothed particle property plot,  Prev: Colour by particle property,  Up: Plot types
+
+6.4 Smoothed projected density
+==============================
+
+
+File: gadgetviewer.info,  Node: Smoothed particle property plot,  Prev: Smoothed projected density,  Up: Plot types
+
+6.5 Smoothed particle property plot
+===================================
+
+
+File: gadgetviewer.info,  Node: View parameters,  Next: Selecting particles,  Prev: Plot types,  Up: Top
+
+7 View parameters
+*****************
+
+
+File: gadgetviewer.info,  Node: Selecting particles,  Next: Making movies,  Prev: View parameters,  Up: Top
+
+8 Selecting particles
+*********************
+
+"Select particles" under the Options menu allows you to highlight
+particles according to property values and/or their distance from the
+selected point. It uses the IDs from the snapshot file to identify
+particles, so if you have a simulation where the IDs are not unique you
+may get strange results. For example, any particle with the same ID as
+a selected particle will be selected too. Particles stay selected when
+you change snapshots, so you can use this to identify progenitors of a
+particular halo, for example.
+
+   It is possible to select up to six different sets of particles
+simultaneously. The drop down box at the top of the "Select particles"
+window allows you to specify which set to operate on, and you can
+specify a name and a colour for each one. The chosen colour is used to
+highlight the selected particles in the main display and in the graph
+window.
+
+
+File: gadgetviewer.info,  Node: Making movies,  Next: Plotting graphs,  Prev: Selecting particles,  Up: Top
+
+9 Making movies
+***************
+
+Select "Make movie" from the options menu. "Rotating movie" makes a
+movie of the particle distribution rotating about the selected point.
+"Evolving movie" loops over a range of snapshots and makes one frame
+per snapshot, optionally re-centering the view on the selected
+particles before calculating each frame. It writes out the frames as
+png files so you need to use something like mencoder to encode the
+movie.
+
+   Evolving movies will look best if you ensure that the sampling rate
+is 100% before making the movie. Otherwise you get a lot of flickering
+because it uses a different random sample for each frame.
+
+
+File: gadgetviewer.info,  Node: Plotting graphs,  Next: Saved settings,  Prev: Making movies,  Up: Top
+
+10 Plotting graphs
+******************
+
+"Make plot" in the options menu allows you to plot a histogram of the
+values of a particle property or to make a scatterplot of one property
+against another (e.g. temperature vs density). Particles in the current
+sample are shown in red and each set of selected particles is shown in
+the appropriate colour for that set. The plot will update automatically
+if you choose a different sample, change snapshots or modify a
+selection.
+
+   If the property plotted on the x or y axis cannot be loaded for the
+current snapshot the graph window will be blank.
+
+
+File: gadgetviewer.info,  Node: Saved settings,  Next: Saving images,  Prev: Plotting graphs,  Up: Top
+
+11 Saved settings
+*****************
+
+
+File: gadgetviewer.info,  Node: Saving images,  Prev: Saved settings,  Up: Top
+
+12 Saving images
+****************
+
+
+
+Tag Table:
+Node: Top223
+Node: Introduction1207
+Node: Compilation1328
+Node: The configure script1587
+Node: Dependencies2186
+Node: Specifying compilers and flags3023
+Node: Specifying library locations3606
+Node: Reading simulation data4632
+Node: Reading snapshots4893
+Node: Reading group catalogues6973
+Node: Reading additional arrays8047
+Node: Navigation controls8838
+Node: Mouse controls9084
+Node: Keyboard shortcuts9705
+Node: The selected point10124
+Node: The displayed sample10860
+Node: Viewing a sub-region in more detail11556
+Node: Viewing the whole volume12421
+Node: Plot types12885
+Node: Dotplots13170
+Node: Projected density plot13289
+Node: Colour by particle property13472
+Node: Smoothed projected density13683
+Node: Smoothed particle property plot13901
+Node: View parameters14093
+Node: Selecting particles14238
+Node: Making movies15266
+Node: Plotting graphs16025
+Node: Saved settings16722
+Node: Saving images16865
+
+End Tag Table

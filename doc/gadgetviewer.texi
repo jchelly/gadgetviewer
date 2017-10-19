@@ -1,0 +1,475 @@
+\input texinfo   @c -*-texinfo-*-
+@c %**start of header
+@setfilename gadgetviewer.info
+@settitle Gadget File Viewer 1.0.3
+@c %**end of header
+     
+@copying
+Manual for Gadget File Viewer version 1.0.3
+@end copying
+     
+@titlepage
+@title Gadget File Viewer Manual
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+@end titlepage
+     
+@c Output the table of the contents at the beginning.
+@contents
+     
+@ifnottex
+@node Top
+@top Gadget File Viewer
+     
+@insertcopying
+@end ifnottex
+     
+@menu
+* Introduction::           Summary of features
+* Compilation::            How to compile the code
+* Reading simulation data::      What types of simulation data can be read in
+* Navigation controls::    How to move around the simulation
+* The displayed sample::   How the number of particles displayed is determined               
+* Plot types::             Displaying the particles in different ways
+* View parameters::        Field of view, type of projection etc.
+* Selecting particles::    Follow particles between snapshots
+* Making movies::          See the particle distribution rotating or evolving
+* Plotting graphs::        Scatter plots and histograms of particle properties
+* Saved settings::         Save and restore the state of the program
+* Saving images::          Write out a PNG image of the particle distribution
+@end menu
+
+
+
+
+@node Introduction
+@chapter Introduction
+
+
+
+
+ 
+@node Compilation
+@chapter Compilation
+
+@menu
+* The configure script::
+* Dependencies::
+* Specifying compilers and flags::
+* Specifying library locations::
+@end menu
+
+@node The configure script
+@section The configure script
+
+This package uses a configure script generated using GNU
+Autoconf. You can get a summary of the available options by running
+@*
+@example
+./configure --help
+@end example
+@*
+In the unlikely event that all of the dependencies are installed in
+standard locations and you don't need any special compiler flags, you
+might get away with just doing
+@*
+@example
+./configure --prefix=<path>
+make
+make install
+@end example
+@*
+where @code{<path>} is the directory where the program should be installed.
+
+@node Dependencies
+@section Dependencies
+
+In order to compile the program you need at least a C compiler, a
+Fortran 90 compiler, and the GTK+ 2.0 GUI library. The program also has
+several optional dependencies:
+
+@itemize @bullet
+@item HDF5  : allows reading of HDF5 snapshots. The HDF5 Fortran interface is not required.
+@item libpng: required for writing out movie frames and screenshots
+@item PlPlot or Cairo: to make scatterplots and histograms of particle properties. Cairo is now used by GTK so PLPlot is only necessary if you have a very old version of GTK.
+@end itemize
+
+If any of these are missing, some features will be unavailable. The
+configure script generates a warning for each library which can't be found.
+
+@node Specifying compilers and flags
+@section Specifying compilers and flags
+
+The compilers to use can be specified by setting the following
+environment variables before running the configure script:
+
+@itemize @bullet
+@item
+CC      - sets the C compiler
+@item
+CFLAGS  - sets C compiler flags to use (e.g. optimization)
+@item
+FC      - sets the Fortran 90 compiler
+@item
+FCFLAGS - sets Fortran compiler flags to use (e.g. optimization or module file locations)
+@end itemize
+
+@node Specifying library locations
+@section Specifying library locations
+
+If libraries are installed in non-standard locations (i.e. not
+somewhere like /usr/lib), the following parameters can be used to tell
+configure where to find the libraries:
+@*
+@example
+    --with-hdf5=...           - specify path to HDF5
+    --with-plplot=...         - specify path to PlPlot
+    --with-png=...            - specify path to libpng
+@end example
+@*
+The supplied directory should contain the 'include' and 'lib'
+subdirectories for the corresponding library. E.g. if libhdf5.so is
+in /opt/local/hdf5/current/lib/ then you would use
+@*
+@example
+./configure --with-hdf5=/opt/local/hdf5/current/
+@end example
+@*
+The program can be compiled without a particular library by doing
+something like:
+@*
+@example
+./configure --without-hdf5
+@end example
+@*
+If you're having problems linking a library you can use the LIBS and
+LDFLAGS environment variables to pass extra flags to the linker.
+
+
+
+
+@node Reading simulation data
+@chapter Reading simulation data
+
+@menu
+* Reading snapshots::
+* Reading group catalogues::
+* Reading additional arrays::
+@end menu
+
+@node Reading snapshots
+@section Reading snapshots
+
+Snapshot files can be read in either by specifying the name of one
+file at the command line or using the ``Read Gadget snapshot''
+option in the File menu. In either case, all files in the snapshot
+are read.
+
+All three formats described in the documentation for the public
+version of Gadget-2 can be read.
+
+@subsection Gadget type 1 binary
+
+Type 1 binary snapshots consist of a header followed by a series of
+Fortran records containing the particle data. Since these files
+contain very little metadata only the following quantities can be
+read in:
+@itemize @bullet
+@item Positions
+@item Velocities
+@item Masses
+@item Particle IDs
+@item Internal energy of gas particles
+@item Density of gas particles
+@end itemize
+
+The precision and endian-ness of the data is determined automatically
+from the Fortran record markers.
+
+@subsection Gadget type 2 binary
+
+Type 2 binary snapshots include a four character ``TAG'' before each
+data block. By default the following blocks are recognised:
+
+@itemize @bullet
+@item POS
+@item VEL
+@item MASS
+@item ID
+@item U
+@item RHO
+@end itemize
+
+Additional blocks can be read in by adding them to the configuration
+file:
+@*
+@example
+~/.gadgetviewer_settings/gadget_binary_type2_blocks
+@end example
+@*
+Note that only scalar quantities can be read in this way. If the 
+configuration file does not exist a default file is created when the 
+program is run.
+
+@subsection Gadget HDF5 snapshots
+
+Any dataset in the PartTypeX groups of a HDF5 snapshot can be read as
+long as it has one element per particle and is of a floating point or
+integer type. By default the following datasets are read:
+@itemize @bullet
+@item Coordinates
+@item Velocity/Velocities
+@item Mass/Masses
+@item ParticleIDs
+@item InternalEnergy
+@item Density
+@end itemize
+Additional datasets can be read in by editing the configuration file:
+@*
+@example
+~/.gadgetviewer_settings/gadget_binary_type2_blocks
+@end example
+@*
+If this file does not exist a default file is created when the 
+program is run.
+
+@node Reading group catalogues
+@section Reading group catalogues
+
+FoF and SubFind group catalogues can be read by selecting the 
+``Auxiliary data/Read groups'' option in the File menu and choosing
+one file from the set. The name of this file is used as a template
+to locate the other files.
+
+Once a  group catalogue has been read the particles will have additional 
+integer properties named ``FoFGroupIndex'' and/or ``SubGroupIndex''.
+These specify which FoF and/or SubFind group each particle belongs to.
+
+@subsection L-Gadget FoF groups
+
+These consist of group_tab and group_ids files and contain FoF groups only.
+
+@subsection L-SubFind subfind groups
+
+These consist of sub_tab and sub_ids files and contain SubFind groups only.
+
+@subsection P-Gadget3 FoF and SubFind
+
+These consist of subhalo_tab and subhalo_ids files and contain both 
+FoF and SubFind groups.
+
+@node Reading additional arrays
+@section Reading additional arrays
+
+Its possible to read in extra particle properties from ascii or HDF5
+files using the "Read additional data" option in the file menu. These
+files must follow the same naming convention as Gadget snapshots. Each
+data array can be split across any number of files as long as there is
+one element for each particle in the snapshot and the values are stored
+in the same order as in the snapshot.
+
+Once an extra property has been read the program will look for a
+corresponding set of files whenever a new snapshot is loaded. This is
+done by replacing any instances of the snapshot number in the
+filename(s).
+
+
+
+
+@node Navigation controls
+@chapter Navigation controls
+
+@menu
+* Mouse controls::
+* Keyboard shortcuts::
+* The selected point::
+@end menu
+
+@node Mouse controls
+@section Mouse controls
+
+The default mouse controls are as follows:
+
+@itemize @bullet
+@item Rotate the view by dragging the left mouse button in the main window
+@item Zoom in or out by dragging the right mouse button up or down or using the scroll wheel
+@item Centre on a clump of particles by clicking on it with the middle button
+@item Move the view in the plane of the screen by dragging with the middle button
+@end itemize
+
+These controls can be changed using the ``Customise'' option in the ``Controls'' menu.
+
+@node Keyboard shortcuts
+@section Keyboard shortcuts
+
+Most of the menu items have keyboard shortcuts. The key combinations are
+displayed next to the corresponding menu items. Where buttons in the main
+window have an underlined letter the button can be activated by pressing 
+Alt and that letter.
+
+
+
+
+@node The selected point
+@section The selected point
+
+The currently selected point is highlighted with a cross and its coordinates
+are displayed at the bottom of the main window. If the view is
+rotated this point is used as the centre of rotation.
+
+You can view the average properties of the particles closest to the selected
+point using the ``Show info'' button at the top of the main window. This
+locates the N nearest neighbours (N=10 by default) and calculates the 
+mean of each particle property over those neighbours.
+
+You can move the selected point to specific coordinates using
+``Jump to coordinates'' in the ``Options'' menu.
+
+
+
+
+@node The displayed sample
+@chapter The displayed sample
+
+Since it is quite easy to read in more particles than can be plotted while
+maintaining a reasonable frame rate, the program usually displays a random
+sample of the particles. By default up to 250,000 are shown.
+When a snapshot is first loaded, if there are more than 250,000 particles
+a random sample is taken from the full simulation volume.
+
+The maximum number of particles to show can be changed with the
+``View parameters'' option in the ``View'' menu.
+
+@menu
+* Viewing a sub-region in more detail::
+* Viewing the whole volume::
+@end menu
+
+@node Viewing a sub-region in more detail
+@section Viewing a sub-region in more detail
+
+If you zoom in on a particular region of the simulation you can make it draw
+a random sample of particles from just that region by clicking the resample 
+button in the main window. Alternatively you can activate the automatic resampling
+option in the View menu. This resamples the particles whenever the zoom factor changes
+by some amount. Its best not to use this in conjunction with the smoothed density
+plot because the smoothing lengths are recalculated whenever the particles are
+resampled.
+
+The current sampling rate is displayed at the bottom of the main window. If
+you zoom in far enough it will reach 100% and all particles will be visible.
+
+@node Viewing the whole volume
+@section Viewing the whole volume
+
+The ``Show all'' button at the top of the main window draws a new sample from
+the full simulation volume. Use this if you've zoomed in and resampled and now
+wish to return to viewing the whole volume. Alternatively, you can just zoom
+right out and click the Resample button.
+
+
+
+
+@node Plot types
+@chapter Plot types
+
+@menu
+* Dotplots::
+* Projected density plot::
+* Colour by particle property::
+* Smoothed projected density::
+* Smoothed particle property plot::
+@end menu
+
+@node Dotplots
+@section Dotplots
+
+@node Projected density plot
+@section Projected density plot
+
+@node Colour by particle property
+@section Colour by particle property
+
+@node Smoothed projected density
+@section Smoothed projected density
+
+@node Smoothed particle property plot
+@section Smoothed particle property plot
+
+
+
+
+@node View parameters
+@chapter View parameters
+
+
+
+
+@node Selecting particles
+@chapter Selecting particles
+
+"Select particles" under the Options menu allows you to highlight
+particles according to property values and/or their distance from the
+selected point. It uses the IDs from the snapshot file to identify
+particles, so if you have a simulation where the IDs are not unique you
+may get strange results. For example, any particle with the same ID as
+a selected particle will be selected too. Particles stay selected when
+you change snapshots, so you can use this to identify progenitors of a
+particular halo, for example.
+
+It is possible to select up to six different sets of particles
+simultaneously. The drop down box at the top of the "Select particles"
+window allows you to specify which set to operate on, and you can
+specify a name and a colour for each one. The chosen colour is used to
+highlight the selected particles in the main display and in the graph
+window.
+
+
+
+
+@node Making movies
+@chapter Making movies
+
+Select "Make movie" from the options menu. "Rotating movie" makes a
+movie of the particle distribution rotating about the selected
+point. "Evolving movie" loops over a range of snapshots and makes one
+frame per snapshot, optionally re-centering the view on the selected
+particles before calculating each frame. It writes out the frames as
+png files so you need to use something like mencoder to encode the movie.
+
+Evolving movies will look best if you ensure that the sampling rate is
+100% before making the movie. Otherwise you get a lot of flickering
+because it uses a different random sample for each frame.
+
+
+
+
+@node Plotting graphs
+@chapter Plotting graphs
+
+"Make plot" in the options menu allows you to plot a histogram of the
+values of a particle property or to make a scatterplot of one property
+against another (e.g. temperature vs density). Particles in the current
+sample are shown in red and each set of selected particles is shown in
+the appropriate colour for that set. The plot will update automatically
+if you choose a different sample, change snapshots or modify a
+selection.
+
+If the property plotted on the x or y axis cannot be loaded for the
+current snapshot the graph window will be blank.
+
+
+
+
+@node Saved settings
+@chapter Saved settings
+
+
+
+
+@node Saving images
+@chapter Saving images
+
+
+@bye
