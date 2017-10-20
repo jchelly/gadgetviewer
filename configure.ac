@@ -14,9 +14,7 @@ AC_PROG_INSTALL
 AC_PROG_CC
 AC_PROG_FC
 
-# Prevent Makefile from re-running automake etc automatically because
-# it always uses the wrong version or doesn't use the necessary flags.
-AM_MAINTAINER_MODE
+AM_MAINTAINER_MODE([enable])
 
 #
 # See if we have python so we can update module dependencies
