@@ -139,33 +139,43 @@ AC_MSG_RESULT([no]))
 #
 
 # Positions
+AC_ARG_ENABLE([double-pos], AS_HELP_STRING([--enable-double-pos], [store positions in double precision]))
 posbytes=4
-AC_ARG_ENABLE([double-pos],  [  --enable-double-pos     store positions in double precision],
-              [posbytes=8])
+AS_IF([test "x$enable_double_pos" = "xyes"], [
+  posbytes=8
+])
 AC_DEFINE_UNQUOTED(POSKIND,[$posbytes],[Number of bytes to store one coordinate]) 
 
 # Velocities
+AC_ARG_ENABLE([double-vel], AS_HELP_STRING([--enable-double-vel], [store velocities in double precision]))
 velbytes=4
-AC_ARG_ENABLE([double-vel],  [  --enable-double-vel     store velocities in double precision],
-              [velbytes=8])
-AC_DEFINE_UNQUOTED(VELKIND,[$velbytes],[Number of bytes to store one velocity component]) 
+AS_IF([test "x$enable_double_vel" = "xyes"], [
+  velbytes=8
+])
+AC_DEFINE_UNQUOTED(VELKIND,[$velbytes],[Number of bytes to store one coordinate]) 
 
 # Real properties
+AC_ARG_ENABLE([double-rprop], AS_HELP_STRING([--enable-double-rprop], [store real properties in double precision]))
 rpropbytes=4
-AC_ARG_ENABLE([double-rprop],[  --enable-double-rprop   store real properties in double precision],
-              [rpropbytes=8])
+AS_IF([test "x$enable_double_rprop" = "xyes"], [
+  rpropbytes=8
+])
 AC_DEFINE_UNQUOTED(RPROPKIND,[$rpropbytes],[Number of bytes to store real particle properties]) 
 
 # Integer properties
+AC_ARG_ENABLE([double-iprop], AS_HELP_STRING([--enable-double-iprop], [store integer properties in double precision]))
 ipropbytes=4
-AC_ARG_ENABLE([double-iprop],[  --enable-double-iprop   store integer properties in double precision],
-              [ipropbytes=8])
+AS_IF([test "x$enable_double_iprop" = "xyes"], [
+  ipropbytes=8
+])
 AC_DEFINE_UNQUOTED(IPROPKIND,[$ipropbytes],[Number of bytes to store integer particle properties]) 
 
 # Allow >2**31 particles
+AC_ARG_ENABLE([big-snapshots],[  --enable-big-snapshots   allow snapshots with more than 2**31 particles])
 indexbytes=4
-AC_ARG_ENABLE([big-snapshots],[  --enable-big-snapshots   allow snapshots with more than 2**31 particles],
-              [indexbytes=8])
+AS_IF([test "x$enable_big_snapshots" = "xyes"], [
+  indexbytes=8
+])
 AC_DEFINE_UNQUOTED(INDEXKIND,[$indexbytes],[Number of bytes to store indexes in particle arrays]) 
 
 
