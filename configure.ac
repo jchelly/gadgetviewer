@@ -162,19 +162,21 @@ AS_IF([test "x$enable_double_rprop" = "xyes"], [
 ])
 AC_DEFINE_UNQUOTED(RPROPKIND,[$rpropbytes],[Number of bytes to store real particle properties]) 
 
-# Integer properties
-AC_ARG_ENABLE([double-iprop], AS_HELP_STRING([--enable-double-iprop], [store integer properties in double precision]))
-ipropbytes=4
-AS_IF([test "x$enable_double_iprop" = "xyes"], [
-  ipropbytes=8
+# Integer properties -
+# default to 8 bytes so we can handle 8 byte particle IDs
+AC_ARG_ENABLE([double-iprop], AS_HELP_STRING([--enable-double-iprop], [store integer properties in double precision @<:@default=yes@:>@]))
+ipropbytes=8
+AS_IF([test "x$enable_double_iprop" = "xno"], [
+  ipropbytes=4
 ])
 AC_DEFINE_UNQUOTED(IPROPKIND,[$ipropbytes],[Number of bytes to store integer particle properties]) 
 
-# Allow >2**31 particles
-AC_ARG_ENABLE([big-snapshots],[  --enable-big-snapshots   allow snapshots with more than 2**31 particles])
-indexbytes=4
-AS_IF([test "x$enable_big_snapshots" = "xyes"], [
-  indexbytes=8
+# Allow >2**31 particles by default.
+# Can disable this to save memory for small simulations.
+AC_ARG_ENABLE([big-snapshots], AS_HELP_STRING([--enable-big-snapshots], [allow snapshots with more than 2**31 particles @<:@default=yes@:>@]))
+indexbytes=8
+AS_IF([test "x$enable_big_snapshots" = "xno"], [
+  indexbytes=4
 ])
 AC_DEFINE_UNQUOTED(INDEXKIND,[$indexbytes],[Number of bytes to store indexes in particle arrays]) 
 
@@ -254,6 +256,7 @@ echo "  Positions                     : " $posbytes bytes
 echo "  Velocities                    : " $velbytes bytes
 echo "  Floating point properties     : " $rpropbytes bytes
 echo "  Integer properties (e.g. IDs) : " $ipropbytes bytes
+echo "  Particle array indexes        : " $indexbytes bytes
 echo
 
 if test "${have_keyfile}" == "no" ; then
