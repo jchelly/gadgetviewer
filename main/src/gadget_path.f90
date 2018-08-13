@@ -115,10 +115,11 @@ contains
           buf = buf(1:ipos-1)
        endif
     endif
-    ! Check for snapshot number
+    ! Check for snapshot number.
+    ! Only recognise snapshot numbers of at least 3 digits.
     path_data%have_snapno = .false.
     ipos = scan(buf, "_", back=.true.)
-    if(ipos.gt.1.and.ipos.lt.len_trim(buf))then
+    if(ipos.gt.1.and.ipos.lt.len_trim(buf)-2)then
        if(verify(buf(ipos+1:len_trim(buf)), "0123456789", back=.true.).eq.0)then
           path_data%have_snapno = .true.
           read(buf(ipos+1:),*)isnap
@@ -137,7 +138,7 @@ contains
                 if(path_data%dir_label.lt.1)path_data%dir_label = -1
                 ! Extract snapshot number from what's left
                 ipos = scan(buf, "_", back=.true.)
-                if(ipos.gt.1.and.ipos.lt.len_trim(buf))then
+                if(ipos.gt.1.and.ipos.lt.len_trim(buf)-2)then
                    if(verify(buf(ipos+1:len_trim(buf)), "0123456789", back=.true.).eq.0)then
                       path_data%have_snapno = .true.
                       read(buf(ipos+1:),*)isnap
@@ -202,7 +203,6 @@ contains
     ! Internal
     character(len=500) :: buf, buf2
     character(len=50)  :: snapstr, snapfmt, str
-    integer            :: snaplen
     integer            :: i, ifirst, ilast, nsub
 
     ! Get base name
@@ -213,11 +213,10 @@ contains
     if(path_data%have_snapno)then
        if(path_data%nsub.gt.0)then
           ! Determine how many digits we need for snapshot numbers
-          i = 3
+          i = path_data%sublength
           do while(isnap.gt.(10**i)-1)
              i = i + 1
           end do
-          snaplen = i
           ! Make string for snapshot numbers
           write(snapfmt,'(a2,i8,a1,i8,1a2)')"(I",i,".",i,")"
           write(snapstr,snapfmt)isnap
