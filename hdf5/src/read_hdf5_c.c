@@ -36,7 +36,7 @@ static int   need_init = 1;
   3 real*8
 */
 
-static hid_t hdf5_type[4];
+static hid_t hdf5_type[6];
 
 /*
   Initialise HDF5
@@ -56,6 +56,8 @@ void init_hdf5()
       hdf5_type[1] = H5T_STD_I64BE;
       hdf5_type[2] = H5T_IEEE_F32BE;
       hdf5_type[3] = H5T_IEEE_F64BE;
+      hdf5_type[4] = H5T_STD_U32BE;
+      hdf5_type[5] = H5T_STD_U64BE;
     }
   else
     {
@@ -64,6 +66,8 @@ void init_hdf5()
       hdf5_type[1] = H5T_STD_I64LE;
       hdf5_type[2] = H5T_IEEE_F32LE;
       hdf5_type[3] = H5T_IEEE_F64LE;
+      hdf5_type[4] = H5T_STD_U32LE;
+      hdf5_type[5] = H5T_STD_U64LE;
     }
   /* Don't print hdf5 errors */
   h5_errors_off;
@@ -132,9 +136,10 @@ void READDATASET_F90(char *name, int *type, void *data,
     dims[i] = count[*rank - i - 1];
   hid_t memspace_id = H5Screate_simple(*rank, dims, dims); 
   
-  /* Get file dataspace */
+  /* Get file dataspace and type */
   hid_t filespace_id = H5Dget_space(dset_id); 
-  
+  hid_t filetype_id  = H5Dget_type(dset_id);
+
   /* Select part of file dataspace */
   for(i=0;i<(*rank);i++)
     {
@@ -144,11 +149,24 @@ void READDATASET_F90(char *name, int *type, void *data,
   H5Sselect_hyperslab(filespace_id, 
 		      H5S_SELECT_SET, h5start, NULL, h5count, NULL);
 
+  /* Determine memory data type to use */
+  hid_t memtype_id = hdf5_type[*type];
+
+  /* Special case for unsigned integers - treat as unsigned in memory */
+  H5T_sign_t  sign  = H5Tget_sign(filetype_id);
+  H5T_class_t class = H5Tget_class(filetype_id);
+  if((sign==H5T_SGN_NONE) && (class==H5T_INTEGER))
+      {
+          if(*type==0)memtype_id = hdf5_type[4];
+          if(*type==1)memtype_id = hdf5_type[5];
+      }
+
   /* Read dataset */
-  herr_t err = H5Dread(dset_id, hdf5_type[*type], memspace_id, filespace_id, 
+  herr_t err = H5Dread(dset_id, memtype_id, memspace_id, filespace_id, 
 		       H5P_DEFAULT, data); 
   H5Sclose(filespace_id);
   H5Sclose(memspace_id);
+  H5Tclose(filetype_id);
   if(err != 0)
     {
       *iostat = 1;
@@ -198,14 +216,30 @@ void READATTRIB_F90(char *name, int *type, void *data, int *iostat)
   hid_t attr_id = h5_open_attribute(parent_id, &(name[i+1])); 
   if(attr_id >= 0)
     {
-      /* Try to read attribute */
-      if(H5Aread(attr_id, hdf5_type[*type], data) == 0)
-	*iostat = 0;
-	
-      /* Close attribute */
-      H5Aclose(attr_id);
-    }
+        /* Get type in file */
+        hid_t filetype_id = H5Aget_type(attr_id);
 
+        /* Determine memory data type to use */
+        hid_t memtype_id = hdf5_type[*type];
+
+        /* Special case for unsigned integers - treat as unsigned in memory */
+        H5T_sign_t  sign  = H5Tget_sign(filetype_id);
+        H5T_class_t class = H5Tget_class(filetype_id);
+        if((sign==H5T_SGN_NONE) && (class==H5T_INTEGER))
+            {
+                if(*type==0)memtype_id = hdf5_type[4];
+                if(*type==1)memtype_id = hdf5_type[5];
+            }
+
+        /* Try to read attribute */
+        if(H5Aread(attr_id, memtype_id, data) == 0)
+            *iostat = 0;
+	
+        /* Close attribute */
+        H5Aclose(attr_id);
+        H5Tclose(filetype_id);
+    }
+  
   /* Close group/dataset */
   if(is_group)
     H5Gclose(parent_id);
