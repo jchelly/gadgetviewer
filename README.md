@@ -1,30 +1,6 @@
+# Gadgetviewer documentation
 
-TABLE OF CONTENTS
-
-1. Compiling the Gadget file viewer
-   1.1 Dependencies
-   1.2 Specifying compilers and flags
-   1.3 Specifying library locations
-   1.4 Example compilation
-   1.5 PlPlot configuration
-   1.6 HDF5 configuration
-2. Using the Gadget file viewer
-   2.1 Reading a snapshot
-   2.2 Random sampling
-   2.3 Using a 3D display
-   2.4 Making movies
-   2.5 Selecting particles to follow between snapshots
-   2.6 Making plots
-   2.7 Using multiple processors
-   2.8 Reading extra particle properties
-        - HDF5 snapshots
-        - Binary type 2 snapshots
-   2.9 Reading additional arrays from auxiliary files
-
-
-
-1. Compiling the Gadget file viewer
-===================================
+## Compilation
 
 This package uses a configure script generated using GNU
 Autoconf. You can get a summary of the available options by running
@@ -35,16 +11,15 @@ In the unlikely event that all of the dependencies are installed in
 standard locations and you don't need any special compiler flags, you
 might get away with just doing
 
+```
 ./configure --prefix=<path>
 make
 make install
+```
 
 where <path> is the directory where the program should be installed.
 
-
-
-1.1 Dependencies
-----------------
+### Dependencies
 
 In order to compile the program you need at least a C compiler, a
 Fortran 90 compiler, and the GTK+ 2.0 GUI library. The program also has
@@ -59,51 +34,54 @@ several optional dependencies:
 If any of these are missing, some features will be unavailable. The
 configure script generates a warning for each library which can't be found.
 
-
-
-1.2 Specifying compilers and flags
-----------------------------------
+### Specifying compilers and flags
 
 The compilers to use can be specified by setting the following
 environment variables before running the configure script:
 
-CC      - C compiler
-CFLAGS  - C compiler flags
-FC      - Fortran 90 compiler
-FCFLAGS - Fortran compiler flags
+  * CC      - C compiler
+  * CFLAGS  - C compiler flags
+  * FC      - Fortran 90 compiler
+  * FCFLAGS - Fortran compiler flags
 
+### OpenMP
 
+The program can make use of multiple processor cores using OpenMP if
+your Fortran compiler supports it. To enable OpenMP add your compiler's
+OpenMP flag to the FCFLAGS environment variable before running configure
+(e.g. -fopenmp for gfortran or -qopenmp for ifort).
 
-1.3 Specifying library locations
---------------------------------
+### Specifying library locations
 
 If libraries are installed in non-standard locations (i.e. not
 somewhere like /usr/lib), the following parameters can be used to tell
 configure where to find the libraries:
 
+```
     --with-hdf5=...           - specify path to HDF5
     --with-plplot=...         - specify path to PlPlot
     --with-png=...            - specify path to libpng
+```
 
 The supplied directory should contain the 'include' and 'lib'
 subdirectories for the corresponding library. E.g. if libhdf5.so is
 in /opt/local/hdf5/current/lib/ then you would use
 
+```
 ./configure --with-hdf5=/opt/local/hdf5/current/
+```
 
 The program can be compiled without a particular library by doing
 something like:
 
+```
 ./configure --without-hdf5
+```
 
 If you're having problems linking a library you can use the LIBS and
 LDFLAGS environment variables to pass extra flags to the linker.
 
 Some points to note:
-
-* The Fortran interfaces to PlPlot and HDF5 need to be compiled
-  with the same compiler as this program. This is because the module file
-  format varies between compilers.
 
 * To read snapshots larger than 2Gb the program needs to be compiled in
   64 bit mode, in which case all of the libraries need to be compiled
@@ -118,34 +96,30 @@ Some points to note:
   4.2 to be able to read binary snapshots. Stream I/O is not
   implemented in 4.1.
 
+### Example compilation
 
+Compiling the code with the Intel compilers and OpenMP (assuming we're 
+using the csh shell):
 
-1.4 Example compilation
------------------------
-
-Here's the script I use to build it on icc-graphics:
-
-#!/bin/tcsh
-setenv CC      "gcc"
-setenv CFLAGS  "-O2 -m64"
-setenv FC      "pgf90"
-setenv FCFLAGS "-tp amd64e -Mlarge_arrays -fPIC -fast -Mfprelaxed -mp"
-./configure \
-    --prefix=/gal/dsk3/jch/Code/GadgetViewer/ \
-    --with-hdf5=/usr/local/hdf5/current/ \
-    --with-plplot=/export/disk/tmp/jch/software/plplot/plplot-5.6.1/
+```
+setenv CC icc
+setenv CFLAGS  "-O3 -xSSE4.2 -fopenmp -shared-intel -no-prec-div -fp-model fast=2"
+setenv FC ifort
+setenv FCFLAGS "-O3 -xSSE4.2 -fopenmp -heap-arrays -shared-intel -no-prec-div -fp-model fast=2"
+./configure --prefix=/usr/local/
 make
 make install
+```
 
+### PlPlot configuration
 
-
-1.5 PlPlot configuration
-------------------------
+Note that PlPlot is not required if Cairo is available (which it usually is).
 
 If you're having problems compiling PlPlot then as a last resort you
 could try disabling features that the gadget file viewer doesn't
 need. To do this, pass the following parameters to cmake:
 
+```
     -DENABLE_tcl=OFF
     -DENABLE_cxx=OFF
     -DENABLE_gnome2=OFF
@@ -156,24 +130,23 @@ need. To do this, pass the following parameters to cmake:
     -DPLD_hp7470=OFF
     -DPLD_hp7580=OFF
     -DPLD_lj_hpgl=OFF
+```
 
 The gadget file viewer just needs the Fortran interface and the 'mem'
 output driver, which is built in and can't be disabled.
 
-1.6 HDF5 configuration
-----------------------
+### HDF5 configuration
 
-HDF5 must be compiled with the Fortran interface enabled. If it is
-compiled without compression support then compressed HDF5 snapshots
-will be unreadable.
+It should now be possible to use any HDF5 1.6 or later installation.
+Only the C interface is used, so it doesn't matter if the HDF5 Fortran
+interface was not built or was built with a different compiler.
 
+If HDF5 is compiled without compression support then compressed HDF5 
+snapshots will be unreadable.
 
-2. Using the Gadget file viewer
-===============================
+## Using the Gadget file viewer
 
-
-2.1 Reading a snapshot
-----------------------
+### Reading a snapshot
 
 The name of a snapshot file to read can be specified on the command
 line or a file can be selected through the File menu. If the file is
@@ -185,10 +158,9 @@ particle properties may also be loaded depending on the file format
 (see 2.8 below).
 
 
-2.2 Random sampling
--------------------
+### Random sampling
 
-By default the program shows up to 250,000 particles. If there are more
+By default the program shows up to 500,000 particles. If there are more
 than this a random sample is shown. If you zoom in on a particular
 region of the simulation you can make it draw the sample from just this
 region by clicking the resample button. Alternatively you can activate
@@ -202,8 +174,7 @@ The maximum number of particles to show can be changed with the
 View/View parameters option.
 
 
-2.3 Using a 3D display
-----------------------
+### Using a 3D display
 
 To use it with a stereoscopic display which expects side by side
 images, load a snapshot then select "Side by side stereo" from
@@ -212,8 +183,7 @@ window. A slider on the toolbar allows you to adjust the eye separation
 to get a comfortable 3D effect.
 
 
-2.4 Making movies
------------------
+### Making movies
 
 Select "Make movie" from the options menu. "Rotating movie" makes a
 movie of the particle distribution rotating about the selected
@@ -227,8 +197,7 @@ Evolving movies will look best if you ensure that the sampling rate is
 because it uses a different random sample for each frame.
 
 
-2.5 Selecting particles to follow between snapshots
----------------------------------------------------
+### Selecting particles to follow between snapshots
 
 "Select particles" under the Options menu allows you to highlight
 particles according to property values and/or their distance from the
@@ -247,8 +216,7 @@ highlight the selected particles in the main display and in the graph
 window (see below).
 
 
-2.6 Making plots
-----------------
+### Making plots
 
 "Make plot" in the options menu allows you to plot a histogram of the
 values of a particle property or to make a scatterplot of one property
@@ -262,8 +230,7 @@ If the property plotted on the x or y axis cannot be loaded for the
 current snapshot the graph window will be blank.
 
 
-2.7 Using multiple processors
------------------------------
+### Using multiple processors
 
 The smoothed density plot and smoothing length routines have been
 parallelised with OpenMP. To use more than one processor, either use
@@ -271,43 +238,46 @@ the OpenMP option in the Options menu or set the environment variable
 OMP_NUM_THREADS to the number of processors to use.
 
 
-2.8 Reading extra particle properties
--------------------------------------
+### Reading extra particle properties
 
-* HDF5 snapshots
+#### HDF5 snapshots
 
 If you have a HDF5 snapshot with extra particle properties (ages,
 metallicities etc), you can make it read them in by putting their
 dataset names in the file
 
-.gadgetviewer/gadget_hdf5_extra_properties
+.gadgetviewer_settings/gadget_hdf5_extra_properties
 
 in your home directory. Note that duplicate dataset names or names which
 conflict with quantities which are always read (e.g. Mass, ID) will be
 silently ignored. The default file contains
 
+```
  Metallicity
  StarFormationRate
  Temperature
  Density
  InternalEnergy
+```
 
 The program will read these quantities for each type of particle in the
 snapshot which has a corresponding HDF5 dataset.
 
 
-* Type 2 binary snapshots
+#### Type 2 binary snapshots
 
 You can specify which blocks should be read from type 2 binary
 snapshots by editing the file
 
-.gadgetviewer/gadget_binary_type2_blocks
+.gadgetviewer_settings/gadget_binary_type2_blocks
 
 in your home directory. The default file looks like this:
 
+```
   U   , InternalEnergy,  T, F, F, F, F, F, REAL
   RHO , Density,         T, F, F, F, F, F, REAL
   HSML, SmoothingLength, T, F, F, F, F, F, REAL
+```
 
 There is one row for each additional block to be read. The columns are
 
@@ -323,15 +293,14 @@ way. There is no need to specify the POS, VEL, ID and MASS blocks
 because they are always read in anyway. Lines with names or tags that
 conflict with the standard set of blocks will be ignored.
 
-* Type 1 binary snapshots
+#### Type 1 binary snapshots
 
 Its not possible to read additional particle properties from type 1
 snapshots because there is no way for the program to determine which
 extra blocks are present.
 
 
-2.9 Reading additional arrays from auxiliary files
---------------------------------------------------
+### Reading additional arrays from auxiliary files
 
 Its possible to read in extra particle properties from ascii or HDF5
 files using the "Read additional data" option in the file menu. These
