@@ -39,10 +39,10 @@ configure script generates a warning for each library which can't be found.
 The compilers to use can be specified by setting the following
 environment variables before running the configure script:
 
-CC      - C compiler
-CFLAGS  - C compiler flags
-FC      - Fortran 90 compiler
-FCFLAGS - Fortran compiler flags
+  * CC      - C compiler
+  * CFLAGS  - C compiler flags
+  * FC      - Fortran 90 compiler
+  * FCFLAGS - Fortran compiler flags
 
 ### OpenMP
 
