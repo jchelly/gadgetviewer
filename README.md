@@ -19,8 +19,6 @@ make install
 
 where <path> is the directory where the program should be installed.
 
-
-
 ### Dependencies
 
 In order to compile the program you need at least a C compiler, a
@@ -36,8 +34,6 @@ several optional dependencies:
 If any of these are missing, some features will be unavailable. The
 configure script generates a warning for each library which can't be found.
 
-
-
 ### Specifying compilers and flags
 
 The compilers to use can be specified by setting the following
@@ -48,7 +44,12 @@ CFLAGS  - C compiler flags
 FC      - Fortran 90 compiler
 FCFLAGS - Fortran compiler flags
 
+### OpenMP
 
+The program can make use of multiple processor cores using OpenMP if
+your Fortran compiler supports it. To enable OpenMP add your compiler's
+OpenMP flag to the FCFLAGS environment variable before running configure
+(e.g. -fopenmp for gfortran or -qopenmp for ifort).
 
 ### Specifying library locations
 
@@ -82,10 +83,6 @@ LDFLAGS environment variables to pass extra flags to the linker.
 
 Some points to note:
 
-* The Fortran interfaces to PlPlot and HDF5 need to be compiled
-  with the same compiler as this program. This is because the module file
-  format varies between compilers.
-
 * To read snapshots larger than 2Gb the program needs to be compiled in
   64 bit mode, in which case all of the libraries need to be compiled
   as 64 bit too.
@@ -99,28 +96,24 @@ Some points to note:
   4.2 to be able to read binary snapshots. Stream I/O is not
   implemented in 4.1.
 
-
-
 ### Example compilation
 
-Here's the script I use to build it on icc-graphics:
+Compiling the code with the Intel compilers and OpenMP (assuming we're 
+using the csh shell):
 
 ```
-#!/bin/tcsh
-setenv CC      "gcc"
-setenv CFLAGS  "-O2 -m64"
-setenv FC      "pgf90"
-setenv FCFLAGS "-tp amd64e -Mlarge_arrays -fPIC -fast -Mfprelaxed -mp"
-./configure \
-    --prefix=/gal/dsk3/jch/Code/GadgetViewer/ \
-    --with-hdf5=/usr/local/hdf5/current/ \
-    --with-plplot=/export/disk/tmp/jch/software/plplot/plplot-5.6.1/
+setenv CC icc
+setenv CFLAGS  "-O3 -xSSE4.2 -fopenmp -shared-intel -no-prec-div -fp-model fast=2"
+setenv FC ifort
+setenv FCFLAGS "-O3 -xSSE4.2 -fopenmp -heap-arrays -shared-intel -no-prec-div -fp-model fast=2"
+./configure --prefix=/usr/local/
 make
 make install
 ```
 
-
 ### PlPlot configuration
+
+Note that PlPlot is not required if Cairo is available (which it usually is).
 
 If you're having problems compiling PlPlot then as a last resort you
 could try disabling features that the gadget file viewer doesn't
@@ -144,10 +137,12 @@ output driver, which is built in and can't be disabled.
 
 ### HDF5 configuration
 
-HDF5 must be compiled with the Fortran interface enabled. If it is
-compiled without compression support then compressed HDF5 snapshots
-will be unreadable.
+It should now be possible to use any HDF5 1.6 or later installation.
+Only the C interface is used, so it doesn't matter if the HDF5 Fortran
+interface was not built or was built with a different compiler.
 
+If HDF5 is compiled without compression support then compressed HDF5 
+snapshots will be unreadable.
 
 ## Using the Gadget file viewer
 
@@ -165,7 +160,7 @@ particle properties may also be loaded depending on the file format
 
 ### Random sampling
 
-By default the program shows up to 250,000 particles. If there are more
+By default the program shows up to 500,000 particles. If there are more
 than this a random sample is shown. If you zoom in on a particular
 region of the simulation you can make it draw the sample from just this
 region by clicking the resample button. Alternatively you can activate
@@ -251,7 +246,7 @@ If you have a HDF5 snapshot with extra particle properties (ages,
 metallicities etc), you can make it read them in by putting their
 dataset names in the file
 
-.gadgetviewer/gadget_hdf5_extra_properties
+.gadgetviewer_settings/gadget_hdf5_extra_properties
 
 in your home directory. Note that duplicate dataset names or names which
 conflict with quantities which are always read (e.g. Mass, ID) will be
@@ -274,7 +269,7 @@ snapshot which has a corresponding HDF5 dataset.
 You can specify which blocks should be read from type 2 binary
 snapshots by editing the file
 
-.gadgetviewer/gadget_binary_type2_blocks
+.gadgetviewer_settings/gadget_binary_type2_blocks
 
 in your home directory. The default file looks like this:
 
