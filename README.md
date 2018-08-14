@@ -1,29 +1,6 @@
+# Gadgetviewer documentation
 
-# TABLE OF CONTENTS
-
-1. Compiling the Gadget file viewer
-   1.1 Dependencies
-   1.2 Specifying compilers and flags
-   1.3 Specifying library locations
-   1.4 Example compilation
-   1.5 PlPlot configuration
-   1.6 HDF5 configuration
-2. Using the Gadget file viewer
-   2.1 Reading a snapshot
-   2.2 Random sampling
-   2.3 Using a 3D display
-   2.4 Making movies
-   2.5 Selecting particles to follow between snapshots
-   2.6 Making plots
-   2.7 Using multiple processors
-   2.8 Reading extra particle properties
-        - HDF5 snapshots
-        - Binary type 2 snapshots
-   2.9 Reading additional arrays from auxiliary files
-
-
-
-# 1. Compiling the Gadget file viewer
+## Compilation
 
 This package uses a configure script generated using GNU
 Autoconf. You can get a summary of the available options by running
@@ -44,7 +21,7 @@ where <path> is the directory where the program should be installed.
 
 
 
-## 1.1 Dependencies
+### Dependencies
 
 In order to compile the program you need at least a C compiler, a
 Fortran 90 compiler, and the GTK+ 2.0 GUI library. The program also has
@@ -61,7 +38,7 @@ configure script generates a warning for each library which can't be found.
 
 
 
-## 1.2 Specifying compilers and flags
+### Specifying compilers and flags
 
 The compilers to use can be specified by setting the following
 environment variables before running the configure script:
@@ -73,7 +50,7 @@ FCFLAGS - Fortran compiler flags
 
 
 
-## 1.3 Specifying library locations
+### Specifying library locations
 
 If libraries are installed in non-standard locations (i.e. not
 somewhere like /usr/lib), the following parameters can be used to tell
@@ -124,7 +101,7 @@ Some points to note:
 
 
 
-## 1.4 Example compilation
+### Example compilation
 
 Here's the script I use to build it on icc-graphics:
 
@@ -143,7 +120,7 @@ make install
 ```
 
 
-## 1.5 PlPlot configuration
+### PlPlot configuration
 
 If you're having problems compiling PlPlot then as a last resort you
 could try disabling features that the gadget file viewer doesn't
@@ -165,16 +142,16 @@ need. To do this, pass the following parameters to cmake:
 The gadget file viewer just needs the Fortran interface and the 'mem'
 output driver, which is built in and can't be disabled.
 
-## 1.6 HDF5 configuration
+### HDF5 configuration
 
 HDF5 must be compiled with the Fortran interface enabled. If it is
 compiled without compression support then compressed HDF5 snapshots
 will be unreadable.
 
 
-# 2. Using the Gadget file viewer
+## Using the Gadget file viewer
 
-## 2.1 Reading a snapshot
+### Reading a snapshot
 
 The name of a snapshot file to read can be specified on the command
 line or a file can be selected through the File menu. If the file is
@@ -186,7 +163,7 @@ particle properties may also be loaded depending on the file format
 (see 2.8 below).
 
 
-## 2.2 Random sampling
+### Random sampling
 
 By default the program shows up to 250,000 particles. If there are more
 than this a random sample is shown. If you zoom in on a particular
@@ -202,7 +179,7 @@ The maximum number of particles to show can be changed with the
 View/View parameters option.
 
 
-## 2.3 Using a 3D display
+### Using a 3D display
 
 To use it with a stereoscopic display which expects side by side
 images, load a snapshot then select "Side by side stereo" from
@@ -211,7 +188,7 @@ window. A slider on the toolbar allows you to adjust the eye separation
 to get a comfortable 3D effect.
 
 
-## 2.4 Making movies
+### Making movies
 
 Select "Make movie" from the options menu. "Rotating movie" makes a
 movie of the particle distribution rotating about the selected
@@ -225,7 +202,7 @@ Evolving movies will look best if you ensure that the sampling rate is
 because it uses a different random sample for each frame.
 
 
-## 2.5 Selecting particles to follow between snapshots
+### Selecting particles to follow between snapshots
 
 "Select particles" under the Options menu allows you to highlight
 particles according to property values and/or their distance from the
@@ -244,7 +221,7 @@ highlight the selected particles in the main display and in the graph
 window (see below).
 
 
-## 2.6 Making plots
+### Making plots
 
 "Make plot" in the options menu allows you to plot a histogram of the
 values of a particle property or to make a scatterplot of one property
@@ -258,7 +235,7 @@ If the property plotted on the x or y axis cannot be loaded for the
 current snapshot the graph window will be blank.
 
 
-## 2.7 Using multiple processors
+### Using multiple processors
 
 The smoothed density plot and smoothing length routines have been
 parallelised with OpenMP. To use more than one processor, either use
@@ -266,9 +243,9 @@ the OpenMP option in the Options menu or set the environment variable
 OMP_NUM_THREADS to the number of processors to use.
 
 
-## 2.8 Reading extra particle properties
+### Reading extra particle properties
 
-* HDF5 snapshots
+#### HDF5 snapshots
 
 If you have a HDF5 snapshot with extra particle properties (ages,
 metallicities etc), you can make it read them in by putting their
@@ -292,7 +269,7 @@ The program will read these quantities for each type of particle in the
 snapshot which has a corresponding HDF5 dataset.
 
 
-* Type 2 binary snapshots
+#### Type 2 binary snapshots
 
 You can specify which blocks should be read from type 2 binary
 snapshots by editing the file
@@ -321,14 +298,14 @@ way. There is no need to specify the POS, VEL, ID and MASS blocks
 because they are always read in anyway. Lines with names or tags that
 conflict with the standard set of blocks will be ignored.
 
-* Type 1 binary snapshots
+#### Type 1 binary snapshots
 
 Its not possible to read additional particle properties from type 1
 snapshots because there is no way for the program to determine which
 extra blocks are present.
 
 
-## 2.9 Reading additional arrays from auxiliary files
+### Reading additional arrays from auxiliary files
 
 Its possible to read in extra particle properties from ascii or HDF5
 files using the "Read additional data" option in the file menu. These
