@@ -1,9 +1,33 @@
 # Gadgetviewer documentation
 
+## Introduction
+
+This is a program for visualisation of 
+[Gadget](https://wwwmpa.mpa-garching.mpg.de/gadget/) N-body simulation snapshots.
+It can read Gadget type 1, type 2 and HDF5 snapshots and provides an 
+interactive display of the particle distribution, optionally with SPH type
+smoothing and colouring by any quantity that can be read from the snapshot.
+
+There are facilities to pick out populations of particles by various
+properties (e.g. temperature, density etc in SPH runs), to follow particles
+between snapshots, and to make movies.
+
+It can be used with other simulation codes which produce Gadget-like
+snapshots, such as [AREPO](https://wwwmpa.mpa-garching.mpg.de/~volker/arepo/)
+and [SWIFT](http://icc.dur.ac.uk/swift/), and has been used to visualize 
+the [EAGLE](http://icc.dur.ac.uk/Eagle) and [Illustris](http://www.illustris-project.org/) 
+simulations.
+
 ## Compilation
 
+### Compiling a release
+
 This package uses a configure script generated using GNU
-Autoconf. You can get a summary of the available options by running
+Autoconf. If you downloaded a release .tar.gz file (which would have a 
+filename along the lines of gadgetviewer-X.Y.Z.tar.gz) then the configure
+script has already been generated and is included.
+
+You can get a summary of the available options by running
 
 ./configure --help
 
@@ -19,6 +43,15 @@ make install
 
 where <path> is the directory where the program should be installed.
 
+### Compiling from the git repository
+
+Since the configure script and related files are machine generated
+they are not included in the git repository. If you acquired the code by 
+cloning the git repository or using the download source option on github 
+then you'll need to ensure that you have autoconf, automake and libtool 
+installed and run the autogen.sh script in the source directory. This will
+generate the configure script which can be run as described above.
+
 ### Dependencies
 
 In order to compile the program you need at least a C compiler, a
@@ -28,7 +61,7 @@ several optional dependencies:
 - HDF5  : allows reading of HDF5 snapshots
 - libpng: required for writing out movie frames and screenshots
 - PlPlot: to make scatterplots and histograms of particle properties
-  (plplot is no longer necessary as the gadgetviewer can use Cairo,
+  (plplot is no longer necessary as gadgetviewer can use Cairo,
   which is a dependency of Gtk, instead)
 
 If any of these are missing, some features will be unavailable. The
@@ -85,7 +118,8 @@ Some points to note:
 
 * To read snapshots larger than 2Gb the program needs to be compiled in
   64 bit mode, in which case all of the libraries need to be compiled
-  as 64 bit too.
+  as 64 bit too (this should no longer be a problem now that most systems
+  are 64 bit).
 
 * Libraries installed by a package manager sometimes don't include the
   header files which are necessary to compile anything that uses the
@@ -132,8 +166,8 @@ need. To do this, pass the following parameters to cmake:
     -DPLD_lj_hpgl=OFF
 ```
 
-The gadget file viewer just needs the Fortran interface and the 'mem'
-output driver, which is built in and can't be disabled.
+Gadgetviewer just needs the Fortran interface and the 'mem' output driver,
+which is built in and can't be disabled.
 
 ### HDF5 configuration
 
