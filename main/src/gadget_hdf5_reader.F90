@@ -42,6 +42,9 @@ module gadget_hdf5_reader
   ! Path information extracted from file name
   type (path_data_type) :: path_data
 
+  ! Which particle types to read
+  logical, dimension(maxspecies) :: read_type
+
 contains
 
   subroutine gadget_hdf5_read_conf(dir)
@@ -192,6 +195,7 @@ contains
     !
     read_extra = .false.
     find_type  = .true.
+    read_type  = .false.
     do ifile = 0, n-1, 1
        call gadget_path_generate(jsnap, ifile, fname, path_data)
        hdferr = hdf5_open_file(fname)
@@ -223,33 +227,44 @@ contains
 
        do ispecies = 1, 6, 1
           
+          if(npfile(ispecies).gt.0.and.find_type(ispecies))then
+
+             ! Check if this particle type has a coordinates dataset
+             str = "/PartType"//trim(string(ispecies-1,fmt='(i1.1)'))//"/Coordinates"
+             hdferr = hdf5_dataset_type(str, dtype)
+             if(hdferr.eq.0)read_type(ispecies) = .true.
+
+             ! Check for other quantities
+             do iextra = 1, nextra, 1
+                str = "/PartType"//trim(string(ispecies-1,fmt='(i1.1)'))//"/"// &
+                     trim(extra_prop(iextra))
+                hdferr = hdf5_dataset_type(str, dtype)
+                if(hdferr.eq.0)then
+                   select case(dtype)
+                   case(HDF5_INTEGER4, HDF5_INTEGER8)
+                      ! Integer dataset
+                      read_extra(ispecies,iextra) = .true.
+                      extra_type(ispecies,iextra) = "INTEGER"
+                   case(HDF5_REAL4, HDF5_REAL8)
+                      ! Real dataset
+                      read_extra(ispecies,iextra) = .true.
+                      extra_type(ispecies,iextra) = "REAL"
+                   case default
+                      ! Don't read if its not real/integer
+                      read_extra(ispecies,iextra) = .false.
+                      extra_type(ispecies,iextra) = "UNKNOWN"
+                   end select
+                endif
+             end do
+
+          endif
+
           ! Determine if we need to keep looking for a file with
           ! particles of this type - can stop if a) there aren't
           ! any in the snapshot or b) there ARE some in this file.
           if(nptot(ispecies).eq.0)find_type(ispecies)=.false.
           if(npfile(ispecies).gt.0)find_type(ispecies)=.false.
 
-          do iextra = 1, nextra, 1
-             str = "/PartType"//trim(string(ispecies-1,fmt='(i1.1)'))//"/"// &
-                  trim(extra_prop(iextra))
-             hdferr = hdf5_dataset_type(str, dtype)
-             if(hdferr.eq.0)then
-                select case(dtype)
-                case(HDF5_INTEGER4, HDF5_INTEGER8)
-                   ! Integer dataset
-                   read_extra(ispecies,iextra) = .true.
-                   extra_type(ispecies,iextra) = "INTEGER"
-                case(HDF5_REAL4, HDF5_REAL8)
-                   ! Real dataset
-                   read_extra(ispecies,iextra) = .true.
-                   extra_type(ispecies,iextra) = "REAL"
-                case default
-                   ! Don't read if its not real/integer
-                   read_extra(ispecies,iextra) = .false.
-                   extra_type(ispecies,iextra) = "UNKNOWN"
-                end select
-             endif
-          end do
        end do
        hdferr = hdf5_close_file()
 
@@ -391,6 +406,14 @@ contains
 
     hdferr = hdf5_close_file()
 
+    ! Set number of particles to zero for types we're not reading
+    do ispecies = 1, 6, 1
+       if(.not.read_type(ispecies))then
+          npfile(ispecies) = 0
+          nptot(ispecies) = 0
+       endif
+    end do
+
     ! At this point we know the file is readable, so deallocate the old
     ! snapshot
     call particle_store_empty(pdata)
@@ -500,6 +523,13 @@ contains
           hdferr = hdf5_close_file()
           return
        endif
+
+       ! Set number of particles to zero for types we're not reading
+       do ispecies = 1, 6, 1
+          if(.not.read_type(ispecies))then
+             npfile(ispecies) = 0
+          endif
+       end do
 
        ! Set up mask array for sampling
        if(rinfo%do_sampling.or.rinfo%do_sphere)then
