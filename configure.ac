@@ -188,22 +188,19 @@ if test "$PYTHON" != ":" ; then
   ax_mod_deps_f90_gui=./mod-deps-f90_gui
   ax_mod_deps_hdf5=./mod-deps-hdf5
   ax_mod_deps_drawing=./mod-deps-drawing
-  ax_mod_deps_read_gadget=./mod-deps-read_gadget
   ax_mod_deps_read_eagle=./mod-deps-read_eagle
   ${PYTHON} ${srcdir}/conf/find_module_dependencies.py ${srcdir}/main/src/     ./mod-deps-main
   ${PYTHON} ${srcdir}/conf/find_module_dependencies.py ${srcdir}/f90_util/src/ ./mod-deps-f90_util
   ${PYTHON} ${srcdir}/conf/find_module_dependencies.py ${srcdir}/f90_gui/src/  ./mod-deps-f90_gui
   ${PYTHON} ${srcdir}/conf/find_module_dependencies.py ${srcdir}/hdf5/src/     ./mod-deps-hdf5
   ${PYTHON} ${srcdir}/conf/find_module_dependencies.py ${srcdir}/drawing/src/  ./mod-deps-drawing
-  ${PYTHON} ${srcdir}/conf/find_module_dependencies.py ${srcdir}/read_gadget/src/  ./mod-deps-read_gadget
-  ${PYTHON} ${srcdir}/conf/find_module_dependencies.py ${srcdir}/read_gadget/src/  ./mod-deps-read_eagle
+  ${PYTHON} ${srcdir}/conf/find_module_dependencies.py ${srcdir}/read_eagle/src/  ./mod-deps-read_eagle
 else
   ax_mod_deps_main=/dev/null
   ax_mod_deps_f90_util=/dev/null
   ax_mod_deps_f90_gui=/dev/null
   ax_mod_deps_hdf5=/dev/null
   ax_mod_deps_drawing=/dev/null
-  ax_mod_deps_read_gadget=/dev/null
   ax_mod_deps_read_eagle=/dev/null
 fi
 AC_SUBST_FILE(ax_mod_deps_main)
@@ -211,13 +208,12 @@ AC_SUBST_FILE(ax_mod_deps_f90_util)
 AC_SUBST_FILE(ax_mod_deps_f90_gui)
 AC_SUBST_FILE(ax_mod_deps_hdf5)
 AC_SUBST_FILE(ax_mod_deps_drawing)
-AC_SUBST_FILE(ax_mod_deps_read_gadget)
 AC_SUBST_FILE(ax_mod_deps_read_eagle)
 
 #
 # Output the Makefiles
 #
-AC_OUTPUT(Makefile drawing/Makefile drawing/src/Makefile main/Makefile main/src/Makefile f90_gui/Makefile f90_gui/src/Makefile f90_util/Makefile f90_util/src/Makefile hdf5/Makefile hdf5/src/Makefile conf/Makefile read_gadget/Makefile read_gadget/src/Makefile read_eagle/Makefile read_eagle/src/Makefile doc/Makefile)
+AC_OUTPUT(Makefile drawing/Makefile drawing/src/Makefile main/Makefile main/src/Makefile f90_gui/Makefile f90_gui/src/Makefile f90_util/Makefile f90_util/src/Makefile hdf5/Makefile hdf5/src/Makefile conf/Makefile read_eagle/Makefile read_eagle/src/Makefile doc/Makefile)
 
 #
 # Configuration summary
