@@ -1086,7 +1086,9 @@ int get_dataset_name(EagleSnapshot *snap, int itype, int iset, char *buf, size_t
 
 
 /*
-  peano_hilbert_key() function taken from Gadget-2
+  The following code is taken from Gadget-2 (http://wwwmpa.mpa-garching.mpg.de/gadget/)
+  Copyright (c) 2005       Volker Springel
+                           Max-Plank-Institute for Astrophysics
 */
 
 static char quadrants[24][2][2][2] = {
