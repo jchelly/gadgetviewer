@@ -1,5 +1,6 @@
 module terminate_module
 
+  use c_types
   implicit none
 
 contains
@@ -12,7 +13,7 @@ contains
     if(present(message))then
        write(0,*)trim(message)
     endif
-    call cterminate(0)
+    call cterminate(int(0, kind=C_INT))
 
     return
   end subroutine terminate
