@@ -1,0 +1,51 @@
+# Compiled files
+
+*.mod
+*.o
+*.lo
+*.la
+*.f90-e
+*.F90-e
+
+# Compiled directories
+
+*.libs*
+*.deps*
+mod-deps*
+stamp-h1*
+libtool*
+
+# Output of configure
+
+configure
+configure.in
+config.h
+config.h.in
+config.log
+config.status
+
+*.m4
+autom4te.cache/*
+
+*Makefile
+*Makefile.in
+
+## Lives in conf/
+conf/compile
+conf/config.guess
+conf/config.sub
+conf/depcomp
+conf/install-sh
+conf/missing
+conf/texinfo.tex
+conf/ltmain.sh
+
+## Lives in doc/
+
+doc/gadgetviewer.info
+
+# Output of build
+
+build/*
+main/src/gadgetviewer
+

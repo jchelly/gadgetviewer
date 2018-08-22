@@ -3,7 +3,13 @@
 # Scan all .[fF]90 files and write out module dependencies
 #
 
-from string import lower
+try:
+    from string import lower
+except ImportError:
+    # For python3 cross-compatibility
+    def lower(x):
+        return x.lower()
+
 import glob
 import re
 import sys
