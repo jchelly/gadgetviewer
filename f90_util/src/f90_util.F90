@@ -7,6 +7,7 @@ module f90_util
 
   use c_types
   use get_argumentsmod
+  use terminate_module
 
   implicit none
   integer, parameter :: fname_maxlen=500

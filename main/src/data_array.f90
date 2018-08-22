@@ -175,7 +175,7 @@ contains
     else if(type.eq.REAL82D)then
        allocate(new_block%r8ptr2d(width,blocksize), stat=istat)
     else
-       stop'new_block() - Invalid data type'
+       call terminate('new_block() - Invalid data type')
     endif
 
     if(istat.ne.0)nullify(new_block)
@@ -258,8 +258,7 @@ contains
        darray%type = this_type
        darray%width = 1
     else if(darray%type.ne.this_type)then
-       write(0,*)"data_array_add_elements() - inconsistent types!"
-       stop
+       call terminate("data_array_add_elements() - inconsistent types!")
     endif
 
     ! Add the data
@@ -381,8 +380,7 @@ contains
        darray%type = this_type
        darray%width = 1
     else if(darray%type.ne.this_type)then
-       write(0,*)"data_array_add_elements() - inconsistent types!"
-       stop
+       call terminate("data_array_add_elements() - inconsistent types!")
     endif
 
     ! Add the data
@@ -504,8 +502,7 @@ contains
        darray%type = this_type
        darray%width = 1
     else if(darray%type.ne.this_type)then
-       write(0,*)"data_array_add_elements() - inconsistent types!"
-       stop
+       call terminate("data_array_add_elements() - inconsistent types!")
     endif
 
     ! Add the data
@@ -627,8 +624,7 @@ contains
        darray%type = this_type
        darray%width = 1
     else if(darray%type.ne.this_type)then
-       write(0,*)"data_array_add_elements() - inconsistent types!"
-       stop
+       call terminate("data_array_add_elements() - inconsistent types!")
     endif
 
     ! Add the data
@@ -751,8 +747,7 @@ contains
        darray%type = this_type
        darray%width = size(data,1)
     else if(darray%type.ne.this_type)then
-       write(0,*)"data_array_add_elements() - inconsistent types!"
-       stop
+       call terminate("data_array_add_elements() - inconsistent types!")
     endif
 
     ! Add the data
@@ -874,8 +869,7 @@ contains
        darray%type = this_type
        darray%width = size(data,1)
     else if(darray%type.ne.this_type)then
-       write(0,*)"data_array_add_elements() - inconsistent types!"
-       stop
+       call terminate("data_array_add_elements() - inconsistent types!")       
     endif
 
     ! Add the data

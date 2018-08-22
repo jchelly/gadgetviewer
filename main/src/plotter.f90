@@ -68,7 +68,7 @@ contains
 
     call plotter_settings_close()
 
-    if(i.lt.1.or.i.gt.nplottypes)stop'Plot type index out of range!'
+    if(i.lt.1.or.i.gt.nplottypes)call terminate('Plot type index out of range!')
 
     iplotter = i
 
@@ -160,7 +160,7 @@ contains
        case(5)
           call smoothed_property_plot_make_image(nx, ny, trans, buf, show_species)
        case default
-          stop'Invalid plot type index in plotter_make_image()'
+          call terminate('Invalid plot type index in plotter_make_image()')
        end select
        ! Add an 'overlay' to the image with any annotations we want
        call overlay_add_to_image(nx, ny, trans, buf, show_species)
@@ -216,7 +216,7 @@ contains
     case(5)
        call smoothed_property_plot_settings_open(mainwin,settings_window,last_type_selected)
     case default
-       stop'Invalid plot type index in plotter_make_image()'
+       call terminate('Invalid plot type index in plotter_make_image()')
     end select
 
     ! Move the settings window to the LHS of the main window -
@@ -278,7 +278,7 @@ contains
     case(5)
        res = smoothed_property_plot_process_events()
     case default
-       stop'Invalid plot type index in plotter_make_image()'
+       call terminate('Invalid plot type index in plotter_make_image()')
     end select
 
     plotter_process_events = res
@@ -310,7 +310,7 @@ contains
     case(5)
        call smoothed_property_plot_update_settings()
     case default
-       stop'Invalid plot type index in plotter_update_settings()'
+       call terminate('Invalid plot type index in plotter_update_settings()')
     end select
 
     return

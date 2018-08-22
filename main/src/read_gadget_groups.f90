@@ -668,7 +668,7 @@ contains
 
     if(present(format_names))then
        if(size(format_names).lt.nformat) &
-            stop'format_names array too small in gadget_groups'
+            call terminate('format_names array too small in gadget_groups')
        do i = 1, nformat, 1
           format_names(i) = trim(group_format(i)%name)
        end do

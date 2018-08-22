@@ -161,7 +161,7 @@ contains
     endif
 
     ! Make a new colour table using the input data
-    if(itab.gt.ncoltabmax)stop'Too many colour tables! Increase ncoltabmax'
+    if(itab.gt.ncoltabmax)call terminate('Too many colour tables! Increase ncoltabmax')
 
     ! Record name of the new colour table
     coltab(itab)%name = trim(name)
@@ -240,7 +240,7 @@ contains
        ! Linear interpolation
        do i = 1, ubound(idx,1)-lbound(idx,1), 1
           do j = idx(i), idx(i+1), 1
-             if(j.lt.0.or.j.gt.255)stop'colour_table_add() - idx out of range'
+             if(j.lt.0.or.j.gt.255)call terminate('colour_table_add() - idx out of range')
              f = real(j-idx(i))/(idx(i+1)-idx(i))
              r_out(j) = floor(r(i) + f*(r(i+1)-r(i)))
              g_out(j) = floor(g(i) + f*(g(i+1)-g(i)))

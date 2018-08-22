@@ -350,8 +350,7 @@ contains
     call gadget_groups_format_list(ngroupformat)
     allocate(groupformat(ngroupformat), groupformat_item(ngroupformat), stat=istat)
     if(istat.ne.0)then
-       write(0,*)"Unable to allocate memory"
-       stop
+       call terminate("Unable to allocate memory")
     endif
     call gadget_groups_format_list(ngroupformat, groupformat)
     do i = 1, ngroupformat, 1
@@ -464,8 +463,7 @@ contains
     call gui_menu_item_set_state(view_show_selection, overlay_show_selection)
     allocate(show_selection(size(display_selection)), stat=istat)
     if(istat.ne.0)then
-       write(0,*)"Unable to allocate memory"
-       stop
+       call terminate("Unable to allocate memory")
     end if
     do i = 1, size(display_selection), 1
        call gui_create_menu_item(show_selection(i), view_show_selection_menu, &

@@ -570,7 +570,7 @@ contains
 #ifdef HAVE_HDF5
          call additional_data_hdf5(i,j)
 #else
-         stop'Code was compiled without HDF5 support'
+         call terminate('Code was compiled without HDF5 support')
 #endif
       case("BINARY")
          aux_file(i:j)%ok        = .false.
@@ -869,7 +869,7 @@ contains
        case("REAL")
           allocate(rprop(iaux)%ptr(np(ispecies)), stat=istat)
        case default
-          stop'Unknown property type in additional_data_ascii()'
+          call terminate('Unknown property type in additional_data_ascii()')
        end select
        if(istat.ne.0)exit
     end do
@@ -946,7 +946,7 @@ contains
                    case("REAL")
                       read(col,*,iostat=ios)rprop(icol(jcol))%ptr(nread)
                    case default
-                      stop'Unknown data type in additional_data_ascii'
+                      call terminate('Unknown data type in additional_data_ascii')
                    end select
                    if(ios.ne.0)then
                       aux_file(i:j)%ok     = .false.

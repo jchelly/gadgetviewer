@@ -4,6 +4,8 @@ module get_argumentsmod
   ! returns the i'th command line argument n variable x. x can be
   ! real, integer, double precision, string or logical.
   !
+  use terminate_module
+
   implicit none
 #include "../../config.h" 
   character(LEN=500) :: usage
@@ -93,7 +95,7 @@ contains
           write(*,*)'Usage: ',trim(usage)
           write(*,*)''
        end if
-       stop
+       call terminate()
     end if
 
     call get_arg(iarg,str)
@@ -107,7 +109,7 @@ contains
           write(*,*)'Usage: ',trim(usage)
           write(*,*)''
        end if
-       stop
+       call terminate()
     end if
 
     return
@@ -132,7 +134,7 @@ contains
           write(*,*)'Usage: ',trim(usage)
           write(*,*)''
        end if
-       stop
+       call terminate()
     end if
 
     call get_arg(iarg,str)
@@ -146,7 +148,7 @@ contains
           write(*,*)'Usage: ',trim(usage)
           write(*,*)''
        end if
-       stop
+       call terminate()
     end if
 
     return
@@ -171,7 +173,7 @@ contains
           write(*,*)'Usage: ',trim(usage)
           write(*,*)''
        end if
-       stop
+       call terminate()
     end if
 
     call get_arg(iarg,str)
@@ -186,7 +188,7 @@ contains
           write(*,*)'Usage: ',trim(usage)
           write(*,*)''
        end if
-       stop
+       call terminate()
     end if
 
     return
@@ -211,7 +213,7 @@ contains
           write(*,*)'Usage: ',trim(usage)
           write(*,*)''
        end if
-       stop
+       call terminate()
     end if
 
     call get_arg(iarg,str)
@@ -226,7 +228,7 @@ contains
           write(*,*)'Usage: ',trim(usage)
           write(*,*)''
        end if
-       stop
+       call terminate()
     end if
 
     return
@@ -249,7 +251,7 @@ contains
           write(*,*)'Usage: ',trim(usage)
           write(*,*)''
        end if
-       stop
+       call terminate()
     end if
 
     call get_arg(iarg,str)

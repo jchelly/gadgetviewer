@@ -5,6 +5,8 @@ module sort
 ! Uses heap sort for large arrays and shell sort for small arrays.
 !
   use data_types
+  use f90_util
+
   implicit none
   private
 
@@ -538,7 +540,7 @@ contains
 
     ! Check array sizes
     n = size(arr)
-    if(size(idx).lt.n)stop'sort_index(): Index array is too small!'
+    if(size(idx).lt.n)call terminate('sort_index(): Index array is too small!')
 
     ! If we have 0 or 1 elements, no sorting required!
     if(n.eq.0)return
@@ -654,7 +656,7 @@ contains
 
     ! Check array sizes
     n = size(arr)
-    if(size(idx).lt.n)stop'sort_index(): Index array is too small!'
+    if(size(idx).lt.n)call terminate('sort_index(): Index array is too small!')
 
     ! If we have 0 or 1 elements, no sorting required!
     if(n.eq.0)return
@@ -770,7 +772,7 @@ contains
 
     ! Check array sizes
     n = size(arr)
-    if(size(idx).lt.n)stop'sort_index(): Index array is too small!'
+    if(size(idx).lt.n)call terminate('sort_index(): Index array is too small!')
 
     ! If we have 0 or 1 elements, no sorting required!
     if(n.eq.0)return
@@ -886,7 +888,7 @@ contains
 
     ! Check array sizes
     n = size(arr)
-    if(size(idx).lt.n)stop'sort_index(): Index array is too small!'
+    if(size(idx).lt.n)call terminate('sort_index(): Index array is too small!')
 
     ! If we have 0 or 1 elements, no sorting required!
     if(n.eq.0)return
@@ -1006,7 +1008,7 @@ contains
 
     ! Check array sizes
     n = size(arr)
-    if(size(idx).lt.n)stop'sort_index(): Index array is too small!'
+    if(size(idx).lt.n)call terminate('sort_index(): Index array is too small!')
 
     ! If we have 0 or 1 elements, no sorting required!
     if(n.eq.0)return
@@ -1127,7 +1129,7 @@ contains
 
     ! Check array sizes
     n = size(arr)
-    if(size(idx).lt.n)stop'sort_index(): Index array is too small!'
+    if(size(idx).lt.n)call terminate('sort_index(): Index array is too small!')
 
     ! If we have 0 or 1 elements, no sorting required!
     if(n.eq.0)return
@@ -1243,7 +1245,7 @@ contains
 
     ! Check array sizes
     n = size(arr)
-    if(size(idx).lt.n)stop'sort_index(): Index array is too small!'
+    if(size(idx).lt.n)call terminate('sort_index(): Index array is too small!')
 
     ! If we have 0 or 1 elements, no sorting required!
     if(n.eq.0)return
@@ -1359,7 +1361,7 @@ contains
 
     ! Check array sizes
     n = size(arr)
-    if(size(idx).lt.n)stop'sort_index(): Index array is too small!'
+    if(size(idx).lt.n)call terminate('sort_index(): Index array is too small!')
 
     ! If we have 0 or 1 elements, no sorting required!
     if(n.eq.0)return
@@ -1475,7 +1477,7 @@ contains
 
     ! Check array sizes
     n = size(arr)
-    if(size(idx).lt.n)stop'sort_index(): Index array is too small!'
+    if(size(idx).lt.n)call terminate('sort_index(): Index array is too small!')
 
     ! If we have 0 or 1 elements, no sorting required!
     if(n.eq.0)return
@@ -1595,7 +1597,7 @@ contains
 
     ! Check array sizes
     n = size(arr)
-    if(size(idx).lt.n)stop'sort_index(): Index array is too small!'
+    if(size(idx).lt.n)call terminate('sort_index(): Index array is too small!')
 
     ! If we have 0 or 1 elements, no sorting required!
     if(n.eq.0)return
@@ -1726,7 +1728,7 @@ contains
 
     ! Check array sizes
     n = size(arr)
-    if(size(idx).lt.n)stop'sort_index(): Index array is too small!'
+    if(size(idx).lt.n)call terminate('sort_index(): Index array is too small!')
 
 #ifdef _OPENMP
     ! Use serial sort for small arrays
@@ -1823,7 +1825,7 @@ contains
 
     ! Check array sizes
     n = size(arr)
-    if(size(idx).lt.n)stop'sort_index(): Index array is too small!'
+    if(size(idx).lt.n)call terminate('sort_index(): Index array is too small!')
 
 #ifdef _OPENMP
     ! Use serial sort for small arrays
@@ -1920,7 +1922,7 @@ contains
 
     ! Check array sizes
     n = size(arr)
-    if(size(idx).lt.n)stop'sort_index(): Index array is too small!'
+    if(size(idx).lt.n)call terminate('sort_index(): Index array is too small!')
 
 #ifdef _OPENMP
     ! Use serial sort for small arrays
@@ -2020,7 +2022,7 @@ contains
 
     ! Check array sizes
     n = size(arr)
-    if(size(idx).lt.n)stop'sort_index(): Index array is too small!'
+    if(size(idx).lt.n)call terminate('sort_index(): Index array is too small!')
 
 #ifdef _OPENMP
     ! Use serial sort for small arrays
@@ -2117,7 +2119,7 @@ contains
 
     ! Check array sizes
     n = size(arr)
-    if(size(idx).lt.n)stop'sort_index(): Index array is too small!'
+    if(size(idx).lt.n)call terminate('sort_index(): Index array is too small!')
 
 #ifdef _OPENMP
     ! Use serial sort for small arrays
@@ -2218,7 +2220,7 @@ contains
 
     ! Check array sizes
     n = size(arr)
-    if(size(idx).lt.n)stop'sort_index(): Index array is too small!'
+    if(size(idx).lt.n)call terminate('sort_index(): Index array is too small!')
 
 #ifdef _OPENMP
     ! Use serial sort for small arrays
@@ -2315,7 +2317,7 @@ contains
 
     ! Check array sizes
     n = size(arr)
-    if(size(idx).lt.n)stop'sort_index(): Index array is too small!'
+    if(size(idx).lt.n)call terminate('sort_index(): Index array is too small!')
 
 #ifdef _OPENMP
     ! Use serial sort for small arrays
@@ -2412,7 +2414,7 @@ contains
 
     ! Check array sizes
     n = size(arr)
-    if(size(idx).lt.n)stop'sort_index(): Index array is too small!'
+    if(size(idx).lt.n)call terminate('sort_index(): Index array is too small!')
 
 #ifdef _OPENMP
     ! Use serial sort for small arrays
@@ -2512,7 +2514,7 @@ contains
 
     ! Check array sizes
     n = size(arr)
-    if(size(idx).lt.n)stop'sort_index(): Index array is too small!'
+    if(size(idx).lt.n)call terminate('sort_index(): Index array is too small!')
 
 #ifdef _OPENMP
     ! Use serial sort for small arrays
@@ -2609,7 +2611,7 @@ contains
 
     ! Check array sizes
     n = size(arr)
-    if(size(idx).lt.n)stop'sort_index(): Index array is too small!'
+    if(size(idx).lt.n)call terminate('sort_index(): Index array is too small!')
 
 #ifdef _OPENMP
     ! Use serial sort for small arrays

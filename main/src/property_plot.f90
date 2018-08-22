@@ -496,7 +496,7 @@ contains
                 ! Next particle
              end do
           case default
-             stop'Unrecognised data type in property_plot_make_image()'
+             call terminate('Unrecognised data type in property_plot_make_image()')
           end select
 
        endif

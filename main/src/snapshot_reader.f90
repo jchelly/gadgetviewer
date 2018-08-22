@@ -23,6 +23,7 @@ module snapshot_reader
   use plotter
   use info_window
   use partial_read_info
+  use f90_util
 
   implicit none
   save
@@ -63,7 +64,7 @@ contains
     character(len=*) :: str
 
     snapformat = trim(str)
-    if(.not.(any(format_names.eq.str)))stop"Unrecognised snapshot format!"
+    if(.not.(any(format_names.eq.str)))call terminate("Unrecognised snapshot format!")
 
     return
   end subroutine snapshot_set_format
@@ -101,7 +102,7 @@ contains
     case("DUMMY")
        res = dummy_open(fname,isnap,ri_in)
     case default
-       stop"Unrecognised snapshot format!"
+       call terminate("Unrecognised snapshot format!")
     end select
      
     if(res%success)then
@@ -153,7 +154,7 @@ contains
        call summary_add_line(s,"Simulation format: DUMMY!")
        res = dummy_read(isnap, rinfo)
     case default
-       stop"Unrecognised snapshot format!"
+       call terminate("Unrecognised snapshot format!")
     end select
 
     call progress_bar_close()

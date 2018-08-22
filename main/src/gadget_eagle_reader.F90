@@ -18,6 +18,7 @@ module gadget_eagle_reader
   use key_file
   use partial_read_info
   use array_shrinker
+  use f90_util
 
   implicit none
   private
@@ -320,7 +321,7 @@ contains
 #else
     ! Should never get here because menu option is greyed out if HDF5 not
     ! available
-    stop'gadget_eagle_reader - Code was compiled without HDF5 support'
+    call terminate('gadget_eagle_reader - Code was compiled without HDF5 support')
 
     ! Stop compiler complaining about return value not being set
     gadget_eagle_open%success = .false.
@@ -822,7 +823,7 @@ contains
 #else
     ! Should never get here because menu option is greyed out if HDF5 not
     ! available
-    stop'gadget_eagle_reader - Code was compiled without HDF5 support'
+    call terminate('gadget_eagle_reader - Code was compiled without HDF5 support')
 
     ! Stop compiler complaining about return value not being set
     gadget_eagle_read%success = .false.
