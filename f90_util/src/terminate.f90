@@ -12,7 +12,7 @@ contains
     if(present(message))then
        write(0,*)trim(message)
     endif
-    stop 1
+    call cterminate(0)
 
     return
   end subroutine terminate
