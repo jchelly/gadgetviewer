@@ -153,6 +153,7 @@ module f90_gui
 !
 
   use c_types
+  use f90_util
 
   implicit none
   public
@@ -695,7 +696,7 @@ contains
     if(present(expander))then
        if(expander)c_expand=1
        if(expander.and.(.not.present(label)))&
-            stop'create_box(): Label must be specified if exapnder=.true.'
+            call terminate('create_box(): Label must be specified if exapnder=.true.')
     endif
 
     c_scroll = 0
@@ -760,7 +761,7 @@ contains
     if(present(expander))then
        if(expander)c_expand=1
        if(expander.and.(.not.present(label)))&
-            stop'create_box(): Label must be specified if exapnder=.true.'
+            call terminate('create_box(): Label must be specified if exapnder=.true.')
     endif
 
     c_scroll = 0
@@ -819,13 +820,11 @@ contains
     character(len=*), optional :: label, image
     
     if((.not.present(image)).and.(.not.present(label)))then
-       write(0,*)"gui_create_button(): button must have a label or an image!"
-       stop
+       call terminate("gui_create_button(): button must have a label or an image!")
     endif
 
     if(present(image).and.present(label))then
-       write(0,*)"gui_create_button(): button must have a label OR an image!"
-       stop
+       call terminate("gui_create_button(): button must have a label OR an image!")
     endif
     
     if(present(label))then
@@ -1194,8 +1193,7 @@ contains
     else if(orientation%id.eq.gui_vertical%id)then
        slider%is_vslider = 1
     else
-       write(0,*)"gui_create_slider(): Unrecognised orientation for slider:"
-       stop
+       call terminate("gui_create_slider(): Unrecognised orientation for slider:")
     end if
 
     c_draw = 0
@@ -1242,8 +1240,7 @@ contains
     else if(orientation%id.eq.gui_vertical%id)then
        slider%is_vslider = 1
     else
-       write(0,*)"gui_create_slider(): Unrecognised orientation for slider:"
-       stop
+       call terminate("gui_create_slider(): Unrecognised orientation for slider:")
     end if
 
     c_draw = 0
@@ -1375,8 +1372,7 @@ contains
     case("error")
        itype = 3
     case default
-       write(0,*)'gui_display_dialog(): unrecognised type '//trim(type)
-       stop
+       call terminate('gui_display_dialog(): unrecognised type '//trim(type))
     end select
 
     call createdialog(window%ptr,itype,trim(text)//char(0),ires)
@@ -1451,8 +1447,7 @@ contains
     character(len=*)  :: text
 
     if(.not.window%has_statusbar)then
-       write(0,*)'gui_window_set_statusbar(): window has no statusbar!'
-       stop
+       call terminate('gui_window_set_statusbar(): window has no statusbar!')
     endif
 
     call setstatusbar(window%statusbar, trim(text)//char(0), window%contextid)
@@ -1473,8 +1468,7 @@ contains
     integer(kind=C_INT) :: c_right
 
     if(.not.window%has_menubar)then
-       write(0,*)'gui_create_menu: window has no menubar!'
-       stop
+       call terminate('gui_create_menu: window has no menubar!')
     endif
 
     c_right = 0
@@ -1562,9 +1556,7 @@ contains
     endif
 
     if(menuitem%is_checkbox.and.menuitem%is_radiobutton)then
-       write(0,*)&
-            "gui_create_menu_item(): item cannot be checkbox AND radiobutton!"
-       stop
+       call terminate("gui_create_menu_item(): item cannot be checkbox AND radiobutton!")
     endif
 
     call createmenuitem(menuitem%ptr, menuitem%clicked, &
@@ -1605,9 +1597,8 @@ contains
     type (gui_menu_item) :: menuitem
 
     if(.not.(menuitem%is_checkbox.or.menuitem%is_radiobutton))then
-       write(0,*)'gui_menu_item_changed():'&
-            //' only available for checkbox and radiobutton menu items!'
-       stop
+       call terminate('gui_menu_item_changed():'&
+            //' only available for checkbox and radiobutton menu items!')
     endif
 
     if(menuitem%changed.ne.0)then
@@ -1632,9 +1623,8 @@ contains
     integer(kind=C_INT) :: c_checked
 
     if(.not.(menuitem%is_checkbox.or.menuitem%is_radiobutton))then
-       write(0,*)'gui_menu_item_changed():'&
-            //' only available for checkbox and radiobutton menu items!'
-       stop
+       call terminate('gui_menu_item_changed():'&
+            //' only available for checkbox and radiobutton menu items!')
     endif
 
     call menuitemstate(menuitem%ptr, c_checked)
@@ -1659,9 +1649,8 @@ contains
     integer(kind=C_INT) :: c_checked
 
     if(.not.(menuitem%is_checkbox.or.menuitem%is_radiobutton))then
-       write(0,*)'gui_menu_item_changed():'&
-            //' only available for checkbox and radiobutton menu items!'
-       stop
+       call terminate('gui_menu_item_changed():'&
+            //' only available for checkbox and radiobutton menu items!')
     endif
 
     if(checked)then
@@ -1697,9 +1686,7 @@ contains
             radiobutton%changed)
     else
        if(previous%has_next)then
-          write(0,*) &
-               'gui_create_radio_button(): buttons must be linked in a chain'
-          stop
+          call terminate('gui_create_radio_button(): buttons must be linked in a chain')
        endif
        call addradiobutton(radiobutton%ptr,box%ptr,trim(label)//char(0), &
             previous%ptr,radiobutton%changed)
@@ -1956,8 +1943,8 @@ contains
     if(present(height))then
        c_height = height
     endif
-    if(present(width).neqv.present(height))stop &
-         'Must specify width AND height in create_drawing_area'
+    if(present(width).neqv.present(height)) &
+         call terminate('Must specify width AND height in create_drawing_area')
 
     db = 0
     if(present(double_buffered))then
@@ -2024,9 +2011,8 @@ contains
     integer :: button
 
     if(button.lt.1.or.button.gt.5)then
-       write(0,*)"gui_drawing_area_mouse_clicked(): "//&
-            "button index must be in range 1-5"
-       stop
+       call terminate("gui_drawing_area_mouse_clicked(): "//&
+            "button index must be in range 1-5")
     endif
 
     if(drawingarea%mouse_state(3+button).gt.0)then
@@ -2049,9 +2035,8 @@ contains
     integer :: button
 
     if(button.lt.1.or.button.gt.5)then
-       write(0,*)"gui_drawing_area_mouse_down(): "//&
-            "button index must be in range 1-5"
-       stop
+       call terminate("gui_drawing_area_mouse_down(): "//&
+            "button index must be in range 1-5")
     endif
 
     if(drawingarea%mouse_state(8+button).gt.0)then

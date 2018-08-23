@@ -60,12 +60,12 @@ program gadgetviewer
         if(.not.res%success)then
            write(0,*)'Failed to read file '//trim(snapshot_file)//":"
            write(0,*)trim(res%string)
-           stop
+           call terminate()
         endif
      else
         write(0,*)'Failed to read file '//trim(snapshot_file)//":"
         write(0,*)trim(res%string)
-        stop
+        call terminate()
      endif
   endif
   if(.not.batch_mode)call read_partial_set_filename(snapshot_file,&
@@ -85,7 +85,7 @@ program gadgetviewer
      res = load_settings(config_file)
      if(.not.res%success)then
         write(0,*)"Unable to read configuration file ",trim(config_file)
-        stop
+        call terminate()
      endif
   endif
   
@@ -94,12 +94,12 @@ program gadgetviewer
      res = selection_restore_state(selection_file)
      if(.not.res%success)then
         write(0,*)"Unable to read selected particles: ",trim(selection_file)
-        stop
+        call terminate()
      else
         res = selection_apply_all(psample)
         if(.not.res%success)then
            write(0,*)"Unable to apply selection: ",trim(res%string)
-           stop
+           call terminate()
         endif
      endif
   endif
@@ -121,7 +121,7 @@ program gadgetviewer
      if(.not.res%success)then
         write(0,*)"Error while making movie: "
         write(0,*)trim(res%string)
-        stop
+        call terminate()
      endif
   endif
 

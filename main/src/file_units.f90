@@ -5,6 +5,8 @@ module file_units
 ! It tries unit numbers from 100 upwards and returns the first free unit.
 ! It aborts if it runs out of valid unit numbers.
 !
+  use f90_util
+
 contains
 
   integer function get_unit()
@@ -22,8 +24,7 @@ contains
     end do
     
     if(.not.exists)then
-       write(*,*)'Error in get_unit(): ran out of valid unit numbers!'
-       stop
+       call terminate('Error in get_unit(): ran out of valid unit numbers!')
     end if
     
     get_unit = i

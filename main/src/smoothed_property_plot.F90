@@ -1089,7 +1089,7 @@ contains
           w = 0.0
        endif
     case default
-       stop'Invalid value of ikernel'
+       call terminate('Invalid value of ikernel')
     end select
 
     kernel = w

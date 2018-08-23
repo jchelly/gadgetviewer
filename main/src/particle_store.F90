@@ -10,6 +10,7 @@ module particle_store
   use octreemod
   use string_module
   use data_array
+  use f90_util
 
   implicit none
   private
@@ -225,7 +226,7 @@ contains
     ! Get index for this species
     pdata%nspecies = pdata%nspecies + 1
     i = pdata%nspecies
-    if(i.gt.maxspecies)stop'Increase MAXSPECIES!'
+    if(i.gt.maxspecies)call terminate('Increase MAXSPECIES!')
 
     ! Allocate storage, if we know how many particles there are
     if(present(np))then
@@ -293,13 +294,13 @@ contains
        if(trim(adjustl(pdata%species(i)%name)).eq. &
             trim(adjustl(species_name))) ispecies = i
     end do
-    if(ispecies.eq.-1)stop'Unable to find species index!'
+    if(ispecies.eq.-1)call terminate('Unable to find species index!')
     i = ispecies
     
     ! Get index of the new species
     pdata%species(i)%nprops = pdata%species(i)%nprops + 1
     j = pdata%species(i)%nprops
-    if(j.gt.maxprops)stop'Increase MAXPROPS!'
+    if(j.gt.maxprops)call terminate('Increase MAXPROPS!')
 
     ! Determine whether this is a real or integer property
     select case(prop_type)
@@ -308,7 +309,7 @@ contains
     case ("REAL")
        pdata%species(i)%property(j)%type = "REAL"
     case default
-       stop"Data type must be REAL or INTEGER!"
+       call terminate("Data type must be REAL or INTEGER!")
     end select
 
     nullify(pdata%species(i)%property(j)%idata)
@@ -364,7 +365,7 @@ contains
        if(trim(adjustl(pdata%species(i)%name)).eq. &
             trim(adjustl(species_name))) ispecies = i
     end do
-    if(ispecies.eq.-1)stop'Unable to find species index!'
+    if(ispecies.eq.-1)call terminate('Unable to find species index!')
     i = ispecies
 
     ! Add pos/vel data
@@ -381,7 +382,7 @@ contains
     endif
     if(present(vel))then
 #ifndef READ_VEL
-       stop 'Attempt to load velocities when compiled without -DREAD_VEL'
+       call terminate( 'Attempt to load velocities when compiled without -DREAD_VEL')
 #endif
        np = ubound(vel,2)-lbound(vel,2)+1
        call data_array_add_elements(pdata%species(i)%veldata, vel, stat)
@@ -403,12 +404,12 @@ contains
        end do
        if(j.lt.1)then
           write(*,*)trim(prop_name),trim(pdata%species(i)%property(k)%name)
-          stop'Unable to identify property!'
+          call terminate('Unable to identify property!')
        endif
 
        ! Check we don't have both types of data simultaneously
        if(present(idata).and.present(rdata)) &
-            stop'Cannot have idata and rdata simultaneously'
+            call terminate('Cannot have idata and rdata simultaneously')
 
        ! Check data type is consistent and add the data
        select case(pdata%species(i)%property(j)%type)
@@ -425,7 +426,7 @@ contains
              pdata%species(i)%property(j)%nloaded = &
                   pdata%species(i)%property(j)%nloaded+np
           else
-             stop'Attempt to add non-integer data to integer property!'
+             call terminate('Attempt to add non-integer data to integer property!')
           endif
        case("REAL")
           if(present(rdata))then
@@ -440,15 +441,15 @@ contains
              pdata%species(i)%property(j)%nloaded = &
                   pdata%species(i)%property(j)%nloaded+np
           else
-             stop'Attempt to add non-real data to real property!'
+             call terminate('Attempt to add non-real data to real property!')
           endif
        case default
-          stop'Unrecognised property type!'
+          call terminate('Unrecognised property type!')
        end select
     else
        ! Abort if we have a property name but no data
        if(present(idata).or.present(rdata))then
-          stop'Property data supplied but no property name specified!'
+          call terminate('Property data supplied but no property name specified!')
        endif
     endif
 
@@ -535,7 +536,7 @@ contains
     ! Sampling rate
     if(present(get_fsample))then
        if(.not.pdata%is_sample)then
-          stop'Attempted to get sampling rate for non-sampled dataset!'
+          call terminate('Attempted to get sampling rate for non-sampled dataset!')
        endif
        get_fsample = pdata%fsample
     endif
@@ -607,15 +608,14 @@ contains
 
     if(present(get_vel))then
 #ifndef READ_VEL
-       stop 'Attempt to get velocity data when compiled without -DREAD_VEL'
+       call terminate( 'Attempt to get velocity data when compiled without -DREAD_VEL')
 #endif
        get_vel => pdata%species(ispecies)%vel
     endif
 
     if(present(get_selected))then
        if(.not.associated(pdata%species(ispecies)%selected))then
-          write(0,*)"Attempt to get selection status when not allocated"
-          stop
+          call terminate("Attempt to get selection status when not allocated")
        endif
        get_selected => pdata%species(ispecies)%selected
     endif
@@ -648,8 +648,8 @@ contains
        do i = 1, pdata%nspecies, 1
           if(pdata%species(ispecies)%property(i)%name.eq."Mass")j = i
        end do
-       if(j.eq.-1)stop &
-            'particle_store_species() - Unable to find mass in snapshot data!'
+       if(j.eq.-1)call terminate( &
+            'particle_store_species() - Unable to find mass in snapshot data!')
        get_mass => pdata%species(ispecies)%property(j)%rdata
     endif
 
@@ -661,8 +661,8 @@ contains
        do i = 1, pdata%nspecies, 1
           if(pdata%species(ispecies)%property(i)%name.eq."ID")j = i
        end do
-       if(j.eq.-1)stop &
-            'particle_store_species() - Unable to find ID in snapshot data!'
+       if(j.eq.-1)call terminate( &
+            'particle_store_species() - Unable to find ID in snapshot data!')
        get_id => pdata%species(ispecies)%property(j)%idata
     endif
 
@@ -688,8 +688,8 @@ contains
     real, dimension(2), optional :: get_range
     integer :: i
 
-    if(present(iprop).eqv.present(propname))stop &
-         'Must specify property name OR index - not both'
+    if(present(iprop).eqv.present(propname))call terminate( &
+         'Must specify property name OR index - not both')
 
     if(present(propname))then
        jprop = -1
@@ -697,7 +697,7 @@ contains
           if(pdata%species(ispecies)%property(i)%name.eq.propname) &
                jprop = i
        end do
-       if(jprop.lt.0)stop'Unknown property name in particle_store_property()'
+       if(jprop.lt.0)call terminate('Unknown property name in particle_store_property()')
     else
        jprop = iprop
     endif
@@ -757,11 +757,11 @@ contains
           if(pdata%species(i)%npos .ne.pdata%species(i)%np)then
              write(0,*)'npos = ',pdata%species(i)%npos
              write(0,*)'np   = ',pdata%species(i)%np
-             stop'Positions not all loaded!'
+             call terminate('Positions not all loaded!')
           endif
 #ifdef READ_VEL
           if(pdata%species(i)%nvel .ne.pdata%species(i)%np) &
-               stop'Velocities not all loaded!'
+               call terminate('Velocities not all loaded!')
 #endif
        endif
        ! Copy pos/vel to contiguous arrays if necessary
@@ -784,7 +784,7 @@ contains
           if(check)then
              if(pdata%species(i)%property(j)%nloaded.ne.&
                   pdata%species(i)%np)then
-                stop'Property data not all loaded!'
+                call terminate('Property data not all loaded!')
              endif
           else
              ! If instructed to skip check, just assume all is well and
@@ -815,7 +815,7 @@ contains
                 pdata%species(i)%property(j)%val_max = &
                      maxval(pdata%species(i)%property(j)%idata)
              case default
-                stop'Unrecognised type value in particle_store_verify()'
+                call terminate('Unrecognised type value in particle_store_verify()')
              end select
           else
              pdata%species(i)%property(j)%val_min = 0.0
@@ -871,7 +871,7 @@ contains
     ! Check parameters
     if((present(pos).and.(.not.present(radius))).or. &
          (present(radius).and.(.not.present(pos)))) &
-         stop'Must specify both or neither of pos and radius'
+         call terminate('Must specify both or neither of pos and radius')
 
     ! Deallocate any existing particles in the output data set
     if(particle_store_loaded(psample))call particle_store_empty(psample)
@@ -1021,7 +1021,7 @@ contains
                 rptr_dest(ip) = rptr_src(j)
              end do
           case default
-             stop'particle_store_sample() - unrecognised type value'
+             call terminate('particle_store_sample() - unrecognised type value')
           end select
        end do
        

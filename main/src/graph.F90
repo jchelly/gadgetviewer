@@ -352,8 +352,8 @@ contains
                gui_file_save, ok, fname)
           if(ok)then
              ! Image should already have been generated
-             if(.not.associated(image))stop &
-                  'Image not allocated when writing out screenshot'
+             if(.not.associated(image))call terminate( &
+                  'Image not allocated when writing out screenshot')
              if(write_png(fname,width,height,image))then
                 ! Success
                 bt=gui_display_dialog(window,"info", &

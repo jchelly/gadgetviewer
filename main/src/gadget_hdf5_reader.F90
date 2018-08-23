@@ -18,6 +18,7 @@ module gadget_hdf5_reader
   use key_file
   use partial_read_info
   use array_shrinker
+  use f90_util
 
   implicit none
   private
@@ -283,7 +284,7 @@ contains
 #else
     ! Should never get here because menu option is greyed out if HDF5 not
     ! available
-    stop'gadget_hdf5_reader - Code was compiled without HDF5 support'
+    call terminate('gadget_hdf5_reader - Code was compiled without HDF5 support')
 
     ! Stop compiler complaining about return value not being set
     gadget_hdf5_open%success = .false.
@@ -853,7 +854,7 @@ contains
 #else
     ! Should never get here because menu option is greyed out if HDF5 not
     ! available
-    stop'gadget_hdf5_reader - Code was compiled without HDF5 support'
+    call terminate('gadget_hdf5_reader - Code was compiled without HDF5 support')
 
     ! Stop compiler complaining about return value not being set
     gadget_hdf5_read%success = .false.

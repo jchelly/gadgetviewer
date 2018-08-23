@@ -710,7 +710,7 @@ contains
     real(kind=pos_kind), dimension(:),   pointer       :: radius
     character(len=label_length), dimension(:), pointer :: label
 
-    if(icat.gt.ncatalogue)stop'icat out of range in catalogue_data_get_points'
+    if(icat.gt.ncatalogue)call terminate('icat out of range in catalogue_data_get_points')
     
     npoints =  catalogue(icat)%npoints
     pos     => catalogue(icat)%pos

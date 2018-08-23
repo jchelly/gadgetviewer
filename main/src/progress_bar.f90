@@ -113,7 +113,7 @@ contains
 
     if(.not.display_progress_bar)return
 
-    if(.not.window_open)stop'Progress bar window not open!'
+    if(.not.window_open)call terminate('Progress bar window not open!')
 
     if(nesting_level.ne.1)then
        ! Nested calls to the progress bar module will redraw
@@ -126,7 +126,7 @@ contains
     endif
 
     if(gui_window_closed(main_window))then
-       stop
+       call terminate()
     endif
 
     return
@@ -142,7 +142,7 @@ contains
 
     if(.not.display_progress_bar)return
 
-    if(.not.window_open)stop'Progress bar window not open!'
+    if(.not.window_open)call terminate('Progress bar window not open!')
 
     nesting_level = nesting_level - 1
     if(nesting_level.gt.0)return

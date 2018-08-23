@@ -210,7 +210,7 @@ contains
     call particle_store_contents(pdata, get_nspecies=nspecies)
 
     if(sel%nspecies.ne.nspecies) &
-         stop'selection_apply(): nspecies incorrect'
+         call terminate('selection_apply(): nspecies incorrect')
     
     ! Bitmask for this selection
     mask    = ibset(0, isel)
@@ -331,7 +331,7 @@ contains
           call particle_store_property(pdata, ispecies, iprop, get_rdata=rdata)
           nullify(idata)
        case default
-          stop'selection_find_particles() - unrecognised property type'
+          call terminate('selection_find_particles() - unrecognised property type')
        end select
     else
        nullify(rdata,idata)
@@ -476,8 +476,8 @@ contains
     integer, optional :: ispecies
     integer :: status
 
-    if(sel1%nspecies.ne.sel2%nspecies)stop &
-         'Number of species in selection doesnt match'
+    if(sel1%nspecies.ne.sel2%nspecies)call terminate( &
+         'Number of species in selection doesnt match')
     
     sel1%empty = .true.
 
@@ -588,8 +588,8 @@ contains
 
     status = 0
 
-    if(sel1%nspecies.ne.sel2%nspecies)stop &
-         'Number of species in selection doesnt match'
+    if(sel1%nspecies.ne.sel2%nspecies)call terminate( &
+         'Number of species in selection doesnt match')
     
     sel1%empty = .true.
 

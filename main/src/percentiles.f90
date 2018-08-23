@@ -4,6 +4,7 @@ module percentiles
 !
   use sort
   use data_types
+  use f90_util
 
   implicit none
   private
@@ -36,7 +37,7 @@ contains
 
     if(n.eq.0)then
        ! Zero points - can't do anything
-       stop'Cannot calculate percentile for zero data points!'
+       call terminate('Cannot calculate percentile for zero data points!')
     else if(n.eq.1)then
        ! One point - just return that data point
        percentile_real4 = data(1)
@@ -55,7 +56,7 @@ contains
           r_lower  = data(idx(ilower))
           r_higher = data(idx(ihigher))
           f = ((p*(n-1.0))-real(ilower-1.0))
-          if(f.lt.0.0.or.f.gt.1.0)stop'f out of range'
+          if(f.lt.0.0.or.f.gt.1.0)call terminate('f out of range')
           percentile_real4 = (f*r_higher) + ((1-f)*r_lower)
        endif
     endif
@@ -84,7 +85,7 @@ contains
 
     if(n.eq.0)then
        ! Zero points - can't do anything
-       stop'Cannot calculate percentile for zero data points!'
+       call terminate('Cannot calculate percentile for zero data points!')
     else if(n.eq.1)then
        ! One point - just return that data point
        percentile_real8 = data(1)
@@ -103,7 +104,7 @@ contains
           r_lower  = data(idx(ilower))
           r_higher = data(idx(ihigher))
           f = ((p*(n-1.0))-real(ilower-1.0))
-          if(f.lt.0.0.or.f.gt.1.0)stop'f out of range'
+          if(f.lt.0.0.or.f.gt.1.0)call terminate('f out of range')
           percentile_real8 = (f*r_higher) + ((1-f)*r_lower)
        endif
     endif

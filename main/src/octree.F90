@@ -14,6 +14,7 @@ module octreemod
   use sort
   use data_types
   use random_shuffle
+  use f90_util
 
   implicit none
   private 
@@ -259,8 +260,7 @@ contains
        if(present(stat))then
           return
        else
-          write(0,*)"Insufficient memory to build tree"
-          stop
+          call terminate("Insufficient memory to build tree")
        endif
     endif
 
@@ -294,8 +294,7 @@ contains
           call deallocate_octree(tree)
           return
        else
-          write(0,*)"Insufficient memory to build tree"
-          stop
+          call terminate("Insufficient memory to build tree")
        endif
     endif
     tree%list(np)=-1
@@ -324,8 +323,7 @@ contains
           call deallocate_octree(tree)
           return
        else
-          write(0,*)"Insufficient memory to build tree"
-          stop
+          call terminate("Insufficient memory to build tree")
        endif
     endif
 
@@ -338,7 +336,7 @@ contains
              if(node%np.gt.1)then
                 ! Get number of particles in this node
                 n = node%np
-                if(n.gt.nmax)stop'nmax too small!'
+                if(n.gt.nmax)call terminate('nmax too small!')
                 ! Make array to access particles in random order
                 call shuffle(idx(1:n))
                 ! Get indexes of particles in this node
@@ -407,8 +405,7 @@ contains
                      call deallocate_octree(tree)
                      return
                   else
-                     write(0,*)"Insufficient memory to build tree"
-                     stop
+                     call terminate("Insufficient memory to build tree")
                   endif
                endif
                child_node%head=i
@@ -485,7 +482,7 @@ contains
     type (nodetype), pointer :: node, child_node
 
     if(.not.associated(tree%first_node)) &
-         call panic("range_search(): Tree has not been built yet!")
+         call terminate("range_search(): Tree has not been built yet!")
     
     nout=0
     node => tree%first_node
@@ -597,7 +594,7 @@ contains
 
     ! Check tree has been built
     if(.not.associated(tree%first_node)) &
-         call panic('radius_search(): Tree has not been built yet!')
+         call terminate('radius_search(): Tree has not been built yet!')
 
     nout=0
     node => tree%first_node
@@ -691,7 +688,7 @@ contains
                       if(ipart.ge.1.and.ipart.le.size(tree%list))then
                          ipart=tree%list(ipart)
                       else
-                         stop'ipart out of range'
+                         call terminate('ipart out of range')
                       endif
                       !write(0,*)"G"
                    end do
@@ -773,7 +770,7 @@ contains
 
     ! Check tree has been built
     if(.not.associated(tree%first_node)) &
-         call panic('periodic_radius_search(): Tree has not been built yet!')
+         call terminate('periodic_radius_search(): Tree has not been built yet!')
 
     ! Ensure requested centre is in the box
     wrap_centre = centre
@@ -887,7 +884,7 @@ contains
                       if(ipart.ge.1.and.ipart.le.size(tree%list))then
                          ipart=tree%list(ipart)
                       else
-                         stop'ipart out of range'
+                         call terminate('ipart out of range')
                       endif
                       !write(0,*)"G"
                    end do
@@ -997,20 +994,6 @@ contains
 
     return
   end subroutine deallocate_octree
-!
-! ------------------------------------------------------------------
-!
-
-  subroutine panic(message)
-
-    implicit none
-    character(len=*) :: message
-
-    write(0,*)trim(message)
-    stop
-
-    return
-  end subroutine panic
 
 !
 ! ------------------------------------------------------------------
@@ -1039,7 +1022,7 @@ contains
     integer :: ilevmax
 
     if(.not.associated(tree%first_node)) &
-         call panic('open_leaf_node(): Tree has not been built yet!')
+         call terminate('open_leaf_node(): Tree has not been built yet!')
     
     nout=0
     node => tree%first_node
@@ -1163,7 +1146,7 @@ contains
 #endif
 
     if(.not.associated(tree%first_node)) &
-         call panic('open_leaf_node(): Tree has not been built yet!')
+         call terminate('open_leaf_node(): Tree has not been built yet!')
 
     call open_leaf_node(tree,centre,nout,tree%idx(:,myid),rnodemin,rnodemax,rmin)
     if(nout.gt.0)then

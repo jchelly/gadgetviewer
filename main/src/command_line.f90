@@ -74,8 +74,7 @@ contains
           rinfo%do_sphere = .true.
           call extract_params(arg, params(1:4), iostat)
           if(iostat.ne.0)then
-             write(0,*)"Unable to interpret region specification!"
-             stop
+             call terminate("Unable to interpret region specification!")
           else
              rinfo%pos    = params(1:3)
              rinfo%radius = params(4)
@@ -85,8 +84,7 @@ contains
           rinfo%do_sampling = .true.
           call extract_params(arg, params(1:1), iostat)
           if(iostat.ne.0)then
-             write(0,*)"Unable to interpret sampling rate as real!"
-             stop
+             call terminate("Unable to interpret sampling rate as real!")
           else
              rinfo%sample_rate = params(1)
           endif
@@ -107,7 +105,7 @@ contains
           write(0,*)"If the --movie flag is specified then a snapshot file"
           write(0,*)"must be specified."
           write(0,*)""
-          stop
+          call terminate()
        endif
        if(len_trim(selection_file).gt.0)then
           write(0,*)""
@@ -129,7 +127,7 @@ contains
        write(0,*)""
        write(0,*)"The --movie and --config flags must not both be specified"
        write(0,*)""
-       stop
+       call terminate()
     endif
 
     ! Help text
@@ -162,8 +160,7 @@ contains
        write(0,*)"The configuration file for the --movie option can be created"
        write(0,*)"with the 'Save movie parameters' button in the movie window."
        write(0,*)""
-
-       stop
+       call terminate()
     endif
 
     return
