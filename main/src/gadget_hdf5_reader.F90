@@ -207,17 +207,20 @@ contains
        endif
 
        ! Read total particle number and number in this file
+       nptot = 0
        hdferr = hdf5_read_attribute("/Header/NumPart_Total", nptot)
        if(hdferr.ne.0)then
           gadget_hdf5_open%string="Unable to read NumPart_Total from file"
           hdferr = hdf5_close_file()
           return
        endif
+       nptot_hw = 0
        hdferr = hdf5_read_attribute("/Header/NumPart_Total_HighWord", nptot_hw)
        if(hdferr.ne.0)then
           ! Not all Gadget files have this dataset
           nptot_hw = 0
        endif
+       npfile = 0
        hdferr = hdf5_read_attribute("/Header/NumPart_ThisFile", npfile)
        if(hdferr.ne.0)then
           gadget_hdf5_open%string="Unable to read NumPart_ThisFile from file"
@@ -364,11 +367,13 @@ contains
     endif
     
     ! Read total particle number
+    nptot = 0
     hdferr = hdf5_read_attribute("/Header/NumPart_Total", nptot)
     if(hdferr.ne.0)then
        gadget_hdf5_read%string="Unable to read NumPart_Total from file"
        return
     endif
+    nptot_hw = 0
     hdferr = hdf5_read_attribute("/Header/NumPart_Total_HighWord", nptot_hw)
     if(hdferr.ne.0)then
        nptot_hw = 0
@@ -512,12 +517,14 @@ contains
        endif
        
        ! Read header
+       npfile = 0
        hdferr = hdf5_read_attribute("/Header/NumPart_ThisFile", npfile)
        if(hdferr.ne.0)then
           gadget_hdf5_read%string="Unable to read NumPart_Total from file"
           hdferr = hdf5_close_file()
           return
        endif
+       massarr = 0.0
        hdferr = hdf5_read_attribute("/Header/MassTable", massarr)
        if(hdferr.ne.0)then
           gadget_hdf5_read%string="Unable to read MassTable from file"
