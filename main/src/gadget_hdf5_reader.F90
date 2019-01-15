@@ -128,9 +128,9 @@ contains
     integer :: ispecies, iextra
     character(len=maxlen) :: str
     ! Checking for datasets
-    integer(kind=int4byte), dimension(6) :: npfile
-    integer(kind=int8byte), dimension(6) :: nptot, nptot_hw
-    logical,                dimension(6) :: find_type
+    integer(kind=int4byte), dimension(7) :: npfile
+    integer(kind=int8byte), dimension(7) :: nptot, nptot_hw
+    logical,                dimension(7) :: find_type
     ! HDF5 stuff
     integer           :: hdferr, err_array(10)
     type(result_type) :: res
@@ -306,11 +306,11 @@ contains
 #ifdef HAVE_HDF5
     ! Internal
     integer :: ifile, i, j
-    integer(kind=int8byte), dimension(6) :: nptot, nptot_hw
-    integer(kind=int4byte), dimension(6) :: npfile
+    integer(kind=int8byte), dimension(7) :: nptot, nptot_hw
+    integer(kind=int4byte), dimension(7) :: npfile
     character(len=fname_maxlen) :: fname
     character(len=50), dimension(6) :: species_name
-    real, dimension(6) :: massarr
+    real, dimension(7) :: massarr
     integer :: istat
     real(kind=real8byte) :: boxsize
     ! Temporary storage for particles
