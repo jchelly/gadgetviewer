@@ -118,7 +118,7 @@ void HDF5VERSION_F90(char *str, int *maxlen)
  */
 #define READDATASET_F90 FC_FUNC (readdataset, READDATASET)
 void READDATASET_F90(char *name, int *type, void *data, 
-		     int *rank, int *start, int *count, int *iostat)
+		     int *rank, long long *start, long long *count, int *iostat)
 {
   int i;
   hsize_t dims[7], h5start[7], h5count[7];
@@ -145,6 +145,7 @@ void READDATASET_F90(char *name, int *type, void *data,
     {
       h5start[i] = start[*rank - i - 1];
       h5count[i] = count[*rank - i - 1];
+      //printf("c: %lld, %lld\n", start[*rank - i - 1], count[*rank - i - 1]);
     }
   H5Sselect_hyperslab(filespace_id, 
 		      H5S_SELECT_SET, h5start, NULL, h5count, NULL);
@@ -306,7 +307,7 @@ void DATASETTYPE_F90(char *name, int *type, int *iostat)
   Get size of a dataset
 */
 #define DATASETSIZE_F90 FC_FUNC (datasetsize, DATASETSIZE)
-void DATASETSIZE_F90(char *name, int *rank, int *dims, int *iostat)
+void DATASETSIZE_F90(char *name, int *rank, long long *dims, long long *iostat)
 {
   *iostat = 1;
 
@@ -330,6 +331,7 @@ void DATASETSIZE_F90(char *name, int *rank, int *dims, int *iostat)
   H5Dclose(dset_id);
 
   *iostat = 0;
+  //printf("rank %i, dims %lld, iostat %i\n", *rank, dims[0], *iostat);
   return;
 }
 

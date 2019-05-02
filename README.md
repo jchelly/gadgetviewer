@@ -145,6 +145,11 @@ make
 make install
 ```
 
+In the bash shell add these flags for ifort and icc to use the gdb for debuging
+```
+./configure  FCFLAGS='-g -check all -fpe0 -warn -traceback -debug extended' CPPFLAGS='-g -warn -traceback -debug extended' --with-hdf5   --enable-big-snapshots --prefix=$HOME/.local/
+```
+
 ### PlPlot configuration
 
 Note that PlPlot is not required if Cairo is available (which it usually is).

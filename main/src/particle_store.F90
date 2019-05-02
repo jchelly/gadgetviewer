@@ -370,7 +370,7 @@ contains
 
     ! Add pos/vel data
     if(present(pos))then
-       np = ubound(pos,2)-lbound(pos,2)+1
+       np = ubound(pos,2,kind=index_kind)-lbound(pos,2,kind=index_kind)+1
        call data_array_add_elements(pdata%species(i)%posdata, pos, stat)
        if(stat.ne.0)then
           particle_store_add_data%string=&
@@ -384,7 +384,7 @@ contains
 #ifndef READ_VEL
        call terminate( 'Attempt to load velocities when compiled without -DREAD_VEL')
 #endif
-       np = ubound(vel,2)-lbound(vel,2)+1
+       np = ubound(vel,2,kind=index_kind)-lbound(vel,2,kind=index_kind)+1
        call data_array_add_elements(pdata%species(i)%veldata, vel, stat)
        if(stat.ne.0)then
           particle_store_add_data%string=&
@@ -415,7 +415,7 @@ contains
        select case(pdata%species(i)%property(j)%type)
        case("INTEGER")
           if(present(idata))then
-             np = ubound(idata,1)-lbound(idata,1)+1
+             np = ubound(idata,1,kind=index_kind)-lbound(idata,1,kind=index_kind)+1
              call data_array_add_elements( &
                   pdata%species(i)%property(j)%data, idata, stat)
              if(stat.ne.0)then
@@ -430,7 +430,7 @@ contains
           endif
        case("REAL")
           if(present(rdata))then
-             np = ubound(rdata,1)-lbound(rdata,1)+1
+             np = ubound(rdata,1,kind=index_kind)-lbound(rdata,1,kind=index_kind)+1
              call data_array_add_elements( &
                   pdata%species(i)%property(j)%data, rdata, stat)
              if(stat.ne.0)then
@@ -754,6 +754,8 @@ contains
 
        if(check)then
           ! Check that all pos/mass/vel/id loaded
+          write(0,*)'npos = ',pdata%species(i)%npos
+          write(0,*)'np   = ',pdata%species(i)%np
           if(pdata%species(i)%npos .ne.pdata%species(i)%np)then
              write(0,*)'npos = ',pdata%species(i)%npos
              write(0,*)'np   = ',pdata%species(i)%np

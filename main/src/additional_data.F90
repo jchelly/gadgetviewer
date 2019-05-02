@@ -608,7 +608,7 @@ contains
     real(r_prop_kind),    dimension(:), allocatable :: rdata
     ! HDF5 stuff
     integer               :: rank
-    integer, dimension(7) :: dims, maxdims
+    integer(kind=index_kind), dimension(7) :: dims, maxdims
     integer               :: hdferr
     integer, dimension(7) :: start, count
 
@@ -689,7 +689,7 @@ contains
              call particle_store_contents(pdata, get_np=np)
 
              ntoread = np(aux_file(iaux)%ispecies) - aux_file(iaux)%nread
-             ntoread = min(int(ntoread), int(dims(1)))
+             ntoread = min(int(ntoread), int(dims(1), kind=index_kind))
 
              ! Go on to next property if there are no elements to read
              ! from this file

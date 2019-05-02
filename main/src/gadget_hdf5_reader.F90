@@ -128,7 +128,7 @@ contains
     integer :: ispecies, iextra
     character(len=maxlen) :: str
     ! Checking for datasets
-    integer(kind=int4byte), dimension(7) :: npfile
+    integer(kind=int8byte), dimension(7) :: npfile
     integer(kind=int8byte), dimension(7) :: nptot, nptot_hw
     logical,                dimension(7) :: find_type
     ! HDF5 stuff
@@ -310,7 +310,7 @@ contains
     ! Internal
     integer :: ifile, i, j
     integer(kind=int8byte), dimension(7) :: nptot, nptot_hw
-    integer(kind=int4byte), dimension(7) :: npfile
+    integer(kind=int8byte), dimension(7) :: npfile
     character(len=fname_maxlen) :: fname
     character(len=50), dimension(6) :: species_name
     real, dimension(7) :: massarr
@@ -568,6 +568,8 @@ contains
              if(hdferr.ne.0)then
                 gadget_hdf5_read%string="Unable to read positions from "//&
                      trim(fname)
+                gadget_hdf5_read%string="NumPart "//trim(string(npfile(i)))//&
+                     " Error "//trim(string(hdferr))
                 call particle_store_empty(pdata)
                 hdferr = hdf5_close_file()
                 return
