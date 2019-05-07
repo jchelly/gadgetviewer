@@ -306,7 +306,7 @@ void DATASETTYPE_F90(char *name, int *type, int *iostat)
   Get size of a dataset
 */
 #define DATASETSIZE_F90 FC_FUNC (datasetsize, DATASETSIZE)
-void DATASETSIZE_F90(char *name, int *rank, long long *dims, long long *iostat)
+void DATASETSIZE_F90(char *name, int *rank, long long *dims, int *iostat)
 {
   *iostat = 1;
 
