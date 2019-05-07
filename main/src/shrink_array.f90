@@ -21,8 +21,8 @@ contains
     implicit none
     real(kind=real4byte), dimension(:), intent(inout) :: arr
     logical,              dimension(:), intent(in)    :: mask
-    integer :: i
-    integer :: n
+    integer(kind=index_kind) :: i
+    integer(kind=index_kind) :: n
 
     n = 0
     do i = 1, size(arr), 1
@@ -40,8 +40,8 @@ contains
     implicit none
     real(kind=real8byte), dimension(:), intent(inout) :: arr
     logical,              dimension(:), intent(in)    :: mask
-    integer :: i
-    integer :: n
+    integer(kind=index_kind) :: i
+    integer(kind=index_kind) :: n
 
     n = 0
     do i = 1, size(arr), 1
@@ -59,8 +59,8 @@ contains
     implicit none
     integer(kind=int4byte), dimension(:), intent(inout) :: arr
     logical,                dimension(:), intent(in)    :: mask
-    integer :: i
-    integer :: n
+    integer(kind=index_kind) :: i
+    integer(kind=index_kind) :: n
 
     n = 0
     do i = 1, size(arr), 1
@@ -78,8 +78,8 @@ contains
     implicit none
     integer(kind=int8byte), dimension(:), intent(inout) :: arr
     logical,                dimension(:), intent(in)    :: mask
-    integer :: i
-    integer :: n
+    integer(kind=index_kind) :: i
+    integer(kind=index_kind) :: n
 
     n = 0
     do i = 1, size(arr), 1

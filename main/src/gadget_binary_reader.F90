@@ -168,6 +168,7 @@ contains
     integer(kind=int4byte), dimension(16) :: dummy2
     integer(kind=int4byte) :: irec, jrec
     integer :: ios, i, j, istat
+    integer(kind=index_kind) :: ipart
     ! Temporary storage for particles
     ! Positions
     real(kind=real4byte),    dimension(:,:), allocatable :: pos4
@@ -204,7 +205,7 @@ contains
     ! Random float
     real    :: rnd
     ! Number of particles to keep after sampling
-    integer :: nkeep, offset
+    integer(kind=index_kind) :: nkeep, offset
 
     gadget_binary_read%success = .false.
     have_density = .true.
@@ -453,9 +454,9 @@ contains
           allocate(mask(sum(npfile)))
           mask = .true.
           if(rinfo%do_sampling)then
-             do j = 1, sum(npfile), 1
+             do ipart = 1, sum(npfile), 1
                 call random_number(rnd)
-                if(rnd.gt.rinfo%sample_rate)mask(j)=.false.
+                if(rnd.gt.rinfo%sample_rate)mask(ipart)=.false.
              end do
           endif
        endif

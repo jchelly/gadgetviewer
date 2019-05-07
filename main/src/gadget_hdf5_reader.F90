@@ -337,7 +337,7 @@ contains
     integer :: firstfile, lastfile
     ! Which particles to read
     logical, dimension(:), allocatable :: mask
-    integer :: offset, nkeep
+    integer(kind=index_kind) :: offset, nkeep
     real :: rnd
     ! Temp. storage
     real(kind=r_prop_kind),    dimension(:), allocatable :: rdata
