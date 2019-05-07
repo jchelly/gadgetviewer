@@ -754,8 +754,6 @@ contains
 
        if(check)then
           ! Check that all pos/mass/vel/id loaded
-          write(0,*)'npos = ',pdata%species(i)%npos
-          write(0,*)'np   = ',pdata%species(i)%np
           if(pdata%species(i)%npos .ne.pdata%species(i)%np)then
              write(0,*)'npos = ',pdata%species(i)%npos
              write(0,*)'np   = ',pdata%species(i)%np
