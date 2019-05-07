@@ -27,6 +27,7 @@ AM_PATH_PYTHON([2.0],, [:])
 AC_LANG(C)
 AC_HEADER_STDC
 AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long long)
 AC_CHECK_SIZEOF(void *)
 AC_CHECK_SIZEOF(double)
 AC_CHECK_LIB(m, fabs, [], [${LIBS}="-lm ${LIBS}"])

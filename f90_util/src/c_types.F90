@@ -20,6 +20,13 @@ module c_types
 #error Size of C int must be 4 or 8 bytes
 #endif
 
+! Determine kind number for C long long
+#if ( SIZEOF_LONG_LONG == 8 )
+  integer, parameter :: C_LONG_LONG = selected_int_kind(18)
+#else
+#error Size of C long long must be 8 bytes
+#endif
+
 ! Determine kind number for C doubles
 #if ( SIZEOF_DOUBLE == 8 )
   integer, parameter :: C_DOUBLE = selected_real_kind(12,300)
