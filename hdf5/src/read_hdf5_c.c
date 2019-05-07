@@ -145,7 +145,6 @@ void READDATASET_F90(char *name, int *type, void *data,
     {
       h5start[i] = start[*rank - i - 1];
       h5count[i] = count[*rank - i - 1];
-      //printf("c: %lld, %lld\n", start[*rank - i - 1], count[*rank - i - 1]);
     }
   H5Sselect_hyperslab(filespace_id, 
 		      H5S_SELECT_SET, h5start, NULL, h5count, NULL);
@@ -331,7 +330,6 @@ void DATASETSIZE_F90(char *name, int *rank, long long *dims, long long *iostat)
   H5Dclose(dset_id);
 
   *iostat = 0;
-  //printf("rank %i, dims %lld, iostat %i\n", *rank, dims[0], *iostat);
   return;
 }
 

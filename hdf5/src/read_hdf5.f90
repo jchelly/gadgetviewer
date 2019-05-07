@@ -1,7 +1,6 @@
 module read_hdf5
+
   use f90_util
-  USE iso_c_binding, ONLY: C_LONG_LONG
-  !use iso_c_binding, only : C_INT, C_LONG_LONG
   implicit none
   private
 
@@ -93,13 +92,12 @@ contains
     character(len=*)      :: name
     integer               :: rank
     integer(kind=int8byte), dimension(:) :: dims
-    integer(kind=C_INT)                        :: c_rank
+    integer(kind=C_INT) :: c_rank
     integer(kind=C_LONG_LONG), dimension(size(dims)) :: c_dims
-    integer(kind=C_LONG_LONG)                        :: ios
+    integer(kind=C_INT) :: ios
     integer :: i
 
     call datasetsize(trim(name)//achar(0), c_rank, c_dims, ios)
-    !write(*,'(A,4I)'), "return c: ", c_rank, c_dims(1), c_dims(2), ios
 
     if(ios.ne.0)then
        hdf5_dataset_size = ios
@@ -111,7 +109,6 @@ contains
        dims(i) = c_dims(rank-i+1)
     end do
     hdf5_dataset_size = ios
-    !write(*,'(4I)'), rank, dims(1), dims(2), hdf5_dataset_size
 
     return
   end function hdf5_dataset_size
@@ -300,11 +297,11 @@ contains
     integer, parameter                 :: dtype = HDF5_REAL4
     ! Everything else...
     character(len=*)                   :: name
-    integer, dimension(:), optional    :: start,   count
-    integer(kind=C_INT), dimension(7)  :: c_start
-    integer(kind=C_LONG_LONG), dimension(7)  :: c_count
+    integer(kind=int8byte), dimension(:), optional :: start,   count
+    integer(kind=C_LONG_LONG), dimension(7) :: c_start
+    integer(kind=C_LONG_LONG), dimension(7) :: c_count
     integer(kind=C_INT)                :: ios, c_rank
-    integer(kind=int8byte), dimension(7)              :: mem_dims, file_dims
+    integer(kind=int8byte), dimension(7) :: mem_dims, file_dims
     integer                            :: file_rank
     integer                            :: i
 
@@ -380,15 +377,15 @@ contains
     integer, parameter                 :: dtype = HDF5_REAL8
     ! Everything else...
     character(len=*)                   :: name
-    integer, dimension(:), optional    :: start,   count
-    integer(kind=C_INT), dimension(7)  :: c_start, c_count
+    integer(kind=int8byte), dimension(:), optional :: start,   count
+    integer(kind=C_LONG_LONG), dimension(7) :: c_start, c_count
     integer(kind=C_INT)                :: ios, c_rank
-    integer(kind=int8byte), dimension(7)              :: mem_dims, file_dims
-    integer                            :: file_rank
-    integer                            :: i
+    integer(kind=int8byte), dimension(7) :: mem_dims, file_dims
+    integer :: file_rank
+    integer :: i
 
     ! Rank and size of input array
-    mem_dims(1:mem_rank) = shape(data)
+    mem_dims(1:mem_rank) = shape(data, kind=int8byte)
     c_rank = mem_rank
 
     ! Set start/count parameters
@@ -405,7 +402,7 @@ contains
        end do
     else
        do i = 1, mem_rank, 1
-          c_count(i) = size(data, i)
+          c_count(i) = size(data, i, kind=int8byte)
        end do
     endif
 
@@ -459,15 +456,15 @@ contains
     integer, parameter                 :: dtype = HDF5_INTEGER4
     ! Everything else...
     character(len=*)                   :: name
-    integer, dimension(:), optional    :: start,   count
-    integer(kind=C_INT), dimension(7)  :: c_start, c_count
+    integer(kind=int8byte), dimension(:), optional :: start,   count
+    integer(kind=C_LONG_LONG), dimension(7)  :: c_start, c_count
     integer(kind=C_INT)                :: ios, c_rank
-    integer(kind=int8byte), dimension(7)              :: mem_dims, file_dims
+    integer(kind=int8byte), dimension(7) :: mem_dims, file_dims
     integer                            :: file_rank
     integer                            :: i
 
     ! Rank and size of input array
-    mem_dims(1:mem_rank) = shape(data)
+    mem_dims(1:mem_rank) = shape(data, kind=int8byte)
     c_rank = mem_rank
 
     ! Set start/count parameters
@@ -484,7 +481,7 @@ contains
        end do
     else
        do i = 1, mem_rank, 1
-          c_count(i) = size(data, i)
+          c_count(i) = size(data, i, kind=int8byte)
        end do
     endif
 
@@ -538,11 +535,11 @@ contains
     integer, parameter                 :: dtype = HDF5_INTEGER8
     ! Everything else...
     character(len=*)                   :: name
-    integer, dimension(:), optional    :: start,   count
-    integer(kind=C_INT), dimension(7)  :: c_start
-    integer(kind=C_LONG_LONG), dimension(7)  :: c_count
+    integer(kind=int8byte), dimension(:), optional :: start, count
+    integer(kind=C_LONG_LONG), dimension(7) :: c_start
+    integer(kind=C_LONG_LONG), dimension(7) :: c_count
     integer(kind=C_INT)                :: ios, c_rank
-    integer(kind=int8byte), dimension(7)              :: mem_dims, file_dims
+    integer(kind=int8byte), dimension(7) :: mem_dims, file_dims
     integer                            :: file_rank
     integer                            :: i
 
@@ -618,11 +615,11 @@ contains
     integer, parameter                 :: dtype = HDF5_REAL4
     ! Everything else...
     character(len=*)                   :: name
-    integer, dimension(:), optional    :: start,   count
-    integer(kind=C_INT), dimension(7)  :: c_start
-    integer(kind=C_LONG_LONG), dimension(7)        :: c_count
+    integer(kind=int8byte), dimension(:), optional :: start,   count
+    integer(kind=C_LONG_LONG), dimension(7) :: c_start
+    integer(kind=C_LONG_LONG), dimension(7) :: c_count
     integer(kind=C_INT)                :: ios, c_rank
-    integer(kind=int8byte), dimension(7)              :: mem_dims, file_dims
+    integer(kind=int8byte), dimension(7) :: mem_dims, file_dims
     integer                            :: file_rank
     integer                            :: i
 
@@ -657,8 +654,6 @@ contains
        return
     endif
 
-    !write(*,*) "File: ",file_rank, file_dims(1), file_dims(2)
-    !write(*,*) "Mem: ",mem_rank, mem_dims(1), mem_dims(2)
     ! Check rank matches
     if(file_rank.ne.mem_rank)then
        res = -1
@@ -681,12 +676,10 @@ contains
        endif
     end do
     
-    !write(*,*) "cstart ", c_start(1), c_count(1), c_count(2), res
     ! Read the data
     call readdataset(trim(name)//achar(0), int(dtype, kind=C_INT), &
          data, c_rank, c_start, c_count, ios)
     res = ios
-    !write(*,*) "cstart ", c_start(1), c_count(1), c_count(2), res
 
     return
   end function hdf5_read_dataset_r4_2d
@@ -704,15 +697,15 @@ contains
     integer, parameter                 :: dtype = HDF5_REAL8
     ! Everything else...
     character(len=*)                   :: name
-    integer, dimension(:), optional    :: start,   count
-    integer(kind=C_INT), dimension(7)  :: c_start, c_count
+    integer(kind=int8byte), dimension(:), optional :: start,   count
+    integer(kind=C_LONG_LONG), dimension(7) :: c_start, c_count
     integer(kind=C_INT)                :: ios, c_rank
-    integer(kind=int8byte), dimension(7)              :: mem_dims, file_dims
+    integer(kind=int8byte), dimension(7) :: mem_dims, file_dims
     integer                            :: file_rank
     integer                            :: i
 
     ! Rank and size of input array
-    mem_dims(1:mem_rank) = shape(data)
+    mem_dims(1:mem_rank) = shape(data, kind=int8byte)
     c_rank = mem_rank
 
     ! Set start/count parameters
@@ -729,7 +722,7 @@ contains
        end do
     else
        do i = 1, mem_rank, 1
-          c_count(i) = size(data, i)
+          c_count(i) = size(data, i, kind=int8byte)
        end do
     endif
 
@@ -783,15 +776,15 @@ contains
     integer, parameter                 :: dtype = HDF5_INTEGER4
     ! Everything else...
     character(len=*)                   :: name
-    integer, dimension(:), optional    :: start,   count
-    integer(kind=C_INT), dimension(7)  :: c_start, c_count
+    integer(kind=int8byte), dimension(:), optional    :: start,   count
+    integer(kind=C_LONG_LONG), dimension(7)  :: c_start, c_count
     integer(kind=C_INT)                :: ios, c_rank
-    integer(kind=int8byte), dimension(7)              :: mem_dims, file_dims
+    integer(kind=int8byte), dimension(7) :: mem_dims, file_dims
     integer                            :: file_rank
     integer                            :: i
 
     ! Rank and size of input array
-    mem_dims(1:mem_rank) = shape(data)
+    mem_dims(1:mem_rank) = shape(data, kind=int8byte)
     c_rank = mem_rank
 
     ! Set start/count parameters
@@ -808,7 +801,7 @@ contains
        end do
     else
        do i = 1, mem_rank, 1
-          c_count(i) = size(data, i)
+          c_count(i) = size(data, i, kind=int8byte)
        end do
     endif
 
@@ -862,15 +855,15 @@ contains
     integer, parameter                 :: dtype = HDF5_INTEGER8
     ! Everything else...
     character(len=*)                   :: name
-    integer, dimension(:), optional    :: start,   count
-    integer(kind=C_INT), dimension(7)  :: c_start, c_count
+    integer(kind=int8byte), dimension(:), optional :: start,   count
+    integer(kind=C_LONG_LONG), dimension(7) :: c_start, c_count
     integer(kind=C_INT)                :: ios, c_rank
-    integer(kind=int8byte), dimension(7)              :: mem_dims, file_dims
+    integer(kind=int8byte), dimension(7) :: mem_dims, file_dims
     integer                            :: file_rank
     integer                            :: i
 
     ! Rank and size of input array
-    mem_dims(1:mem_rank) = shape(data)
+    mem_dims(1:mem_rank) = shape(data, kind=int8byte)
     c_rank = mem_rank
 
     ! Set start/count parameters
@@ -887,7 +880,7 @@ contains
        end do
     else
        do i = 1, mem_rank, 1
-          c_count(i) = size(data, i)
+          c_count(i) = size(data, i, kind=int8byte)
        end do
     endif
 

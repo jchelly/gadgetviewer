@@ -608,9 +608,9 @@ contains
     real(r_prop_kind),    dimension(:), allocatable :: rdata
     ! HDF5 stuff
     integer               :: rank
-    integer(kind=index_kind), dimension(7) :: dims, maxdims
+    integer(kind=int8byte), dimension(7) :: dims, maxdims
     integer               :: hdferr
-    integer, dimension(7) :: start, count
+    integer(kind=int8byte), dimension(7) :: start, count
 
     ! Get snapshot number
     call particle_store_contents(pdata, get_isnap=isnap, &

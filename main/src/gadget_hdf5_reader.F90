@@ -308,6 +308,7 @@ contains
     type (read_info) :: rinfo
 #ifdef HAVE_HDF5
     ! Internal
+    integer(kind=index_kind) :: ipart
     integer :: ifile, i, j
     integer(kind=int8byte), dimension(7) :: nptot, nptot_hw
     integer(kind=int8byte), dimension(7) :: npfile
@@ -327,7 +328,6 @@ contains
     type (result_type) :: res
     ! HDF5 stuff
     integer :: hdferr, err_array(10)
-    integer :: dims(7)
     character(len=100)    :: gname
     integer :: dtype
     ! Progress bar
@@ -544,9 +544,9 @@ contains
           allocate(mask(sum(npfile)))
           mask = .true.
           if(rinfo%do_sampling)then
-             do j = 1, sum(npfile), 1
+             do ipart = 1, sum(npfile), 1
                 call random_number(rnd)
-                if(rnd.gt.rinfo%sample_rate)mask(j)=.false.
+                if(rnd.gt.rinfo%sample_rate)mask(ipart)=.false.
              end do
           endif
        endif
