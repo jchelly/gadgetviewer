@@ -134,6 +134,23 @@ AC_DEFINE([IARGC_DECLARE],[],
 AC_MSG_RESULT([no]))
 
 #
+# Check if the size intrinsic has the optional kind parameter -
+# we need this F2003 feature to be able to safely read very large 
+# HDF5 datasets.
+#
+AC_MSG_CHECKING([if the size() intrinsic has the optional kind parameter])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([], [
+  implicit none
+  integer, dimension(10) :: arr
+  integer, dimension(1)  :: arr_shape
+  arr_shape = shape(arr, kind=kind(arr))
+])], 
+AC_MSG_RESULT([yes])
+AC_DEFINE([SHAPE_HAS_KIND_PARAM],[],
+          [Defined if the shape intrinsic takes the kind parameter]),
+AC_MSG_RESULT([no]))
+
+#
 # Decide which data types to use for various quantities
 #
 

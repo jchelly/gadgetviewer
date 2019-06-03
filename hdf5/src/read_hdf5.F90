@@ -1,5 +1,7 @@
 module read_hdf5
 
+#include "../../config.h" 
+
   use f90_util
   implicit none
   private
@@ -306,7 +308,11 @@ contains
     integer                            :: i
 
     ! Rank and size of input array
+#ifdef SHAPE_HAS_KIND_PARAM
     mem_dims(1:mem_rank) = shape(data, kind=int8byte)
+#else
+    mem_dims(1:mem_rank) = shape(data)
+#endif
     c_rank = mem_rank
 
     ! Set start/count parameters
@@ -385,7 +391,11 @@ contains
     integer :: i
 
     ! Rank and size of input array
+#ifdef SHAPE_HAS_KIND_PARAM
     mem_dims(1:mem_rank) = shape(data, kind=int8byte)
+#else
+    mem_dims(1:mem_rank) = shape(data)
+#endif
     c_rank = mem_rank
 
     ! Set start/count parameters
@@ -464,7 +474,11 @@ contains
     integer                            :: i
 
     ! Rank and size of input array
+#ifdef SHAPE_HAS_KIND_PARAM
     mem_dims(1:mem_rank) = shape(data, kind=int8byte)
+#else
+    mem_dims(1:mem_rank) = shape(data)
+#endif
     c_rank = mem_rank
 
     ! Set start/count parameters
@@ -544,7 +558,11 @@ contains
     integer                            :: i
 
     ! Rank and size of input array
+#ifdef SHAPE_HAS_KIND_PARAM
     mem_dims(1:mem_rank) = shape(data, kind=int8byte)
+#else
+    mem_dims(1:mem_rank) = shape(data)
+#endif
     c_rank = mem_rank
 
     ! Set start/count parameters
@@ -624,9 +642,12 @@ contains
     integer                            :: i
 
     ! Rank and size of input array
+#ifdef SHAPE_HAS_KIND_PARAM
     mem_dims(1:mem_rank) = shape(data, kind=int8byte)
+#else
+    mem_dims(1:mem_rank) = shape(data)
+#endif
     c_rank = mem_rank
-    res = 1
 
     ! Set start/count parameters
     if(present(start))then
@@ -705,7 +726,11 @@ contains
     integer                            :: i
 
     ! Rank and size of input array
+#ifdef SHAPE_HAS_KIND_PARAM
     mem_dims(1:mem_rank) = shape(data, kind=int8byte)
+#else
+    mem_dims(1:mem_rank) = shape(data)
+#endif
     c_rank = mem_rank
 
     ! Set start/count parameters
@@ -784,7 +809,11 @@ contains
     integer                            :: i
 
     ! Rank and size of input array
+#ifdef SHAPE_HAS_KIND_PARAM
     mem_dims(1:mem_rank) = shape(data, kind=int8byte)
+#else
+    mem_dims(1:mem_rank) = shape(data)
+#endif
     c_rank = mem_rank
 
     ! Set start/count parameters
@@ -863,7 +892,11 @@ contains
     integer                            :: i
 
     ! Rank and size of input array
+#ifdef SHAPE_HAS_KIND_PARAM
     mem_dims(1:mem_rank) = shape(data, kind=int8byte)
+#else
+    mem_dims(1:mem_rank) = shape(data)
+#endif
     c_rank = mem_rank
 
     ! Set start/count parameters
