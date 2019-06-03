@@ -315,6 +315,19 @@ contains
 #endif
     c_rank = mem_rank
 
+    ! Get size of dataset in file
+    i = hdf5_dataset_size(name, file_rank, file_dims)
+    if(i.ne.0)then
+       res = -1
+       return
+    endif
+
+    ! Check rank matches
+    if(file_rank.ne.mem_rank)then
+       res = -1
+       return
+    end if
+
     ! Set start/count parameters
     if(present(start))then
        do i = 1, size(start), 1
@@ -329,22 +342,9 @@ contains
        end do
     else
        do i = 1, mem_rank, 1
-          c_count(i) = size(data, i, kind=int8byte)
+          c_count(i) = file_dims(i)
        end do
     endif
-
-    ! Get size of dataset in file
-    i = hdf5_dataset_size(name, file_rank, file_dims)
-    if(i.ne.0)then
-       res = -1
-       return
-    endif
-
-    ! Check rank matches
-    if(file_rank.ne.mem_rank)then
-       res = -1
-       return
-    end if
 
     ! Check requested data fits in memory
     do i = 1, mem_rank, 1
@@ -398,6 +398,19 @@ contains
 #endif
     c_rank = mem_rank
 
+    ! Get size of dataset in file
+    i = hdf5_dataset_size(name, file_rank, file_dims)
+    if(i.ne.0)then
+       res = -1
+       return
+    endif
+
+    ! Check rank matches
+    if(file_rank.ne.mem_rank)then
+       res = -1
+       return
+    end if
+
     ! Set start/count parameters
     if(present(start))then
        do i = 1, size(start), 1
@@ -412,22 +425,9 @@ contains
        end do
     else
        do i = 1, mem_rank, 1
-          c_count(i) = size(data, i, kind=int8byte)
+          c_count(i) = file_dims(i)
        end do
     endif
-
-    ! Get size of dataset in file
-    i = hdf5_dataset_size(name, file_rank, file_dims)
-    if(i.ne.0)then
-       res = -1
-       return
-    endif
-
-    ! Check rank matches
-    if(file_rank.ne.mem_rank)then
-       res = -1
-       return
-    end if
 
     ! Check requested data fits in memory
     do i = 1, mem_rank, 1
@@ -481,6 +481,19 @@ contains
 #endif
     c_rank = mem_rank
 
+    ! Get size of dataset in file
+    i = hdf5_dataset_size(name, file_rank, file_dims)
+    if(i.ne.0)then
+       res = -1
+       return
+    endif
+
+    ! Check rank matches
+    if(file_rank.ne.mem_rank)then
+       res = -1
+       return
+    end if
+
     ! Set start/count parameters
     if(present(start))then
        do i = 1, size(start), 1
@@ -495,22 +508,9 @@ contains
        end do
     else
        do i = 1, mem_rank, 1
-          c_count(i) = size(data, i, kind=int8byte)
+          c_count(i) = file_dims(i)
        end do
     endif
-
-    ! Get size of dataset in file
-    i = hdf5_dataset_size(name, file_rank, file_dims)
-    if(i.ne.0)then
-       res = -1
-       return
-    endif
-
-    ! Check rank matches
-    if(file_rank.ne.mem_rank)then
-       res = -1
-       return
-    end if
 
     ! Check requested data fits in memory
     do i = 1, mem_rank, 1
@@ -565,6 +565,19 @@ contains
 #endif
     c_rank = mem_rank
 
+    ! Get size of dataset in file
+    i = hdf5_dataset_size(name, file_rank, file_dims)
+    if(i.ne.0)then
+       res = -1
+       return
+    endif
+
+    ! Check rank matches
+    if(file_rank.ne.mem_rank)then
+       res = -1
+       return
+    end if
+
     ! Set start/count parameters
     if(present(start))then
        do i = 1, size(start), 1
@@ -579,22 +592,9 @@ contains
        end do
     else
        do i = 1, mem_rank, 1
-          c_count(i) = size(data, i, kind=int8byte)
+          c_count(i) = file_dims(i)
        end do
     endif
-
-    ! Get size of dataset in file
-    i = hdf5_dataset_size(name, file_rank, file_dims)
-    if(i.ne.0)then
-       res = -1
-       return
-    endif
-
-    ! Check rank matches
-    if(file_rank.ne.mem_rank)then
-       res = -1
-       return
-    end if
 
     ! Check requested data fits in memory
     do i = 1, mem_rank, 1
@@ -649,6 +649,19 @@ contains
 #endif
     c_rank = mem_rank
 
+    ! Get size of dataset in file
+    i = hdf5_dataset_size(name, file_rank, file_dims)
+    if(i.ne.0)then
+       res = -1
+       return
+    endif
+
+    ! Check rank matches
+    if(file_rank.ne.mem_rank)then
+       res = -1
+       return
+    end if
+
     ! Set start/count parameters
     if(present(start))then
        do i = 1, size(start), 1
@@ -663,23 +676,9 @@ contains
        end do
     else
        do i = 1, mem_rank, 1
-          c_count(i) = size(data, i, kind=int8byte)
+          c_count(i) = file_dims(i)
        end do
     endif
-
-    ! Get size of dataset in file
-    i = hdf5_dataset_size(name, file_rank, file_dims)
-    !write(*,*) "i = ", i, file_rank, file_dims
-    if(i.ne.0)then
-       res = -1
-       return
-    endif
-
-    ! Check rank matches
-    if(file_rank.ne.mem_rank)then
-       res = -1
-       return
-    end if
 
     ! Check requested data fits in memory
     do i = 1, mem_rank, 1
@@ -733,6 +732,19 @@ contains
 #endif
     c_rank = mem_rank
 
+    ! Get size of dataset in file
+    i = hdf5_dataset_size(name, file_rank, file_dims)
+    if(i.ne.0)then
+       res = -1
+       return
+    endif
+
+    ! Check rank matches
+    if(file_rank.ne.mem_rank)then
+       res = -1
+       return
+    end if
+
     ! Set start/count parameters
     if(present(start))then
        do i = 1, size(start), 1
@@ -747,22 +759,9 @@ contains
        end do
     else
        do i = 1, mem_rank, 1
-          c_count(i) = size(data, i, kind=int8byte)
+          c_count(i) = file_dims(i)
        end do
     endif
-
-    ! Get size of dataset in file
-    i = hdf5_dataset_size(name, file_rank, file_dims)
-    if(i.ne.0)then
-       res = -1
-       return
-    endif
-
-    ! Check rank matches
-    if(file_rank.ne.mem_rank)then
-       res = -1
-       return
-    end if
 
     ! Check requested data fits in memory
     do i = 1, mem_rank, 1
@@ -816,6 +815,19 @@ contains
 #endif
     c_rank = mem_rank
 
+    ! Get size of dataset in file
+    i = hdf5_dataset_size(name, file_rank, file_dims)
+    if(i.ne.0)then
+       res = -1
+       return
+    endif
+
+    ! Check rank matches
+    if(file_rank.ne.mem_rank)then
+       res = -1
+       return
+    end if
+
     ! Set start/count parameters
     if(present(start))then
        do i = 1, size(start), 1
@@ -830,22 +842,9 @@ contains
        end do
     else
        do i = 1, mem_rank, 1
-          c_count(i) = size(data, i, kind=int8byte)
+          c_count(i) = file_dims(i)
        end do
     endif
-
-    ! Get size of dataset in file
-    i = hdf5_dataset_size(name, file_rank, file_dims)
-    if(i.ne.0)then
-       res = -1
-       return
-    endif
-
-    ! Check rank matches
-    if(file_rank.ne.mem_rank)then
-       res = -1
-       return
-    end if
 
     ! Check requested data fits in memory
     do i = 1, mem_rank, 1
@@ -899,6 +898,19 @@ contains
 #endif
     c_rank = mem_rank
 
+    ! Get size of dataset in file
+    i = hdf5_dataset_size(name, file_rank, file_dims)
+    if(i.ne.0)then
+       res = -1
+       return
+    endif
+
+    ! Check rank matches
+    if(file_rank.ne.mem_rank)then
+       res = -1
+       return
+    end if
+
     ! Set start/count parameters
     if(present(start))then
        do i = 1, size(start), 1
@@ -913,22 +925,9 @@ contains
        end do
     else
        do i = 1, mem_rank, 1
-          c_count(i) = size(data, i, kind=int8byte)
+          c_count(i) = file_dims(i)
        end do
     endif
-
-    ! Get size of dataset in file
-    i = hdf5_dataset_size(name, file_rank, file_dims)
-    if(i.ne.0)then
-       res = -1
-       return
-    endif
-
-    ! Check rank matches
-    if(file_rank.ne.mem_rank)then
-       res = -1
-       return
-    end if
 
     ! Check requested data fits in memory
     do i = 1, mem_rank, 1
