@@ -2,79 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <hdf5.h>
-
-/* Check we can use this HDF5 version */
-#if (H5_VERS_MAJOR < 1) || ((H5_VERS_MAJOR == 1) && (H5_VERS_MINOR < 6))
-#error Need HDF5 1.6 or later!
-#endif
-
-
-/* Define macros for functions which differ between HDF5 versions */
-#if ((H5_VERS_MAJOR == 1) && (H5_VERS_MINOR < 8))
-/* Use HDF5 1.6 API */
-#define h5_open_dataset(file_id, name)      H5Dopen(file_id, name)
-#define h5_open_group(file_id, name)        H5Gopen(file_id, name)
-#define h5_errors_off                       H5Eset_auto(NULL, NULL)
-#define h5_open_attribute(parent_id, name)  H5Aopen_name(parent_id, name)
-#else
-/* Use HDF5 1.8 API - only "2" versions of functions are guaranteed to exist */
-#define h5_open_dataset(file_id, name)      H5Dopen2(file_id, name, H5P_DEFAULT)
-#define h5_open_group(file_id, name)        H5Gopen2(file_id, name, H5P_DEFAULT)
-#define h5_errors_off                       H5Eset_auto2(H5E_DEFAULT, NULL, NULL)
-#define h5_open_attribute(parent_id, name)  H5Aopen_by_name(parent_id, ".", name, H5P_DEFAULT, H5P_DEFAULT)
-#endif
+#include "hdf5_util.h"
 
 static hid_t file_id;
-static int   need_init = 1;
-
-/*
-  Memory type codes for datasets:
-
-  0 integer*4
-  1 integer*8
-  2 real*4
-  3 real*8
-*/
-
-static hid_t hdf5_type[6];
-
-/*
-  Initialise HDF5
-*/
-void init_hdf5()
-{
-  if(need_init==0)return;
-  
-  H5open();
-  
-  /* Find endianness */
-  int x = 1;
-  if (!(*(char*)&x))
-    {
-      /* Big endian */
-      hdf5_type[0] = H5T_STD_I32BE;
-      hdf5_type[1] = H5T_STD_I64BE;
-      hdf5_type[2] = H5T_IEEE_F32BE;
-      hdf5_type[3] = H5T_IEEE_F64BE;
-      hdf5_type[4] = H5T_STD_U32BE;
-      hdf5_type[5] = H5T_STD_U64BE;
-    }
-  else
-    {
-      /* Little endian */
-      hdf5_type[0] = H5T_STD_I32LE;
-      hdf5_type[1] = H5T_STD_I64LE;
-      hdf5_type[2] = H5T_IEEE_F32LE;
-      hdf5_type[3] = H5T_IEEE_F64LE;
-      hdf5_type[4] = H5T_STD_U32LE;
-      hdf5_type[5] = H5T_STD_U64LE;
-    }
-  /* Don't print hdf5 errors */
-  h5_errors_off;
-
-  need_init = 0;
-}
-
 
 /*
   Open a HDF5 file
