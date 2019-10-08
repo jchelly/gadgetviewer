@@ -5,8 +5,7 @@
 #include "hdf5_util.h"
 
 #define MAX_DIMS 7
-//#define BUFFER_SIZE (2*1024*1024)
-#define BUFFER_SIZE 47
+#define BUFFER_SIZE (2*1024*1024)
 
 /*
   Worker process for reading HDF5 datasets.

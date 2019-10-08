@@ -44,11 +44,11 @@ void HDF5VERSION_F90(char *str, int *maxlen)
 }
 
 /*
-  Read a dataset
+  Read a dataset - serial implementaton
  */
-#define READDATASET_F90 FC_FUNC (readdataset, READDATASET)
-void READDATASET_F90(char *name, int *type, void *data, 
-		     int *rank, long long *start, long long *count, int *iostat)
+void read_dataset_serial(char *name, int *type, void *data, 
+			 int *rank, long long *start, 
+			 long long *count, int *iostat)
 {
   int i;
   hsize_t dims[7], h5start[7], h5count[7];
@@ -108,6 +108,72 @@ void READDATASET_F90(char *name, int *type, void *data,
 
   /* Done */
   *iostat = 0;
+  return;
+}
+
+
+/*
+  Read a dataset - parallel implementaton
+
+  This version spawns extra processes to do the actual reading.
+*/
+void read_dataset_parallel(char *name, int *type, void *data, 
+			   int *rank, long long *start, 
+			   long long *count, int *iostat)
+{
+  
+  /* Arguments defining selection etc */
+  const size_t maxlen = 100;
+  char params[2+2*7][maxlen];
+  snprintf(params[0], maxlen, "%d", *type);
+  snprintf(params[1], maxlen, "%d", *rank);
+  int i;
+  for(i=0;i<(*rank);i+=1) {
+    snprintf(params[2+i],         maxlen, "%lld", start[i]);
+    snprintf(params[2+(*rank)+i], maxlen, "%lld", count[i]);
+  }
+
+  /* Determine HDF5 file name */
+  ssize_t namelen = H5Fget_name(file_id, NULL, 0);
+  char *filename = malloc((namelen+1)*sizeof(char));
+  H5Fget_name(file_id, filename, namelen+1);
+
+  /* Location of executable */
+  char gv_hdf5_reader[] = "/gal/r4/jch/Code/GadgetViewer/gadgetviewer/build/hdf5/src/gv_hdf5_reader";
+
+  /* Determine all arguments for sub-process */
+  char *all_args[6+2*(*rank)];
+  all_args[0] = gv_hdf5_reader;
+  all_args[1] = filename;
+  all_args[2] = name;
+  for(i=0;i<2+2*(*rank);i+=1) {
+    all_args[3+i] = params[i];
+  }
+  all_args[5+2*(*rank)] = NULL;
+
+  
+
+  
+  free(filename);
+}
+
+/*
+  Read a dataset
+ */
+#define READDATASET_F90 FC_FUNC (readdataset, READDATASET)
+void READDATASET_F90(char *name, int *type, void *data, 
+		     int *rank, long long *start, long long *count, int *iostat)
+{
+  const int parallel_min_size = 1024;
+
+  /* Use parallel read for large selections */
+  if(count[0] >= parallel_min_size) {
+    read_dataset_serial(name, type, data, rank, 
+			start, count, iostat);
+  } else {
+    read_dataset_parallel(name, type, data, rank, 
+			  start, count, iostat);
+  }
   return;
 }
 
