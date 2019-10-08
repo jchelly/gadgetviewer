@@ -127,9 +127,9 @@ int main(int argc, char *argv[])
   /* Determine size of the read buffer */
   long long num_per_element = 1;
   for(i=1;i<ndim;i+=1)
-    num_per_element *= h5dims[i];
+    num_per_element *= count[i];
   long long bytes_per_element = num_per_element * H5Tget_size(memtype_id);
-  long long num_elements = h5dims[0] > BUFFER_SIZE ? BUFFER_SIZE : h5dims[0];
+  long long num_elements = count[0] > BUFFER_SIZE ? BUFFER_SIZE : count[0];
   long long num_bytes = bytes_per_element * num_elements;
 
   /* Allocate buffer */
@@ -142,18 +142,18 @@ int main(int argc, char *argv[])
   /* Create memory dataspace */
   hsize_t mem_dims[MAX_DIMS];
   for(i=1;i<ndim;i+=1)
-    mem_dims[i] = h5dims[i];
+    mem_dims[i] = count[i];
   mem_dims[0] = num_elements;
   hid_t memspace_id = H5Screate_simple(ndim, mem_dims, NULL); 
 
   /* Loop over chunks of dataset to read */
-  hsize_t h5start[MAX_DIMS];
+  hsize_t h5offset[MAX_DIMS];
   hsize_t h5count[MAX_DIMS];
   for(i=1;i<ndim;i+=1) {
-    h5start[i] = 0;
-    h5count[i] = h5dims[i];
+    h5offset[i] = offset[i];
+    h5count[i]  = count[i];
   }
-  h5start[0] = offset[0];
+  h5offset[0] = offset[0];
   hsize_t nleft = count[0];
   while(nleft > 0) {
     
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
     H5Sselect_hyperslab(memspace_id, H5S_SELECT_SET, h5zero, NULL, h5count, NULL);
 
     /* Select region in the file dataspace */
-    H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, h5start, NULL, h5count, NULL);
+    H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, h5offset, NULL, h5count, NULL);
 
     /* Read the data */
     if(H5Dread(dataset_id, memtype_id, memspace_id, filespace_id, H5P_DEFAULT, buffer) < 0) {
@@ -182,8 +182,8 @@ int main(int argc, char *argv[])
     }
   
     /* Update offset and number of elements left */
-    h5start[0] += h5count[0];
-    nleft      -= h5count[0];
+    h5offset[0] += h5count[0];
+    nleft       -= h5count[0];
   }
   
   /* Tidy up */
