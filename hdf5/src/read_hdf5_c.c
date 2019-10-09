@@ -120,15 +120,15 @@ void read_dataset_serial(char *name, int *type, void *data,
 
 
 /*
-  Read a dataset - parallel implementaton
-
-  This version spawns extra processes to do the actual reading.
+  Read a dataset - here we spawn a new process to do the reading.
 */
-void read_dataset_subprocess(char *name, int *type, void *data, 
-			   int *rank, long long *start, 
-			   long long *count, int *iostat)
+void read_dataset_subprocess(char *filename, char *name, int *type, 
+			     size_t type_size, void *data, int *rank,
+			     long long *start, long long *count, 
+			     int *iostat)
 {
   int i;
+  *iostat = 1;
   
   /* Arguments defining selection etc */
   const size_t maxlen = 100;
@@ -140,13 +140,20 @@ void read_dataset_subprocess(char *name, int *type, void *data,
     snprintf(params[2+(*rank)+i], maxlen, "%lld", count[*rank-i-1]);
   }
 
-  /* Determine HDF5 file name */
-  ssize_t namelen = H5Fget_name(file_id, NULL, 0);
-  char *filename = malloc((namelen+1)*sizeof(char));
-  H5Fget_name(file_id, filename, namelen+1);
+  /* 
+     Location of executable:
 
-  /* Location of executable */
-  char gv_hdf5_reader[] = "/gal/r4/jch/Code/GadgetViewer/gadgetviewer/build/hdf5/src/gv_hdf5_reader";
+     Use environment variable GV_HDF5_READER_PATH if set,
+     or ${bindir}/gv_hdf5_reader otherwise.
+  */
+  char install_path[] = GV_HDF5_READER_PATH ;
+  char *env_var_path = getenv("GV_HDF5_READER_PATH");
+  char *gv_hdf5_reader;
+  if(env_var_path) {
+    gv_hdf5_reader = env_var_path;
+  } else {
+    gv_hdf5_reader = install_path;
+  }
 
   /* Determine all arguments for sub-process */
   char *all_args[6+2*(*rank)];
@@ -162,7 +169,7 @@ void read_dataset_subprocess(char *name, int *type, void *data,
   size_t nbytes = 1;
   for(i=0;i<(*rank);i+=1)
     nbytes *= count[i];
-  nbytes *= H5Tget_size(hdf5_type[*type]);
+  nbytes *= type_size;
 
   /* 
      Create the pipe to communicate with child process:
@@ -171,18 +178,16 @@ void read_dataset_subprocess(char *name, int *type, void *data,
   */
   int filedes[2];
   if (pipe(filedes) == -1) {
-    *iostat = 1;
-    goto cleanup;
+    return;
   }
   
   /* Fork and exec the gv_hdf5_reader executable */
   pid_t pid = fork();
   if (pid == -1) {
     /* Only get here if fork() failed */
-    *iostat = 1;
     close(filedes[1]);
     close(filedes[0]);
-    goto cleanup;
+    return;
   } else if (pid == 0) {
     /* This is the child - route its stdout to pipe's input */
     while ((dup2(filedes[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
@@ -204,8 +209,7 @@ void read_dataset_subprocess(char *name, int *type, void *data,
       if (errno == EINTR) {
 	continue;
       } else {
-	*iostat = 1;
-	goto cleanup;
+	return;
       }
     } else if (count == 0) {
       break;
@@ -219,14 +223,7 @@ void read_dataset_subprocess(char *name, int *type, void *data,
   /* Wait for child process to complete and check return code  */
   int status;
   waitpid(pid, &status, 0);
-  if(WIFEXITED(status)) {
-    *iostat = WEXITSTATUS(status);
-  } else {
-    *iostat = 1;
-  }
-
- cleanup:
-  free(filename);
+  if(WIFEXITED(status)) *iostat = WEXITSTATUS(status);
 }
 
 /*
@@ -237,12 +234,24 @@ void READDATASET_F90(char *name, int *type, void *data,
 		     int *rank, long long *start, long long *count, int *iostat)
 {
   const int parallel_min_size = 1024;
-
-  /* Use parallel read for large selections */
   if(count[(*rank)-1] >= parallel_min_size) {
-    read_dataset_subprocess(name, type, data, rank, 
-			    start, count, iostat);
+    /* 
+       Use parallel read for large selections
+    */
+    /* Determine HDF5 file name */
+    ssize_t namelen = H5Fget_name(file_id, NULL, 0);
+    char *filename = malloc((namelen+1)*sizeof(char));
+    H5Fget_name(file_id, filename, namelen+1);
+    /* Get size of one element */
+    size_t type_size = H5Tget_size(hdf5_type[*type]);
+    /* Read the data */
+    read_dataset_subprocess(filename, name, type, type_size, data, 
+			    rank, start, count, iostat);
+    free(filename);
   } else {
+    /*
+      Serial read
+    */
     read_dataset_serial(name, type, data, rank, 
 			start, count, iostat);
   }

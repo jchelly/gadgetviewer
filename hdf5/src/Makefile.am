@@ -1,5 +1,6 @@
 AUTOMAKE_OPTIONS = foreign
 AM_CFLAGS        = @HDF5_CFLAGS@
+AM_CPPFLAGS      = -DGV_HDF5_READER_PATH=\"$(bindir)/gv_hdf5_reader\"
 AM_FCFLAGS       = $(ax_cv_f90_modflag)../../f90_util/src/
 
 @ax_mod_deps_hdf5@
