@@ -4,6 +4,13 @@
 #include <hdf5.h>
 #include "hdf5_util.h"
 
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+
 static hid_t file_id;
 
 /*
@@ -117,20 +124,20 @@ void read_dataset_serial(char *name, int *type, void *data,
 
   This version spawns extra processes to do the actual reading.
 */
-void read_dataset_parallel(char *name, int *type, void *data, 
+void read_dataset_subprocess(char *name, int *type, void *data, 
 			   int *rank, long long *start, 
 			   long long *count, int *iostat)
 {
+  int i;
   
   /* Arguments defining selection etc */
   const size_t maxlen = 100;
   char params[2+2*7][maxlen];
   snprintf(params[0], maxlen, "%d", *type);
   snprintf(params[1], maxlen, "%d", *rank);
-  int i;
   for(i=0;i<(*rank);i+=1) {
-    snprintf(params[2+i],         maxlen, "%lld", start[i]);
-    snprintf(params[2+(*rank)+i], maxlen, "%lld", count[i]);
+    snprintf(params[2+i],         maxlen, "%lld", start[*rank-i-1]);
+    snprintf(params[2+(*rank)+i], maxlen, "%lld", count[*rank-i-1]);
   }
 
   /* Determine HDF5 file name */
@@ -151,9 +158,74 @@ void read_dataset_parallel(char *name, int *type, void *data,
   }
   all_args[5+2*(*rank)] = NULL;
 
-  
+  /* Determine number of bytes to read */
+  size_t nbytes = 1;
+  for(i=0;i<(*rank);i+=1)
+    nbytes *= count[i];
+  nbytes *= H5Tget_size(hdf5_type[*type]);
 
+  /* 
+     Create the pipe to communicate with child process:
+     filedes[0] is output from pipe
+     filedes[1] is input to pipe
+  */
+  int filedes[2];
+  if (pipe(filedes) == -1) {
+    *iostat = 1;
+    goto cleanup;
+  }
   
+  /* Fork and exec the gv_hdf5_reader executable */
+  pid_t pid = fork();
+  if (pid == -1) {
+    /* Only get here if fork() failed */
+    *iostat = 1;
+    close(filedes[1]);
+    close(filedes[0]);
+    goto cleanup;
+  } else if (pid == 0) {
+    /* This is the child - route its stdout to pipe's input */
+    while ((dup2(filedes[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
+    close(filedes[1]);
+    close(filedes[0]);
+    /* Execute the reader with parameters */
+    execv(gv_hdf5_reader, all_args);
+    /* Should not reach this point */
+    fprintf(stderr, "execv() call failed?!\n");
+    _exit(1);
+  }
+  close(filedes[1]);
+
+  /* Read data from child's stdout */
+  char *dataptr = data;
+  while (1) {
+    ssize_t count = read(filedes[0], dataptr, nbytes);
+    if (count == -1) {
+      if (errno == EINTR) {
+	continue;
+      } else {
+	*iostat = 1;
+	goto cleanup;
+      }
+    } else if (count == 0) {
+      break;
+    } else {
+      dataptr += count;
+      nbytes -= count;
+    }
+  }
+  close(filedes[0]);
+
+  /* Wait for child process to complete and check return code  */
+  int status;
+  waitpid(pid, &status, 0);
+  if(WIFEXITED(status)) {
+    *iostat = WEXITSTATUS(status);
+  } else {
+    *iostat = 1;
+  }
+
+ cleanup:
   free(filename);
 }
 
@@ -167,12 +239,12 @@ void READDATASET_F90(char *name, int *type, void *data,
   const int parallel_min_size = 1024;
 
   /* Use parallel read for large selections */
-  if(count[0] >= parallel_min_size) {
+  if(count[(*rank)-1] >= parallel_min_size) {
+    read_dataset_subprocess(name, type, data, rank, 
+			    start, count, iostat);
+  } else {
     read_dataset_serial(name, type, data, rank, 
 			start, count, iostat);
-  } else {
-    read_dataset_parallel(name, type, data, rank, 
-			  start, count, iostat);
   }
   return;
 }
