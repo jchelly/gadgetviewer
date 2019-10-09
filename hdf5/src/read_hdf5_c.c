@@ -10,11 +10,12 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+#ifdef HDF5_MULTI_PROCESS
 /* Minimum dataset size to do parallel reads */
 #define PARALLEL_READ_SIZE (1024*1024)
-
 /* Maximum number of processes */
 #define MAX_PROCESSES 8
+#endif
 
 static hid_t file_id;
 
@@ -127,6 +128,7 @@ void read_dataset_serial(char *name, int *type, void *data,
 /*
   Read a dataset - here we spawn a new process to do the reading.
 */
+#ifdef HDF5_MULTI_PROCESS
 void read_dataset_subprocess(char *filename, char *name, int *type, 
 			     size_t type_size, void *data, int *rank,
 			     long long *start, long long *count, 
@@ -291,6 +293,7 @@ void read_dataset_subprocess(char *filename, char *name, int *type,
   }
   *iostat = failed;
 }
+#endif
 
 /*
   Read a dataset
@@ -299,6 +302,7 @@ void read_dataset_subprocess(char *filename, char *name, int *type,
 void READDATASET_F90(char *name, int *type, void *data, 
 		     int *rank, long long *start, long long *count, int *iostat)
 {
+#ifdef HDF5_MULTI_PROCESS
   if(count[(*rank)-1] >= 2*PARALLEL_READ_SIZE ) {
     /* 
        Use parallel read for large selections
@@ -314,12 +318,15 @@ void READDATASET_F90(char *name, int *type, void *data,
 			    rank, start, count, iostat);
     free(filename);
   } else {
+#endif
     /*
       Serial read
     */
     read_dataset_serial(name, type, data, rank, 
 			start, count, iostat);
+#ifdef HDF5_MULTI_PROCESS
   }
+#endif
   return;
 }
 
