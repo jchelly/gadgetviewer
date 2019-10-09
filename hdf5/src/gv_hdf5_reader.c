@@ -29,6 +29,8 @@ void usage(void) {
   fprintf(stderr, 
 	  "\nUsage: gv_hdf5_reader filename dataset typecode ndims\n"	\
 	  "           offset_1..offset_ndims count_1..count_ndims\n\n");
+  fclose(stderr);
+  fclose(stdout);
   exit(1);
 }
 

@@ -10,6 +10,11 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+/* Minimum dataset size to do parallel reads */
+#define PARALLEL_READ_SIZE (1024*1024)
+
+/* Maximum number of processes */
+#define MAX_PROCESSES 8
 
 static hid_t file_id;
 
@@ -130,16 +135,6 @@ void read_dataset_subprocess(char *filename, char *name, int *type,
   int i;
   *iostat = 1;
   
-  /* Arguments defining selection etc */
-  const size_t maxlen = 100;
-  char params[2+2*7][maxlen];
-  snprintf(params[0], maxlen, "%d", *type);
-  snprintf(params[1], maxlen, "%d", *rank);
-  for(i=0;i<(*rank);i+=1) {
-    snprintf(params[2+i],         maxlen, "%lld", start[*rank-i-1]);
-    snprintf(params[2+(*rank)+i], maxlen, "%lld", count[*rank-i-1]);
-  }
-
   /* 
      Location of executable:
 
@@ -155,75 +150,146 @@ void read_dataset_subprocess(char *filename, char *name, int *type,
     gv_hdf5_reader = install_path;
   }
 
-  /* Determine all arguments for sub-process */
-  char *all_args[6+2*(*rank)];
-  all_args[0] = gv_hdf5_reader;
-  all_args[1] = filename;
-  all_args[2] = name;
-  for(i=0;i<2+2*(*rank);i+=1) {
-    all_args[3+i] = params[i];
-  }
-  all_args[5+2*(*rank)] = NULL;
+  /* Determine number of processes to use */
+  int iproc;
+  int nproc = count[*rank-1] / PARALLEL_READ_SIZE;
+  if(nproc < 1)nproc = 1;
+  if(nproc > MAX_PROCESSES)nproc = MAX_PROCESSES;
 
-  /* Determine number of bytes to read */
-  size_t nbytes = 1;
-  for(i=0;i<(*rank);i+=1)
-    nbytes *= count[i];
-  nbytes *= type_size;
-
-  /* 
-     Create the pipe to communicate with child process:
-     filedes[0] is output from pipe
-     filedes[1] is input to pipe
-  */
-  int filedes[2];
-  if (pipe(filedes) == -1) {
-    return;
+  /* Decide range of elements to read on each process */
+  long long process_offset[MAX_PROCESSES];
+  long long process_count[MAX_PROCESSES];
+  for(iproc=0;iproc<nproc;iproc+=1) {
+    process_count[iproc] = count[*rank-1] / nproc;
+    if(iproc<(count[*rank-1] % nproc))process_count[iproc] += 1;
   }
+  process_offset[0] = start[*rank-1];
+  for(iproc=1;iproc<nproc;iproc+=1) {
+    process_offset[iproc] = process_offset[iproc-1] + process_count[iproc-1];
+  }
+
+  /* File descriptors for process stdouts */
+  int stdout[MAX_PROCESSES];
+  pid_t pid[MAX_PROCESSES];
+
+  /* Loop over sub-processes */
+  for(iproc=0;iproc<nproc;iproc+=1) {
   
-  /* Fork and exec the gv_hdf5_reader executable */
-  pid_t pid = fork();
-  if (pid == -1) {
-    /* Only get here if fork() failed */
-    close(filedes[1]);
-    close(filedes[0]);
-    return;
-  } else if (pid == 0) {
-    /* This is the child - route its stdout to pipe's input */
-    while ((dup2(filedes[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
-    close(filedes[1]);
-    close(filedes[0]);
-    /* Execute the reader with parameters */
-    execv(gv_hdf5_reader, all_args);
-    /* Should not reach this point */
-    fprintf(stderr, "execv() call failed?!\n");
-    _exit(1);
-  }
-  close(filedes[1]);
+    /* Arguments defining selection etc */
+    const size_t maxlen = 100;
+    char params[2+2*7][maxlen];
+    snprintf(params[0], maxlen, "%d", *type);
+    snprintf(params[1], maxlen, "%d", *rank);
+    for(i=0;i<*rank;i+=1) {
+      snprintf(params[2+i],         maxlen, "%lld", start[*rank-i-1]);
+      snprintf(params[2+(*rank)+i], maxlen, "%lld", count[*rank-i-1]);
+    }
+    snprintf(params[2+0],         maxlen, "%lld", process_offset[iproc]);
+    snprintf(params[2+(*rank)+0], maxlen, "%lld", process_count[iproc]);
 
-  /* Read data from child's stdout */
-  char *dataptr = data;
-  while (1) {
-    ssize_t count = read(filedes[0], dataptr, nbytes);
-    if (count == -1) {
-      if (errno == EINTR) {
-	continue;
-      } else {
-	return;
+    /* Determine all arguments for this process */
+    char *all_args[6+2*(*rank)];
+    all_args[0] = gv_hdf5_reader;
+    all_args[1] = filename;
+    all_args[2] = name;
+    for(i=0;i<2+2*(*rank);i+=1) {
+      all_args[3+i] = params[i];
+    }
+    all_args[5+2*(*rank)] = NULL;
+
+    /* 
+       Create the pipe to communicate with the child process:
+       filedes[0] is output from pipe
+       filedes[1] is input to pipe
+    */
+    int filedes[2];
+    if (pipe(filedes) == -1) {
+      printf("Failed creating pipe\n");
+      abort();
+    }
+  
+    /* Fork and exec the gv_hdf5_reader executable */
+    pid[iproc] = fork();
+    if (pid[iproc] == -1) {
+      /* Only get here if fork() failed */
+      close(filedes[1]);
+      close(filedes[0]);
+      printf("Fork call failed!\n");
+      abort();
+    } else if (pid[iproc] == 0) {
+      /* This is the child - route its stdout to pipe's input */
+      while ((dup2(filedes[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
+      close(filedes[1]);
+      close(filedes[0]);
+      /* Execute the reader with parameters */
+      execv(gv_hdf5_reader, all_args);
+      /* Should not reach this point */
+      printf("Execv call failed!\n");
+      abort();
+    }
+    close(filedes[1]);
+
+    /* Save stdout descriptor */
+    stdout[iproc] = filedes[0];
+  }
+
+  /* Make a pointer to the output location in 'data' for each process */
+  char *dataptr[MAX_PROCESSES];
+  long long nleft[MAX_PROCESSES];
+  long long bytes_per_element = type_size;
+  for(i=0;i<((*rank)-1);i+=1)
+    bytes_per_element *= count[i];
+  for(iproc=0;iproc<nproc;iproc+=1) {
+    dataptr[iproc] = data + bytes_per_element*process_offset[iproc];
+    nleft[iproc] = bytes_per_element*process_count[iproc];
+  }
+
+  /* Read from child processes */
+  int ndone = 0;
+  int failed = 0;
+  while(ndone < nproc) {
+    for(iproc=0;iproc<nproc;iproc+=1) {
+      if(nleft[iproc] > 0) {
+	ssize_t count = read(stdout[iproc], dataptr[iproc], nleft[iproc]);
+	if (count == -1) {
+	  /* Read failed */
+	  if (errno != EINTR) {
+	    printf("Read call failed!\n");
+	    abort();
+	  }
+	} else if (count > 0) {
+	  /* Read in some data, so check if this process is done */
+	  dataptr[iproc] += count;
+	  nleft[iproc]   -= count;
+	  if(nleft[iproc] == 0) {
+	    close(stdout[iproc]);
+	    ndone += 1;
+	  }
+	} else {
+	  /* Read zero bytes - indicates stdout from child process closed prematurely */
+	  nleft[iproc] = 0;
+	  ndone += 1;
+	  failed = 1;
+	  /* Try to kill other processes so we can return quickly */
+	  for(iproc=0;iproc<nproc;iproc+=1) {
+	    if(nleft[iproc] > 0)kill(pid[iproc], SIGKILL);
+	  }
+	}
       }
-    } else if (count == 0) {
-      break;
-    } else {
-      dataptr += count;
-      nbytes -= count;
     }
   }
-  close(filedes[0]);
 
-  /* Wait for child process to complete and check return code  */
-  int status;
-  waitpid(pid, &status, 0);
-  if(WIFEXITED(status)) *iostat = WEXITSTATUS(status);
+  /* Wait for child processes to complete and check return codes */
+  for(iproc=0;iproc<nproc;iproc+=1) {
+    int status;
+    waitpid(pid[iproc], &status, 0);
+    if(WIFEXITED(status)) {
+      if(WEXITSTATUS(status)!=0) failed = 1;
+    } else {
+      failed = 1;
+    }
+  }
+  *iostat = failed;
 }
 
 /*
@@ -233,8 +299,7 @@ void read_dataset_subprocess(char *filename, char *name, int *type,
 void READDATASET_F90(char *name, int *type, void *data, 
 		     int *rank, long long *start, long long *count, int *iostat)
 {
-  const int parallel_min_size = 1024;
-  if(count[(*rank)-1] >= parallel_min_size) {
+  if(count[(*rank)-1] >= 2*PARALLEL_READ_SIZE ) {
     /* 
        Use parallel read for large selections
     */
