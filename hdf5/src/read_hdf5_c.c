@@ -7,8 +7,11 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#ifdef HDF5_MULTI_PROCESS
 #include <unistd.h>
 #include <sys/wait.h>
+#endif
 
 #ifdef HDF5_MULTI_PROCESS
 /* Minimum dataset size to do parallel reads */
@@ -126,7 +129,7 @@ void read_dataset_serial(char *name, int *type, void *data,
 
 
 /*
-  Read a dataset - here we spawn a new process to do the reading.
+  Read a dataset - here we spawn child processes to do the reading.
 */
 #ifdef HDF5_MULTI_PROCESS
 void read_dataset_subprocess(char *filename, char *name, int *type, 
@@ -216,6 +219,7 @@ void read_dataset_subprocess(char *filename, char *name, int *type,
       /* Only get here if fork() failed */
       close(filedes[1]);
       close(filedes[0]);
+      /* TODO: return error code if this happens? */
       printf("Fork call failed!\n");
       abort();
     } else if (pid[iproc] == 0) {
@@ -225,7 +229,10 @@ void read_dataset_subprocess(char *filename, char *name, int *type,
       close(filedes[0]);
       /* Execute the reader with parameters */
       execv(gv_hdf5_reader, all_args);
-      /* Should not reach this point */
+      /* 
+	 Only get here if exec fails. Terminate child process so 
+	 reads below will fail and we can return an error code.
+      */
       printf("Execv call failed!\n");
       abort();
     }
