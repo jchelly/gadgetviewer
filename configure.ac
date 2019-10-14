@@ -81,12 +81,9 @@ AM_CONDITIONAL([COND_HDF5], [test "$USE_HDF5" = yes])
 #
 # Enable multi-process HDF5 reader if requested
 #
-AC_ARG_ENABLE(hdf5-multi-process,
-	[AC_HELP_STRING([--enable-hdf5-multi-process],[enable multi-process HDF5 reader])],
-	[AC_DEFINE([HDF5_MULTI_PROCESS],[],[Defined if we should use multiple processes to read HDF5 datasets])
-	 hdf5_multi_process="yes"],
-	[hdf5_multi_process="no"])
-AM_CONDITIONAL([COND_HDF5_MULTI_PROCESS], [test "$hdf5_multi_process" = yes])
+AC_ARG_ENABLE(hdf5-multi-process, [AC_HELP_STRING([--enable-hdf5-multi-process],[enable multi-process HDF5 reader])])
+AS_IF([test "x$enable_hdf5_multi_process" = "xyes"], [AC_DEFINE([HDF5_MULTI_PROCESS],[],[Defined if we should use multiple processes to read HDF5 datasets])])
+AM_CONDITIONAL([COND_HDF5_MULTI_PROCESS], [test "$enable_hdf5_multi_process" = yes])
 
 #
 # Figure out how to use the Fortran compiler
