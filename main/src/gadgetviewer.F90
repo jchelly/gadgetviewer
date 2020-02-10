@@ -20,6 +20,7 @@ program gadgetviewer
   use movie
   use read_partial
   use partial_read_info
+  use sampling
 
   implicit none
   type(result_type)           :: res
@@ -86,6 +87,13 @@ program gadgetviewer
      if(.not.res%success)then
         write(0,*)"Unable to read configuration file ",trim(config_file)
         call terminate()
+     else
+        ! Resample to apply new parameters
+        res = sample_region(keep_coords=.true.)
+        if(.not.res%success)then
+           write(0,*)"Unable to sample particles"
+           call terminate()
+        endif
      endif
   endif
   
