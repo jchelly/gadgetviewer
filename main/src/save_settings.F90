@@ -13,6 +13,7 @@ module settings
   use sampling
   use selection
   use movie_parameters
+  use threads
 
   implicit none
   private
@@ -35,6 +36,7 @@ contains
     call new_key_file()
 
     ! Set keys from current settings
+    call threads_set_keys()
     call view_parameters_set_keys()
     call transform_set_keys(view_transform)
     call sample_set_keys()
@@ -78,6 +80,7 @@ contains
     endif
 
     ! Update settings from file
+    call threads_get_keys()
     call view_parameters_get_keys()
     call transform_get_keys(view_transform)
     call sample_get_keys()

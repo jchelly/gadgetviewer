@@ -21,6 +21,7 @@ program gadgetviewer
   use read_partial
   use partial_read_info
   use sampling
+  use threads
 
   implicit none
   type(result_type)           :: res
@@ -31,6 +32,7 @@ program gadgetviewer
   type(read_info) :: rinfo
 
   ! Initialise modules
+  call threads_init()
   call particle_store_init(pdata)
   call particle_store_init(psample)
   call colour_table_init()

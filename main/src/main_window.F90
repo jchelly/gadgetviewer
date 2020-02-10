@@ -38,6 +38,8 @@ module main_window
 #ifdef HAVE_HDF5
   use read_hdf5
 #endif
+  use threads
+
   implicit none
   private
   save
@@ -49,8 +51,6 @@ module main_window
   public :: main_window_redraw
   public :: main_window_finalise
 
-  ! Maximum number of OpenMP threads to use by default
-  integer, parameter :: MAX_DEFAULT_THREADS = 8
 
   ! Version string (added to config.h by autoconf)
   character(len=20) :: version = VERSION
@@ -86,7 +86,6 @@ module main_window
   type (gui_menu_item)   :: file_save_default
   type (gui_menu_item)   :: file_exit
   type (gui_menu_item), dimension(:), allocatable :: groupformat_item
-
 
   ! View menu
   type (gui_menu)        :: view_menu
@@ -125,14 +124,8 @@ module main_window
   type (gui_menu)      :: help_menu
   type (gui_menu_item) :: help_doc
 
-  ! Allow up to 2**(nparmax-1) OpenMP threads
-  integer, parameter                       :: nparmax = 7
-
   type (gui_menu)                          :: options_parallel
   type (gui_menu_item), dimension(nparmax) :: options_nproc
-#ifdef OPENMP_AUTO
-  type (gui_menu_item)                     :: options_nproc_auto
-#endif
 
   ! Boxes for control layout
   type (gui_box)         :: hbox, vbox, button_box
@@ -206,13 +199,8 @@ contains
     real              :: sep
     ! HDF5 version info
     character(len=20) :: str
-    ! OpenMP stuff
-    integer :: nthreads, nthreadmax, nproc
-#ifdef _OPENMP
-    integer, external :: OMP_GET_MAX_THREADS
-    integer, external :: OMP_GET_NUM_PROCS
-#endif
     integer :: ibutton, ifunction, istat
+    integer :: nproc
 
     ! Check which libraries are available
     ! Plotting library
@@ -225,18 +213,8 @@ contains
 #else
     extra(2) = "HDF5: disabled"
 #endif
-
-    ! OpenMP
-#ifdef _OPENMP
-    nthreadmax = OMP_GET_NUM_PROCS()
-    nthreads   = min(MAX_DEFAULT_THREADS, nthreadmax)
-    call omp_set_num_threads(nthreads)
-
-    extra(3) = "OpenMP: enabled, initial threads: "//trim(string(nthreads))//&
-         ", number of cores available: "//trim(string(nthreadmax))
-#else
-    extra(3) = "OpenMP: disabled"
-#endif
+    ! OpenMP status message
+    extra(3) = openmp_status
 
     ! Make a new window
     call gui_create_window(mainwin, dimensions=(/600,550/), &
@@ -581,10 +559,6 @@ contains
             button_click_centre(ibutton))
     end do
 
-    ! Help menu
-    !call gui_create_menu(help_menu, mainwin, "Help")
-    !call gui_create_menu_item(help_doc, help_menu, "Documentation")
-
 #ifdef _OPENMP
     call gui_create_menu(options_parallel, options_menu, &
          "OpenMP")
@@ -604,13 +578,6 @@ contains
           call gui_menu_item_set_state(options_nproc(i), .true.)
        endif
     end do
-#ifdef OPENMP_AUTO
-    call gui_create_menu_item(options_nproc_auto, options_parallel, &
-         "Automatic", radiobutton=.true., previous=options_nproc(i-1))
-    call gui_menu_item_set_state(options_nproc_auto, .true.)
-    ! By default allow OpenMP to set the number of threads
-    call omp_set_dynamic(.true.)
-#endif
 #endif
 
     ! Add slider for stereo separation
@@ -911,21 +878,10 @@ contains
        if(gui_menu_item_changed(options_nproc(i)))then
           call gui_menu_item_get_state(options_nproc(i), status)
           if(status)then
-#ifdef OPENMP_AUTO
-             call omp_set_dynamic(.false.)
-#endif
-             call omp_set_num_threads(2**(i-1))             
+             call threads_set_number(2**(i-1))             
           endif
        endif
     end do
-
-#ifdef OPENMP_AUTO
-    ! Check if the number of processors has been set to automatic
-    if(gui_menu_item_changed(options_nproc_auto))then
-       call gui_menu_item_get_state(options_nproc_auto, status)
-       call omp_set_dynamic(.true.)
-    endif
-#endif
 #endif
 
     ! Process events for screenshot window
@@ -1407,6 +1363,7 @@ contains
     integer :: nspecies
     logical :: data_loaded
     logical, dimension(:), pointer :: state
+    integer :: nproc
 
     data_loaded = particle_store_loaded(pdata)
 
@@ -1483,6 +1440,16 @@ contains
     call gui_menu_item_set_state(view_show_points, overlay_show_points)
     call gui_menu_item_set_state(view_selected_only, draw_selected_only)
     call gui_menu_item_set_state(view_perspective, perspective_projection)
+
+    ! OpenMP settings
+#ifdef _OPENMP
+    do i = 1, nparmax, 1
+       nproc = 2**(i-1)
+       if(nproc.eq.nthreads)then
+          call gui_menu_item_set_state(options_nproc(i), .true.)
+       endif
+    end do
+#endif
 
     return
   end subroutine main_window_update_controls
