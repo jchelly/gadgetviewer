@@ -126,7 +126,7 @@ module main_window
   type (gui_menu_item) :: help_doc
 
   ! Allow up to 2**(nparmax-1) OpenMP threads
-  integer, parameter                       :: nparmax = 4
+  integer, parameter                       :: nparmax = 7
 
   type (gui_menu)                          :: options_parallel
   type (gui_menu_item), dimension(nparmax) :: options_nproc
@@ -233,7 +233,7 @@ contains
     call omp_set_num_threads(nthreads)
 
     extra(3) = "OpenMP: enabled, initial threads: "//trim(string(nthreads))//&
-         ", number of processors: "//trim(string(nthreadmax))
+         ", number of cores available: "//trim(string(nthreadmax))
 #else
     extra(3) = "OpenMP: disabled"
 #endif
@@ -593,11 +593,11 @@ contains
        write(str,'(i8)')nproc
        if(i.gt.1)then
           call gui_create_menu_item(options_nproc(i), options_parallel, &
-               "Use "//trim(adjustl(str))//" processors", &
+               "Use "//trim(adjustl(str))//" threads", &
                radiobutton=.true., previous=options_nproc(i-1))
        else
           call gui_create_menu_item(options_nproc(i), options_parallel, &
-               "Use "//trim(adjustl(str))//" processor", &
+               "Use "//trim(adjustl(str))//" thread", &
                radiobutton=.true.)
        endif
        if(nproc.eq.nthreads)then
