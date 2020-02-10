@@ -70,12 +70,29 @@ contains
        call get_key("Gadget HDF5","Extra Properties", props)
     else
        ! Default settings
-       nextra = 5
-       extra_prop(1) = "Metallicity"
-       extra_prop(2) = "StarFormationRate"
-       extra_prop(3) = "Temperature"
-       extra_prop(4) = "Density"
-       extra_prop(5) = "InternalEnergy"
+       nextra = 0
+       ! Common names in Gadget snapshots
+       call add_extra("Metallicity")
+       call add_extra("StarFormationRate")
+       call add_extra("Temperature")
+       call add_extra("Density")
+       call add_extra("InternalEnergy")
+       ! Common names in Swift-EAGLE snapshots
+       ! All
+       call add_extra("FOFGroupIDs")
+       ! Gas
+       call add_extra("MetalMassFractions")
+       call add_extra("StarFormationRates")
+       call add_extra("Temperatures")
+       call add_extra("Densities")
+       call add_extra("InternalEnergies")
+       ! Stars
+       call add_extra("BirthScaleFactors")
+       call add_extra("BirthDensities")
+       ! Black holes
+       call add_extra("DynamicalMasses")
+       call add_extra("SubgridMasses")
+       ! Save default list
        call set_key("Gadget HDF5","Extra Properties", extra_prop(1:nextra)) 
        call write_key_file(fname)
     endif
@@ -106,6 +123,19 @@ contains
     end do
     
     return
+
+    contains 
+      
+      subroutine add_extra(name)
+        
+        character(len=*), intent(in) :: name
+        
+        if(nextra.lt.max_extra)then
+           nextra = nextra + 1
+           extra_prop(nextra) = trim(name)
+        endif
+      
+      end subroutine add_extra
 
   end subroutine gadget_hdf5_read_conf
 
