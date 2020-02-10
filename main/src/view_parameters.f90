@@ -21,6 +21,8 @@ module view_parameters
   public :: view_parameters_get_keys
   public :: view_parameters_update
 
+  real, parameter :: pi = 4.0*atan(1.0)
+
   ! Extent of the particle distribution
   real, dimension(3)         :: posmin, posmax
   real, dimension(3), public :: simcentre
@@ -30,7 +32,7 @@ module view_parameters
   type (transform_type), public :: view_transform
 
   ! Default values
-  real, parameter    :: fov_max_default  = 1.5
+  real, parameter    :: fov_max_default  = 1.0
   real, parameter    :: nearclip_default = -0.75
   real, parameter    :: farclip_default  = 0.75
   real, parameter    :: z_offset_default = 0.1
@@ -182,7 +184,7 @@ contains
     ! Maximum field of view
     call gui_create_box(hbox, vbox, gui_horizontal)
     call gui_packing_mode(position=gui_start)
-    call gui_create_label(label, hbox, "Maximum field of view in z=0 plane: ")
+    call gui_create_label(label, hbox, "Maximum field of view (degrees): ")
     call gui_packing_mode(position=gui_end)
     call gui_create_entrybox(fov_entry, hbox, 8) 
 
@@ -257,6 +259,7 @@ contains
 !    
     implicit none
     character(len=8), parameter :: rfmt = "(1f8.3)", ifmt="(1i10)"
+    real :: fov_degrees
 
     if(.not.window_open)return
 
@@ -265,7 +268,8 @@ contains
     call gui_entrybox_set_text(zoffset_entry,  trim(string(z_offset,fmt=rfmt)))
     call gui_entrybox_set_text(npmax_entry, &
          trim(string(npmax_display,fmt=ifmt)))
-    call gui_entrybox_set_text(fov_entry,      trim(string(fov_max,fmt=rfmt)))
+    fov_degrees = (2*atan(fov_max/2.0)) * (180.0/pi)
+    call gui_entrybox_set_text(fov_entry,      trim(string(fov_degrees,fmt=rfmt)))
     call gui_entrybox_set_text(autosample_entry, &
          trim(string(ar_zoomfac,fmt=rfmt)))
 
@@ -301,7 +305,14 @@ contains
     endif
 
     call gui_entrybox_get_value(fov_entry, rtmp, ios)
-    if(ios.eq.0)fov_max = max(0.01,rtmp)
+    if(ios.eq.0)then
+       ! Only allow range 1-120 degrees
+       rtmp = max(min(rtmp, 120.0), 1.0)
+       ! Convert to radians
+       rtmp = rtmp / 180.0 * pi
+       ! Compute linear FoV
+       fov_max = 2.0*tan(rtmp/2.0)
+    endif
 
     call gui_entrybox_get_value(autosample_entry, rtmp, ios)
     if(ios.eq.0)then
