@@ -66,9 +66,7 @@ contains
     fname = trim(dir)//"/"//"gadget_hdf5_extra_properties"
     props = ""
     call read_key_file(fname)
-    if(file_has_group("Gadget HDF5"))then
-       call get_key("Gadget HDF5","Extra Properties", props)
-    else
+    if(.not.file_has_group("Gadget HDF5"))then
        ! Default settings
        nextra = 0
        ! Common names in Gadget snapshots
@@ -92,9 +90,12 @@ contains
        ! Black holes
        call add_extra("DynamicalMasses")
        call add_extra("SubgridMasses")
-       ! Save default list
+       ! Save the new list
        call set_key("Gadget HDF5","Extra Properties", extra_prop(1:nextra)) 
        call write_key_file(fname)
+    endif
+    if(file_has_group("Gadget HDF5"))then
+       call get_key("Gadget HDF5","Extra Properties", props)
     endif
     call close_key_file()
 
