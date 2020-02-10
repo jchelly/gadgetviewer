@@ -39,6 +39,7 @@ module read_partial
   type (gui_radio_button) :: allfiles_button
   type (gui_radio_button) :: index_button
   type (gui_checkbox) :: spatial_box
+  type (gui_checkbox) :: ignore_missing_masses_box
   type (gui_button)   :: ok_button, cancel_button
   type (gui_window), pointer :: mainwin
 
@@ -50,6 +51,7 @@ module read_partial
   logical            :: read_all_particles = .true.
   logical            :: read_sphere        = .false.
   character(len=50)  :: xtext, ytext, ztext, rtext, srtext
+  logical            :: ignore_missing_masses = .false.
 
 contains
   
@@ -127,6 +129,10 @@ contains
     call gui_create_entrybox(x_box, hbox, length=12)
     call gui_create_label(label, hbox, "X: ")
     call gui_packing_mode(position=gui_start)
+
+    ! Missing mass option
+    call gui_create_box(hbox, vbox, gui_horizontal, frame=.true.)
+    call gui_create_checkbox(ignore_missing_masses_box, hbox, "Ignore missing mass datasets (HDF5 only)")
 
     ! Buttons
     call gui_create_box(vbox, outer_vbox, gui_vertical)
@@ -255,6 +261,10 @@ contains
              return
           endif
        endif
+
+       ! Missing mass option
+       call gui_checkbox_get_state(ignore_missing_masses_box, ri%ignore_missing_mass)
+
        ! Parameters look ok so try to read the data
        call plotter_settings_close()
        call selection_close()
@@ -347,6 +357,7 @@ contains
     call gui_entrybox_get_text(z_box, ztext)
     call gui_entrybox_get_text(r_box, rtext)
     call gui_entrybox_get_text(rate_box, srtext)
+    call gui_checkbox_get_state(ignore_missing_masses_box, ignore_missing_masses)
 
     return
   end subroutine get_state
@@ -371,6 +382,7 @@ contains
     call gui_entrybox_set_text(z_box, ztext)
     call gui_entrybox_set_text(r_box, rtext)
     call gui_entrybox_set_text(rate_box, srtext)
+    call gui_checkbox_set_state(ignore_missing_masses_box, ignore_missing_masses)
     call update_window()
 
     return

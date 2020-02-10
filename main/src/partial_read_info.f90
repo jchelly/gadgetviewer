@@ -13,6 +13,7 @@ module partial_read_info
      real               :: radius
      real, dimension(3) :: pos
      logical            :: use_index
+     logical            :: ignore_missing_mass
   end type read_info
 
 end module partial_read_info

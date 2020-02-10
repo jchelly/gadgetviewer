@@ -41,6 +41,7 @@ contains
     rinfo%do_sampling    = .false.
     rinfo%do_sphere      = .false.
     rinfo%just_this_file = .false.
+    rinfo%ignore_missing_mass = .false.
 
     nargs = get_nargs()
     do iarg = 1, nargs, 1
@@ -91,6 +92,9 @@ contains
        else if(index(arg, "--use-index").eq.1)then
           ! Use spatial index
           rinfo%use_index = .true.
+       else if(index(arg, "--ignore-missing-mass").eq.1)then
+          ! Set missing masses to 1
+          rinfo%ignore_missing_mass = .true.
        else
           ! Snapshot filename
           snapshot_file = trim(arg)
@@ -137,19 +141,20 @@ contains
        write(0,*)""
        write(0,*)"Where options can include any of the following:"
        write(0,*)""
-       write(0,*)"       --config=<file>     : read configuration from file"
-       write(0,*)"       --selection=<file>  : read saved particle selection"
-       write(0,*)"       --movie=<file>      : batch mode movie making"
-       write(0,*)"       --partial           : open gui to read part of a snapshot"
-       write(0,*)"       --single-file       : only read this file"
-       write(0,*)"       --sample-rate=s     : random sample the particles with"
-       write(0,*)"                             a sampling rate S in range 0-1"
-       write(0,*)"       --region=x,y,z,r    : only load particles in a cube"
-       write(0,*)"                             centred on x,y,z with side 2*r"
-       write(0,*)"                             (reads all files by default)"
-       write(0,*)"       --use-index         : use spatial indexing to read the"
-       write(0,*)"                             region specified with --region"
-       write(0,*)"       --help              : print this message"
+       write(0,*)"       --config=<file>      : read configuration from file"
+       write(0,*)"       --selection=<file>   : read saved particle selection"
+       write(0,*)"       --movie=<file>       : batch mode movie making"
+       write(0,*)"       --partial            : open gui to read part of a snapshot"
+       write(0,*)"       --single-file        : only read this file"
+       write(0,*)"       --sample-rate=s      : random sample the particles with"
+       write(0,*)"                              a sampling rate S in range 0-1"
+       write(0,*)"       --region=x,y,z,r     : only load particles in a cube"
+       write(0,*)"                              centred on x,y,z with side 2*r"
+       write(0,*)"                              (reads all files by default)"
+       write(0,*)"       --use-index          : use spatial indexing to read the"
+       write(0,*)"                              region specified with --region"
+       write(0,*)"       --ignore-missing-mass: assume mass=1 if no mass dataset"
+       write(0,*)"       --help               : print this message"
        write(0,*)""
        write(0,*)"A snapshot file must be specified for batch mode movie making."
        write(0,*)"For rotating movies the snapshot file must be a file "

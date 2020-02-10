@@ -765,11 +765,17 @@ contains
                      hdferr = hdf5_read_dataset(trim(gname)//"/DynamicalMasses", mass)
                 ! Report an error if we can't find any mass at all
                 if(hdferr.ne.0)then
-                   gadget_hdf5_read%string="Unable to read masses from "//&
-                        trim(fname)
-                   call particle_store_empty(pdata)
-                   hdferr = hdf5_close_file()
-                   return
+                   if(rinfo%ignore_missing_mass)then
+                      ! If there's no mass dataset, assign unit masses
+                      mass = 1.0
+                   else
+                      ! Complain if we were supposed to read masses but can't
+                      gadget_hdf5_read%string="Unable to read masses from "//&
+                           trim(fname)
+                      call particle_store_empty(pdata)
+                      hdferr = hdf5_close_file()
+                      return
+                   endif
                 endif
              else
                 ! Use mass array from header
