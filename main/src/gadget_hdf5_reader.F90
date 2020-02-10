@@ -729,6 +729,10 @@ contains
                 hdferr = hdf5_read_dataset(trim(gname)//"/Mass", mass)
                 if(hdferr.ne.0) &
                      hdferr = hdf5_read_dataset(trim(gname)//"/Masses", mass)
+                ! Swift black holes have DynamicalMass instead of Mass
+                if((hdferr.ne.0).and.(i.eq.6)) &
+                     hdferr = hdf5_read_dataset(trim(gname)//"/DynamicalMasses", mass)
+                ! Report an error if we can't find any mass at all
                 if(hdferr.ne.0)then
                    gadget_hdf5_read%string="Unable to read masses from "//&
                         trim(fname)
