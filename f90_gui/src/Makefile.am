@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS = foreign
 AM_CFLAGS        = @GTK_CFLAGS@ -I$(srcdir)/../../f90_util/src/
 AM_FCFLAGS       = $(ax_cv_f90_modflag)../../f90_util/src/
 
-lib_LTLIBRARIES      = libf90_gui.la
+noinst_LTLIBRARIES      = libf90_gui.la
 
 @ax_mod_deps_f90_gui@
 
@@ -11,5 +11,5 @@ libf90_gui_la_LIBADD = @GTK_LIBS@ ../../f90_util/src/libf90_util.la
 
 noinst_HEADERS = set_event_handler.h pack_box.h  packingmode.h
 
-nodist_include_HEADERS = f90_gui.$(ax_cv_f90_modext)
+#nodist_include_HEADERS = f90_gui.$(ax_cv_f90_modext)
 
