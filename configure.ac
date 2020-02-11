@@ -71,14 +71,6 @@ fi
 AM_CONDITIONAL([COND_HDF5], [test "$USE_HDF5" = yes])
 
 #
-# Allow optional use of old GTK file selector
-#
-# AC_ARG_ENABLE(old-file-selector,
-#     [  --enable-old-file-selector      use old style GTK file chooser],
-#	[AC_DEFINE([OLD_FILE_SELECTOR],[],[Defined if we're using GtkFileSelection])],[])
-#
-
-#
 # Figure out how to use the Fortran compiler
 #
 AC_LANG(Fortran)
@@ -92,10 +84,40 @@ if test "x$ax_cv_f90_modext" = "xunknown" ; then
 fi
 AC_SUBST(ax_cv_f90_modext)
 
-#
-# Check for OpenMP
-#
+# Check for OpenMP support
 AC_OPENMP
+
+#
+# Avoid stack overflows by not allocating large arrays on the stack
+#
+extra_fcflags=""
+AC_ARG_ENABLE([heap-arrays],
+	[AS_HELP_STRING([--enable-heap-arrays], [prevents stack overflows (default=yes)])],
+	[with_heap_arrays="${enableval}"],
+	[with_heap_arrays="yes"]
+)
+if test "$with_heap_arrays" = "yes"; then
+  # Intel ifort
+  AX_CHECK_COMPILE_FLAG([--heap-arrays],     [extra_fcflags=--heap-arrays],     [], [], [])
+fi
+
+#
+# Try to add some optimization flags
+#
+AC_ARG_ENABLE([optimization],
+	[AS_HELP_STRING([--enable-optimization], [add optimization flags (default=yes)])],
+	[with_optimization="${enableval}"],
+	[with_optimization="yes"]
+)
+if test "$with_optimization" = "yes"; then
+  # Use -O3 by default
+  AX_CHECK_COMPILE_FLAG([-O3], [extra_fcflags="${extra_fcflags} -O3"], [], [], [])
+  # Test for some Intel compiler specific flags
+  AX_CHECK_COMPILE_FLAG([-ip],              [extra_fcflags="${extra_fcflags} -ip"],              [], [], [])
+  AX_CHECK_COMPILE_FLAG([-no-prec-div],     [extra_fcflags="${extra_fcflags} -no-prec-div"],     [], [], [])
+  AX_CHECK_COMPILE_FLAG([-fp-model fast=2], [extra_fcflags="${extra_fcflags} -fp-model fast=2"], [], [], [])
+fi
+AC_SUBST(extra_fcflags)
 
 #
 # Check we can read command line arguments from Fortran
@@ -241,51 +263,33 @@ AC_OUTPUT(Makefile drawing/Makefile drawing/src/Makefile main/Makefile main/src/
 #
 # Configuration summary
 #
-echo
-echo Gadgetviewer configuration summary
-echo ----------------------------------
-echo
-echo Compiler flags
-echo
-echo "  Fortran             :" ${FCFLAGS}
-echo "  C                   :" ${CFLAGS}
-echo "  OpenMP flags        :" ${OPENMP_FCFLAGS}
-echo
-echo Libraries
-echo
-if test "${USE_PLPLOT}" = "yes" ; then
-  echo "  Plotting library : PLPlot"
-else
-  if test "${USE_CAIRO}" = "yes" ; then
-    echo "  Plotting library : Cairo"
-  else
-    echo "  Plotting library : none     (can use PLPlot or Cairo)"
-  fi
-fi
-if test "${USE_HDF5}" = "no" ; then
-  echo "  HDF5 support     : disabled (required to read HDF5 snapshots)"
-else
-  echo "  HDF5 support     : enabled"
-fi
-if test "${USE_LIBPNG}" = "no" ; then
-  echo "  PNG output       : disabled (required to output movie frames)"
-else
-  echo "  PNG output       : enabled"
-fi
-echo
-echo Internal precision of particle data
-echo
-echo "  Positions                     : " $posbytes bytes
-echo "  Velocities                    : " $velbytes bytes
-echo "  Floating point properties     : " $rpropbytes bytes
-echo "  Integer properties (e.g. IDs) : " $ipropbytes bytes
-echo "  Particle array indexes        : " $indexbytes bytes
-echo
+AC_MSG_RESULT([
+  Gadgetviewer v${VERSION} configuration
+  --------------------------------------
 
-if test "${have_keyfile}" == "no" ; then
-echo WARNING: this version of GLib is too old to read/write config files.
-echo          It will not be possible to load/save settings.
-echo
-fi
+  Compilers
 
+    Fortran compiler: ${FC}
+    Fortran flags   : ${FCFLAGS} ${extra_fcflags} ${OPENMP_FCFLAGS} 
+    C compiler      : ${CC}
+    C flags         : ${CFLAGS}
 
+  Plotting library (only need one of these)
+
+    PLPlot          : ${USE_PLPLOT}
+    Cairo           : ${USE_CAIRO}
+
+  Other libraries
+
+    HDF5            : ${USE_HDF5}
+    PNG             : ${USE_LIBPNG}
+
+  Internal precision of particle data
+
+    Positions                     : $posbytes bytes
+    Velocities                    : $velbytes bytes
+    Floating point properties     : $rpropbytes bytes
+    Integer properties (e.g. IDs) : $ipropbytes bytes
+    Particle array indexes        : $indexbytes bytes
+
+])
