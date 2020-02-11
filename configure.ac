@@ -98,7 +98,7 @@ AC_ARG_ENABLE([heap-arrays],
 )
 if test "$with_heap_arrays" = "yes"; then
   # Intel ifort
-  AX_CHECK_COMPILE_FLAG([--heap-arrays],     [extra_fcflags=--heap-arrays],     [], [], [])
+  AX_CHECK_COMPILE_FLAG([-heap-arrays],     [extra_fcflags=-heap-arrays],     [], [], [])
 fi
 
 #
