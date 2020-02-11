@@ -143,22 +143,20 @@ Some points to note:
 
 ### Example compilation
 
-Compiling the code with the Intel compilers and OpenMP (assuming we're 
-using the csh shell):
+Compiling the code with the Intel compilers and installing to our own
+home directory (assuming we're using the bash shell):
 
 ```
-setenv CC icc
-setenv CFLAGS  "-O3 -xSSE4.2 -fopenmp -shared-intel -no-prec-div -fp-model fast=2"
-setenv FC ifort
-setenv FCFLAGS "-O3 -xSSE4.2 -fopenmp -heap-arrays -shared-intel -no-prec-div -fp-model fast=2"
-./configure --prefix=/usr/local/
+./configure CC=icc FC=ifort --prefix=$HOME/.local/
 make
 make install
 ```
 
-In the bash shell add these flags for ifort and icc to use the gdb for debuging
+To configure for debugging with gdb:
 ```
-./configure  FCFLAGS='-g -check all -fpe0 -warn -traceback -debug extended' CPPFLAGS='-g -warn -traceback -debug extended' --with-hdf5   --enable-big-snapshots --prefix=$HOME/.local/
+./configure FCFLAGS='-g -check all -fpe0 -warn -traceback -debug extended' \
+            CFLAGS='-g -warn -traceback -debug extended' --prefix=$HOME/.local/ \
+            --disable-optimization
 ```
 
 ### PlPlot configuration
@@ -282,10 +280,11 @@ current snapshot the graph window will be blank.
 
 ### Using multiple processors
 
-The smoothed density plot and smoothing length routines have been
-parallelised with OpenMP. To use more than one processor, either use
-the OpenMP option in the Options menu or set the environment variable
-OMP_NUM_THREADS to the number of processors to use.
+Most of the code (with the exception of the octree construction on 
+startup) has been parallelised with OpenMP. Multiple processor
+cores should be used automatically if your compiler supports OpenMP.
+You can set the number of threads to use via the OpenMP entry in the
+Options menu.
 
 
 ### Reading extra particle properties
@@ -293,8 +292,15 @@ OMP_NUM_THREADS to the number of processors to use.
 #### HDF5 snapshots
 
 If you have a HDF5 snapshot with extra particle properties (ages,
-metallicities etc), you can make it read them in by putting their
-dataset names in the file
+metallicities etc) there are two ways to make it read the extra datasets.
+
+First, you can specify the extra datasets on the command line. E.g.
+``
+gadgetviewer --datasets=Temperature,Density,Metallicity ./snapshot_010.0.hdf5
+```
+
+If you'd rather make the program always read certain datasets if they're
+present, then you can put the dataset names in the file
 
 .gadgetviewer_settings/gadget_hdf5_extra_properties
 
@@ -303,11 +309,8 @@ conflict with quantities which are always read (e.g. Mass, ID) will be
 silently ignored. The default file contains
 
 ```
- Metallicity
- StarFormationRate
- Temperature
- Density
- InternalEnergy
+[Gadget HDF5]
+Extra Properties=Metallicity;StarFormationRate;Temperature;Density;InternalEnergy
 ```
 
 The program will read these quantities for each type of particle in the
@@ -324,23 +327,37 @@ snapshots by editing the file
 in your home directory. The default file looks like this:
 
 ```
-  U   , InternalEnergy,  T, F, F, F, F, F, REAL
-  RHO , Density,         T, F, F, F, F, F, REAL
-  HSML, SmoothingLength, T, F, F, F, F, F, REAL
+[Gadget Type 2 Binary]
+NBlocks=3;
+
+[U]
+Displayed Name=InternalEnergy;
+Particle Types=0;
+Data Type=REAL;
+
+[RHO]
+Displayed Name=Density;
+Particle Types=0;
+Data Type=REAL;
+
+[HSML]
+Displayed Name=SmoothingLength;
+Particle Types=0;
+Data Type=REAL;
 ```
 
-There is one row for each additional block to be read. The columns are
+For each block you need to provide
 
-  * Four character tag for this block
-  * Name of the particle property stored in the block
-  * Flags (T or F) which specify which particle types this property
-    applies to
+  * Four character tag for this block (in [] above)
+  * Name of the particle property stored in the block ("Displayed Name")
+  * Which particle types this property applies to ("Particle Types", a 
+    semicolon delimited list of integers in the range 0-5)
   * Data type - this should be REAL or INTEGER. The precision of the data
     (4 or 8 byte) is detected using the record markers in the file.
 
 Note that vector quantities (e.g. accelerations) cannot be read in this
 way. There is no need to specify the POS, VEL, ID and MASS blocks
-because they are always read in anyway. Lines with names or tags that
+because they are always read in anyway. Entries with names or tags that
 conflict with the standard set of blocks will be ignored.
 
 #### Type 1 binary snapshots
