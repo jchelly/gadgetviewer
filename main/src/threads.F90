@@ -58,7 +58,9 @@ contains
     integer, intent(in) :: num
     
     nthreads = num
+#ifdef _OPENMP
     call omp_set_num_threads(nthreads)
+#endif
 
     return
   end subroutine threads_set_number
