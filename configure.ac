@@ -93,6 +93,11 @@ fi
 AC_SUBST(ax_cv_f90_modext)
 
 #
+# Check for OpenMP
+#
+AC_OPENMP
+
+#
 # Check we can read command line arguments from Fortran
 #
 AC_MSG_CHECKING([if we have Fortran 2003 command line functions])
@@ -239,6 +244,12 @@ AC_OUTPUT(Makefile drawing/Makefile drawing/src/Makefile main/Makefile main/src/
 echo
 echo Gadgetviewer configuration summary
 echo ----------------------------------
+echo
+echo Compiler flags
+echo
+echo "  Fortran             :" ${FCFLAGS}
+echo "  C                   :" ${CFLAGS}
+echo "  OpenMP flags        :" ${OPENMP_FCFLAGS}
 echo
 echo Libraries
 echo
