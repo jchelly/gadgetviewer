@@ -77,12 +77,23 @@ environment variables before running the configure script:
   * FC      - Fortran 90 compiler
   * FCFLAGS - Fortran compiler flags
 
+By default the configure script will add some compiler flags which are usually
+helpful. These are used in addition to anything you specify with the FCFLAGS 
+and CFLAGS environment variables. If this causes problems you can configure with
+
+--disable-optimization --disable-heap-arrays --disable-openmp
+
+to prevent it adding extra flags.
+
 ### OpenMP
 
 The program can make use of multiple processor cores using OpenMP if
-your Fortran compiler supports it. To enable OpenMP add your compiler's
-OpenMP flag to the FCFLAGS environment variable before running configure
-(e.g. -fopenmp for gfortran or -qopenmp for ifort).
+your Fortran compiler supports it. The configure script should now
+detect OpenMP if it is available.
+
+If that doesn't work you could try adding your compiler's OpenMP flag 
+to the FCFLAGS environment variable before running configure (e.g.
+-fopenmp for gfortran or -openmp for ifort).
 
 ### Specifying library locations
 
