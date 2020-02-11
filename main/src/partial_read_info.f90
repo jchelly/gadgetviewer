@@ -14,6 +14,7 @@ module partial_read_info
      real, dimension(3) :: pos
      logical            :: use_index
      logical            :: ignore_missing_mass
+     character(len=1000) :: extra_dataset_names
   end type read_info
 
 end module partial_read_info

@@ -31,10 +31,14 @@ module gadget_hdf5_reader
   ! Simulation details
   integer :: nfiles
 
-  ! Extra properties to read
-  integer :: nextra = 0
+  ! Extra properties defined in the configuration file
+  integer :: nextra_config = 0
   integer, parameter :: max_extra = 100
-  character(len=maxlen), dimension(max_extra) :: extra_prop
+  character(len=maxlen), dimension(max_extra) :: extra_prop_config
+
+  ! Extra properties from config+command line
+  integer :: nextra_all
+  character(len=maxlen), dimension(max_extra) :: extra_prop_all
 
   ! Which properties exist in the current snapshot
   logical, dimension(maxspecies,max_extra)           :: read_extra
@@ -68,7 +72,7 @@ contains
     call read_key_file(fname)
     if(.not.file_has_group("Gadget HDF5"))then
        ! Default settings
-       nextra = 0
+       nextra_config = 0
        ! Common names in Gadget snapshots
        call add_extra("Metallicity")
        call add_extra("StarFormationRate")
@@ -91,7 +95,7 @@ contains
        call add_extra("DynamicalMasses")
        call add_extra("SubgridMasses")
        ! Save the new list
-       call set_key("Gadget HDF5","Extra Properties", extra_prop(1:nextra)) 
+       call set_key("Gadget HDF5","Extra Properties", extra_prop_config(1:nextra_config)) 
        call write_key_file(fname)
     endif
     if(file_has_group("Gadget HDF5"))then
@@ -99,7 +103,7 @@ contains
     endif
     call close_key_file()
 
-    nextra = 0
+    nextra_config = 0
     do iprop = 1, max_extra, 1
        str = trim(props(iprop))
        if(len_trim(str).gt.0)then
@@ -112,13 +116,13 @@ contains
           if(trim(adjustl(str)).eq."ID")cycle
           ! Check for duplicates
           is_duplicate = .false.
-          do i = 1, nextra, 1
-             if(trim(adjustl(str)).eq.trim(extra_prop(i))) &
+          do i = 1, nextra_config, 1
+             if(trim(adjustl(str)).eq.trim(extra_prop_config(i))) &
                   is_duplicate = .true.
           end do
           if(.not.is_duplicate)then
-             nextra = nextra + 1
-             extra_prop(nextra) = trim(adjustl(str))
+             nextra_config = nextra_config + 1
+             extra_prop_config(nextra_config) = trim(adjustl(str))
           endif
        endif
     end do
@@ -131,9 +135,9 @@ contains
         
         character(len=*), intent(in) :: name
         
-        if(nextra.lt.max_extra)then
-           nextra = nextra + 1
-           extra_prop(nextra) = trim(name)
+        if(nextra_config.lt.max_extra)then
+           nextra_config = nextra_config + 1
+           extra_prop_config(nextra_config) = trim(name)
         endif
       
       end subroutine add_extra
@@ -155,7 +159,7 @@ contains
     ! Internal
     integer :: jsnap, ios, ifile
     logical :: fexist
-    integer :: n
+    integer :: n, i1, i2
     integer :: ispecies, iextra
     character(len=maxlen) :: str
     ! Checking for datasets
@@ -219,6 +223,27 @@ contains
        return
     endif
 
+    ! Make full list of properties to try to read
+    ! Start with list from config file
+    nextra_all     = nextra_config
+    extra_prop_all = extra_prop_config
+    ! Then add any specified on the command line
+    i1 = 1
+    do while(i1.le.len_trim(rinfo%extra_dataset_names))
+       i2 = index(rinfo%extra_dataset_names(i1:), ",")
+       if(i2.lt.1)then
+          i2 = len_trim(rinfo%extra_dataset_names) + 1
+       else
+          i2 = i2 + i1 - 1
+       endif
+       if(i2.gt.i1)then
+          nextra_all = nextra_all + 1
+          extra_prop_all(nextra_all) = trim(adjustl(rinfo%extra_dataset_names(i1:i2-1)))          
+          !write(0,*)"Extra property added : ", trim(adjustl(extra_prop_all(nextra_all)))          
+       endif
+       i1 = max(i1+1, i2+1)
+    end do
+
     ! Check which of the extra properties exist in this snapshot
     !
     ! Strategy is to keep opening snapshot files until we find at
@@ -270,9 +295,9 @@ contains
              if(hdferr.eq.0)read_type(ispecies) = .true.
 
              ! Check for other quantities
-             do iextra = 1, nextra, 1
+             do iextra = 1, nextra_all, 1
                 str = "/PartType"//trim(string(ispecies-1,fmt='(i1.1)'))//"/"// &
-                     trim(extra_prop(iextra))
+                     trim(extra_prop_all(iextra))
                 hdferr = hdf5_dataset_type(str, dtype)
                 if(hdferr.eq.0)then
                    select case(dtype)
@@ -507,10 +532,10 @@ contains
 
     ! Allocate storage for any extra properties
     do ispecies = 1, 6, 1
-       do iextra = 1, nextra, 1
+       do iextra = 1, nextra_all, 1
           if(read_extra(ispecies,iextra))then
              res = particle_store_new_property(pdata,species_name(ispecies),&
-                  extra_prop(iextra), extra_type(ispecies,iextra))
+                  extra_prop_all(iextra), extra_type(ispecies,iextra))
              if(.not.res%success)then
                 gadget_hdf5_read = res
                 call particle_store_empty(pdata)
@@ -808,11 +833,11 @@ contains
        ! Read any extra properties
        do ispecies = 1, 6, 1
           if(npfile(ispecies).gt.0)then
-             do iextra = 1, nextra, 1
+             do iextra = 1, nextra_all, 1
                 if(read_extra(ispecies,iextra))then
                    str = "/PartType"//&
                         trim(string(ispecies-1,fmt='(i1.1)'))//"/"// &
-                        trim(extra_prop(iextra))
+                        trim(extra_prop_all(iextra))
                    select case(extra_type(ispecies,iextra))
                    case("INTEGER")
                       allocate(idata(npfile(ispecies)))
@@ -830,12 +855,12 @@ contains
                          nkeep = shrink_array(idata, mask(offset+1:))
                          res = particle_store_add_data(pdata,&
                               species_name(ispecies),&
-                              extra_prop(iextra), &
+                              extra_prop_all(iextra), &
                               idata=int(idata(1:nkeep),kind=i_prop_kind))
                       else
                          res = particle_store_add_data(pdata,&
                               species_name(ispecies),&
-                              extra_prop(iextra), &
+                              extra_prop_all(iextra), &
                               idata=int(idata,kind=i_prop_kind))
                       endif
                       deallocate(idata)
@@ -861,12 +886,12 @@ contains
                          nkeep = shrink_array(rdata, mask(offset+1:))
                          res = particle_store_add_data(pdata,&
                               species_name(ispecies),&
-                              extra_prop(iextra), &
+                              extra_prop_all(iextra), &
                               rdata=real(rdata(1:nkeep),kind=r_prop_kind))
                       else
                          res = particle_store_add_data(pdata,&
                               species_name(ispecies),&
-                              extra_prop(iextra), &
+                              extra_prop_all(iextra), &
                               rdata=real(rdata,kind=r_prop_kind))
                       endif
                       deallocate(rdata)

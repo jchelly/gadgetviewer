@@ -42,6 +42,7 @@ contains
     rinfo%do_sphere      = .false.
     rinfo%just_this_file = .false.
     rinfo%ignore_missing_mass = .false.
+    rinfo%extra_dataset_names = ""
 
     nargs = get_nargs()
     do iarg = 1, nargs, 1
@@ -95,6 +96,9 @@ contains
        else if(index(arg, "--ignore-missing-mass").eq.1)then
           ! Set missing masses to 1
           rinfo%ignore_missing_mass = .true.
+       else if(index(arg, "--datasets=").eq.1)then
+          ! Store extra datasets string
+          rinfo%extra_dataset_names = arg(12:)
        else
           ! Snapshot filename
           snapshot_file = trim(arg)
@@ -153,6 +157,8 @@ contains
        write(0,*)"                              (reads all files by default)"
        write(0,*)"       --use-index          : use spatial indexing to read the"
        write(0,*)"                              region specified with --region"
+       write(0,*)"       --datasets=...       : comma separated list of extra HDF5"
+       write(0,*)"                              datasets to read"
        write(0,*)"       --ignore-missing-mass: assume mass=1 if no mass dataset"
        write(0,*)"       --help               : print this message"
        write(0,*)""

@@ -40,6 +40,7 @@ module read_partial
   type (gui_radio_button) :: index_button
   type (gui_checkbox) :: spatial_box
   type (gui_checkbox) :: ignore_missing_masses_box
+  type (gui_entrybox) :: extra_datasets_box
   type (gui_button)   :: ok_button, cancel_button
   type (gui_window), pointer :: mainwin
 
@@ -52,7 +53,8 @@ module read_partial
   logical            :: read_sphere        = .false.
   character(len=50)  :: xtext, ytext, ztext, rtext, srtext
   logical            :: ignore_missing_masses = .false.
-
+  character(len=1000) :: extra_datasets
+  
 contains
   
   subroutine read_partial_open(mainwin_in)
@@ -131,8 +133,11 @@ contains
     call gui_packing_mode(position=gui_start)
 
     ! Missing mass option
-    call gui_create_box(hbox, vbox, gui_horizontal, frame=.true.)
-    call gui_create_checkbox(ignore_missing_masses_box, hbox, "Ignore missing mass datasets (HDF5 only)")
+    call gui_packing_mode(expand=.true., fill=.true.)
+    call gui_create_box(hbox, vbox, gui_horizontal, frame=.true., label="Extra datasets to read (HDF5 only, comma separated)")
+    call gui_create_entrybox(extra_datasets_box, hbox)
+    call gui_create_checkbox(ignore_missing_masses_box, vbox, "Ignore missing mass datasets")
+    call gui_packing_mode(expand=.false., fill=.false.)
 
     ! Buttons
     call gui_create_box(vbox, outer_vbox, gui_vertical)
@@ -265,6 +270,9 @@ contains
        ! Missing mass option
        call gui_checkbox_get_state(ignore_missing_masses_box, ri%ignore_missing_mass)
 
+       ! Extra dataset names
+       call gui_entrybox_get_text(extra_datasets_box, ri%extra_dataset_names)
+
        ! Parameters look ok so try to read the data
        call plotter_settings_close()
        call selection_close()
@@ -297,8 +305,9 @@ contains
          gui_entrybox_changed(y_box).or. &
          gui_entrybox_changed(z_box).or. &
          gui_entrybox_changed(r_box).or. &
-         gui_entrybox_changed(rate_box) &
-         )then
+         gui_entrybox_changed(rate_box).or. &
+         gui_checkbox_changed(ignore_missing_masses_box).or. &
+         gui_entrybox_changed(extra_datasets_box))then
        call get_state()
        call update_window()
     endif
@@ -358,6 +367,7 @@ contains
     call gui_entrybox_get_text(r_box, rtext)
     call gui_entrybox_get_text(rate_box, srtext)
     call gui_checkbox_get_state(ignore_missing_masses_box, ignore_missing_masses)
+    call gui_entrybox_get_text(extra_datasets_box, extra_datasets)
 
     return
   end subroutine get_state
@@ -383,6 +393,7 @@ contains
     call gui_entrybox_set_text(r_box, rtext)
     call gui_entrybox_set_text(rate_box, srtext)
     call gui_checkbox_set_state(ignore_missing_masses_box, ignore_missing_masses)
+    call gui_entrybox_set_text(extra_datasets_box, extra_datasets)
     call update_window()
 
     return
