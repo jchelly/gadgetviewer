@@ -295,7 +295,7 @@ If you have a HDF5 snapshot with extra particle properties (ages,
 metallicities etc) there are two ways to make it read the extra datasets.
 
 First, you can specify the extra datasets on the command line. E.g.
-``
+```
 gadgetviewer --datasets=Temperature,Density,Metallicity ./snapshot_010.0.hdf5
 ```
 
