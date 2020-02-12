@@ -19,6 +19,7 @@ module gadget_hdf5_reader
   use partial_read_info
   use array_shrinker
   use f90_util
+  use sort
 
   implicit none
   private
@@ -51,6 +52,46 @@ module gadget_hdf5_reader
   logical, dimension(maxspecies) :: read_type
 
 contains
+
+  
+  subroutine sanitize_property_list(nextra, extra_prop)
+!
+! Ensure the extra properties list contains only unique elements
+! which don't conflict with things we always read
+!
+    implicit none
+    integer :: nextra
+    character(len=*), dimension(:) :: extra_prop
+    integer :: iprop, jprop
+    integer, dimension(:), allocatable :: sortidx
+
+    ! Remove any duplicate property names
+    allocate(sortidx(nextra))
+    call sort_index(extra_prop(1:nextra), sortidx)
+    do iprop = 2, nextra, 1
+       if(extra_prop(sortidx(iprop)).eq.extra_prop(sortidx(iprop-1)))then
+          extra_prop(sortidx(iprop)) = ""
+       endif
+    end do
+    deallocate(sortidx)
+
+    ! Only keep unique, non-conflicting entries
+    jprop = 0
+    do iprop = 1, nextra, 1
+       ! Check if this is a duplicate
+       if(len_trim(extra_prop(iprop)).eq.0)cycle
+       ! We always create Mass and ID arrays, so don't duplicate them
+       if(trim(adjustl(extra_prop(iprop))).eq."Mass")cycle
+       if(trim(adjustl(extra_prop(iprop))).eq."ID")cycle
+       ! Keep this one
+       jprop = jprop + 1
+       extra_prop(jprop) = extra_prop(iprop)   
+    end do
+    nextra = jprop
+
+    return
+  end subroutine sanitize_property_list
+
 
   subroutine gadget_hdf5_read_conf(dir)
 !
@@ -92,7 +133,7 @@ contains
        call add_extra("BirthScaleFactors")
        call add_extra("BirthDensities")
        ! Black holes
-       call add_extra("DynamicalMasses")
+       !call add_extra("DynamicalMasses")
        call add_extra("SubgridMasses")
        ! Save the new list
        call set_key("Gadget HDF5","Extra Properties", extra_prop_config(1:nextra_config)) 
@@ -103,29 +144,7 @@ contains
     endif
     call close_key_file()
 
-    nextra_config = 0
-    do iprop = 1, max_extra, 1
-       str = trim(props(iprop))
-       if(len_trim(str).gt.0)then
-          ! Ignore names that conflict with things we always read
-          if(trim(adjustl(str)).eq."Coordinates")cycle
-          if(trim(adjustl(str)).eq."Velocity")cycle
-          if(trim(adjustl(str)).eq."Velocities")cycle
-          if(trim(adjustl(str)).eq."Mass")cycle
-          if(trim(adjustl(str)).eq."ParticleIDs")cycle
-          if(trim(adjustl(str)).eq."ID")cycle
-          ! Check for duplicates
-          is_duplicate = .false.
-          do i = 1, nextra_config, 1
-             if(trim(adjustl(str)).eq.trim(extra_prop_config(i))) &
-                  is_duplicate = .true.
-          end do
-          if(.not.is_duplicate)then
-             nextra_config = nextra_config + 1
-             extra_prop_config(nextra_config) = trim(adjustl(str))
-          endif
-       endif
-    end do
+    call sanitize_property_list(nextra_config, extra_prop_config)
     
     return
 
@@ -170,6 +189,8 @@ contains
     integer           :: hdferr, err_array(10)
     type(result_type) :: res
     integer           :: dtype
+    integer           :: rank
+    integer(kind=int8byte), dimension(10) :: dims
 
     gadget_hdf5_open%success = .false.
 
@@ -238,11 +259,13 @@ contains
        endif
        if(i2.gt.i1)then
           nextra_all = nextra_all + 1
-          extra_prop_all(nextra_all) = trim(adjustl(rinfo%extra_dataset_names(i1:i2-1)))          
-          !write(0,*)"Extra property added : ", trim(adjustl(extra_prop_all(nextra_all)))          
+          extra_prop_all(nextra_all) = trim(adjustl(rinfo%extra_dataset_names(i1:i2-1)))
        endif
        i1 = max(i1+1, i2+1)
     end do
+
+    ! Remove any duplicate property names
+    call sanitize_property_list(nextra_all, extra_prop_all)
 
     ! Check which of the extra properties exist in this snapshot
     !
@@ -296,25 +319,32 @@ contains
 
              ! Check for other quantities
              do iextra = 1, nextra_all, 1
+                ! Assume we're not reading this until we know otherwise
+                read_extra(ispecies,iextra) = .false.
+                extra_type(ispecies,iextra) = "UNKNOWN"
+                ! Construct name of this dataset
                 str = "/PartType"//trim(string(ispecies-1,fmt='(i1.1)'))//"/"// &
                      trim(extra_prop_all(iextra))
+                ! Get the type of the dataset
                 hdferr = hdf5_dataset_type(str, dtype)
-                if(hdferr.eq.0)then
-                   select case(dtype)
-                   case(HDF5_INTEGER4, HDF5_INTEGER8)
-                      ! Integer dataset
-                      read_extra(ispecies,iextra) = .true.
-                      extra_type(ispecies,iextra) = "INTEGER"
-                   case(HDF5_REAL4, HDF5_REAL8)
-                      ! Real dataset
-                      read_extra(ispecies,iextra) = .true.
-                      extra_type(ispecies,iextra) = "REAL"
-                   case default
-                      ! Don't read if its not real/integer
-                      read_extra(ispecies,iextra) = .false.
-                      extra_type(ispecies,iextra) = "UNKNOWN"
-                   end select
-                endif
+                if(hdferr.ne.0)cycle
+                ! Get the size of the dataset
+                hdferr = hdf5_dataset_size(str, rank, dims)
+                if(hdferr.ne.0)cycle
+                if(rank.ne.1.or.dims(1).ne.npfile(ispecies))cycle
+                select case(dtype)
+                case(HDF5_INTEGER4, HDF5_INTEGER8)
+                   ! Integer dataset
+                   read_extra(ispecies,iextra) = .true.
+                   extra_type(ispecies,iextra) = "INTEGER"
+                case(HDF5_REAL4, HDF5_REAL8)
+                   ! Real dataset
+                   read_extra(ispecies,iextra) = .true.
+                   extra_type(ispecies,iextra) = "REAL"
+                case default
+                   ! Don't read if it's not real/integer
+                   cycle
+                end select
              end do
 
           endif
