@@ -42,8 +42,9 @@ module gadget_hdf5_reader
   character(len=maxlen), dimension(max_extra) :: extra_prop_all
 
   ! Which properties exist in the current snapshot
-  logical, dimension(maxspecies,max_extra)           :: read_extra
+  logical,           dimension(maxspecies,max_extra) :: read_extra
   character(len=20), dimension(maxspecies,max_extra) :: extra_type
+  integer,           dimension(maxspecies,max_extra) :: extra_bytes
 
   ! Path information extracted from file name
   type (path_data_type) :: path_data
@@ -51,13 +52,15 @@ module gadget_hdf5_reader
   ! Which particle types to read
   logical, dimension(maxspecies) :: read_type
 
+  ! Possible names of the Mass and ID datasets
+  character(len=maxlen), dimension(1) :: id_datasets   = (/"ParticleIDs"/)
+  character(len=maxlen), dimension(3) :: mass_datasets = (/"Mass","Masses","DynamicalMasses"/)
+
 contains
 
-  
   subroutine sanitize_property_list(nextra, extra_prop)
 !
 ! Ensure the extra properties list contains only unique elements
-! which don't conflict with things we always read
 !
     implicit none
     integer :: nextra
@@ -75,14 +78,11 @@ contains
     end do
     deallocate(sortidx)
 
-    ! Only keep unique, non-conflicting entries
+    ! Only keep unique entries
     jprop = 0
     do iprop = 1, nextra, 1
        ! Check if this is a duplicate
        if(len_trim(extra_prop(iprop)).eq.0)cycle
-       ! We always create Mass and ID arrays, so don't duplicate them
-       if(trim(adjustl(extra_prop(iprop))).eq."Mass")cycle
-       if(trim(adjustl(extra_prop(iprop))).eq."ID")cycle
        ! Keep this one
        jprop = jprop + 1
        extra_prop(jprop) = extra_prop(iprop)   
@@ -105,15 +105,13 @@ contains
     character(len=500) :: str
     integer            :: i
     logical            :: is_duplicate
-    character(len=maxlen), dimension(max_extra) :: props
     integer :: iprop
 
+    nextra_config = 0
     fname = trim(dir)//"/"//"gadget_hdf5_extra_properties"
-    props = ""
     call read_key_file(fname)
     if(.not.file_has_group("Gadget HDF5"))then
        ! Default settings
-       nextra_config = 0
        ! Common names in Gadget snapshots
        call add_extra("Metallicity")
        call add_extra("StarFormationRate")
@@ -133,33 +131,35 @@ contains
        call add_extra("BirthScaleFactors")
        call add_extra("BirthDensities")
        ! Black holes
-       !call add_extra("DynamicalMasses")
        call add_extra("SubgridMasses")
        ! Save the new list
        call set_key("Gadget HDF5","Extra Properties", extra_prop_config(1:nextra_config)) 
        call write_key_file(fname)
     endif
     if(file_has_group("Gadget HDF5"))then
-       call get_key("Gadget HDF5","Extra Properties", props)
+       extra_prop_config(:) = ""
+       call get_key("Gadget HDF5","Extra Properties", extra_prop_config)
+       do i = 1, max_extra, 1
+          if(len_trim(extra_prop_config(i)).gt.0)nextra_config = nextra_config + 1
+       end do
     endif
     call close_key_file()
-
     call sanitize_property_list(nextra_config, extra_prop_config)
     
     return
 
-    contains 
+  contains 
       
-      subroutine add_extra(name)
+    subroutine add_extra(name)
         
-        character(len=*), intent(in) :: name
-        
-        if(nextra_config.lt.max_extra)then
-           nextra_config = nextra_config + 1
-           extra_prop_config(nextra_config) = trim(name)
-        endif
+      character(len=*), intent(in) :: name
       
-      end subroutine add_extra
+      if(nextra_config.lt.max_extra)then
+         nextra_config = nextra_config + 1
+         extra_prop_config(nextra_config) = trim(name)
+      endif
+      
+    end subroutine add_extra
 
   end subroutine gadget_hdf5_read_conf
 
@@ -245,9 +245,19 @@ contains
     endif
 
     ! Make full list of properties to try to read
-    ! Start with list from config file
-    nextra_all     = nextra_config
-    extra_prop_all = extra_prop_config
+    ! Start with things we always read
+    nextra_all = 0
+    do i1 = 1, size(id_datasets), 1
+       call add_extra(id_datasets(i1))
+    end do
+    do i1 = 1, size(mass_datasets), 1
+       call add_extra(mass_datasets(i1))
+    end do
+    ! Add list from config file
+    do i1 = 1, nextra_config, 1
+       call add_extra(extra_prop_config(i1))
+    end do
+
     ! Then add any specified on the command line
     i1 = 1
     do while(i1.le.len_trim(rinfo%extra_dataset_names))
@@ -258,8 +268,7 @@ contains
           i2 = i2 + i1 - 1
        endif
        if(i2.gt.i1)then
-          nextra_all = nextra_all + 1
-          extra_prop_all(nextra_all) = trim(adjustl(rinfo%extra_dataset_names(i1:i2-1)))
+          call add_extra(trim(adjustl(rinfo%extra_dataset_names(i1:i2-1))))
        endif
        i1 = max(i1+1, i2+1)
     end do
@@ -333,14 +342,26 @@ contains
                 if(hdferr.ne.0)cycle
                 if(rank.ne.1.or.dims(1).ne.npfile(ispecies))cycle
                 select case(dtype)
-                case(HDF5_INTEGER4, HDF5_INTEGER8)
+                case(HDF5_INTEGER4)
                    ! Integer dataset
-                   read_extra(ispecies,iextra) = .true.
-                   extra_type(ispecies,iextra) = "INTEGER"
-                case(HDF5_REAL4, HDF5_REAL8)
+                   read_extra (ispecies,iextra) = .true.
+                   extra_type (ispecies,iextra) = "INTEGER"
+                   extra_bytes(ispecies,iextra) = 4
+                case(HDF5_INTEGER8)
+                   ! Integer dataset
+                   read_extra (ispecies,iextra) = .true.
+                   extra_type (ispecies,iextra) = "INTEGER"
+                   extra_bytes(ispecies,iextra) = 8
+                case(HDF5_REAL4)
                    ! Real dataset
                    read_extra(ispecies,iextra) = .true.
                    extra_type(ispecies,iextra) = "REAL"
+                   extra_bytes(ispecies,iextra) = 4
+                case(HDF5_REAL8)
+                   ! Real dataset
+                   read_extra(ispecies,iextra) = .true.
+                   extra_type(ispecies,iextra) = "REAL"
+                   extra_bytes(ispecies,iextra) = 8
                 case default
                    ! Don't read if it's not real/integer
                    cycle
@@ -381,6 +402,20 @@ contains
     isnap = 0
 #endif
     return
+
+  contains 
+      
+    subroutine add_extra(name)
+      
+      character(len=*), intent(in) :: name
+        
+      if(nextra_all.lt.max_extra)then
+         nextra_all = nextra_all + 1
+         extra_prop_all(nextra_all) = trim(name)
+      endif
+      
+    end subroutine add_extra
+      
   end function gadget_hdf5_open
 
 !
@@ -414,7 +449,7 @@ contains
     type (result_type) :: res
     ! HDF5 stuff
     integer :: hdferr, err_array(10)
-    character(len=100)    :: gname
+    character(len=100) :: gname
     integer :: dtype
     ! Progress bar
     integer(kind=int8byte) :: prog_tot, prog_so_far
@@ -425,11 +460,14 @@ contains
     logical, dimension(:), allocatable :: mask
     integer(kind=index_kind) :: offset, nkeep
     real :: rnd
+    ! Whether each type has a mass dataset
+    logical, dimension(6) :: have_mass
     ! Temp. storage
     real(kind=r_prop_kind),    dimension(:), allocatable :: rdata
     integer(kind=i_prop_kind), dimension(:), allocatable :: idata
     character(len=500) :: str, time_unit
     real :: redshift, time, expansion
+    logical :: is_id, is_mass, found_id, found_mass
 
     gadget_hdf5_read%success = .false.
 
@@ -542,41 +580,54 @@ contains
        endif
     end do
 
-    ! Allocate storage for masses and IDs
-    do i = 1, 6, 1
-       res = particle_store_new_property(pdata,species_name(i),"Mass", &
-            "REAL")
-       if(.not.res%success)then
-          gadget_hdf5_read = res
-          call particle_store_empty(pdata)
-          return
-       endif
-       res = particle_store_new_property(pdata,species_name(i),"ID", &
-            "INTEGER")
-       if(.not.res%success)then
-          gadget_hdf5_read = res
-          call particle_store_empty(pdata)
-          return
-       endif
-    end do
+    ! Assume no masses initially
+    have_mass = .false.
 
     ! Allocate storage for any extra properties
     do ispecies = 1, 6, 1
+       found_id   = .false.
+       found_mass = .false.
        do iextra = 1, nextra_all, 1
           if(read_extra(ispecies,iextra))then
+             ! Check if this is the ID or Mass dataset
+             is_id   = .false.
+             is_mass = .false.
+             do i = 1, size(id_datasets), 1
+                if(.not.found_id)then
+                   if(extra_prop_all(iextra).eq.id_datasets(i))then
+                      is_id    = .true.
+                      found_id = .true.
+                   endif
+                endif
+             end do
+             do i = 1, size(mass_datasets), 1
+                if(.not.found_mass)then
+                   if(extra_prop_all(iextra).eq.mass_datasets(i))then
+                      have_mass(ispecies) = .true.
+                      is_mass    = .true.
+                      found_mass = .true.
+                   endif
+                endif
+             end do
+             ! Allocate
              res = particle_store_new_property(pdata,species_name(ispecies),&
-                  extra_prop_all(iextra), extra_type(ispecies,iextra))
+                  extra_prop_all(iextra), extra_type(ispecies,iextra), &
+                  is_mass=is_mass, is_id=is_id)
              if(.not.res%success)then
                 gadget_hdf5_read = res
                 call particle_store_empty(pdata)
                 return
+             endif
+             if(is_id)then
+                ! Store number of bytes per ID
+                call particle_store_set_idsize(pdata, extra_bytes(ispecies,iextra))
              endif
           endif
        end do
     end do
 
     ! Work out values for progress bar
-    prog_tot    = sum(nptot(1:6))*4
+    prog_tot    = sum(nptot(1:6))*2
     prog_so_far = 0
 
     ! Loop over files and read them
@@ -616,6 +667,16 @@ contains
           gadget_hdf5_read%string="Unable to read MassTable from file"
           hdferr = hdf5_close_file()
           return
+       endif
+
+       ! Create mass datasets for particles with no individual masses
+       if(ifile.eq.firstfile)then
+          do ispecies = 1, 6, 1
+             if(.not.have_mass(ispecies))then
+                res = particle_store_new_property(pdata,species_name(ispecies),&
+                     mass_datasets(1), "REAL", is_mass=.true.)
+             endif
+          end do
        endif
 
        ! Set number of particles to zero for types we're not reading
@@ -744,130 +805,55 @@ contains
        prog_so_far = prog_so_far + sum(npfile)
        call progress_bar_update(real(prog_so_far)/real(prog_tot))
 
-       ! Read IDs
-       do i = 1, 6, 1
-          if(npfile(i).gt.0)then
-             ! Allocate temporary buffer
-             allocate(id(npfile(i)),stat=istat)
-             if(istat.gt.0)then
-                call particle_store_empty(pdata)
-                gadget_hdf5_read%string = "Unable to allocate id buffer"
-                hdferr = hdf5_close_file()
-                return
-             endif
-             ! Read the data
-             gname = "PartType"//trim(string(i-1))
-             hdferr = hdf5_read_dataset(trim(gname)//"/ParticleIDs", id)
-             if(hdferr.ne.0)then
-                gadget_hdf5_read%string="Unable to read IDs from "//&
-                     trim(fname)
-                call particle_store_empty(pdata)
-                hdferr = hdf5_close_file()
-                return
-             endif
-             ! Store the data we want to keep
-             offset = sum(npfile(1:i-1))
-             if(allocated(mask))then
-                nkeep = shrink_array(id, mask(offset+1:))
-                res = particle_store_add_data(pdata,species_name(i), &
-                     prop_name="ID", idata=int(id(1:nkeep),i_prop_kind))
-             else
-                res = particle_store_add_data(pdata,species_name(i), &
-                     prop_name="ID", idata=int(id,i_prop_kind))                
-             endif
-             deallocate(id)
-             if(.not.res%success)then
-                gadget_hdf5_read%string="Unable to allocate memory"
-                call particle_store_empty(pdata)
-                hdferr = hdf5_close_file()
-                return
-             endif
-             ! Determine size of IDs
-             hdferr = hdf5_dataset_type(trim(gname)//"/ParticleIDs", dtype)
-             select case(dtype)
-             case(HDF5_INTEGER4)
-                call particle_store_set_idsize(pdata, 4)
-             case(HDF5_INTEGER8)
-                call particle_store_set_idsize(pdata, 8)
-             end select
-          endif
-       end do
-
-       prog_so_far = prog_so_far + sum(npfile)
-       call progress_bar_update(real(prog_so_far)/real(prog_tot))
-
-       ! Read masses
-       do i = 1, 6, 1
-          if(npfile(i).gt.0)then
-             
-             ! Allocate temporary buffer
-             allocate(mass(npfile(i)),stat=istat)
-             if(istat.gt.0)then
-                call particle_store_empty(pdata)
-                gadget_hdf5_read%string = "Unable to allocate mass buffer"
-                hdferr = hdf5_close_file()
-                return
-             endif
-             ! Read the data
-             if(massarr(i).eq.0.0)then
-                ! Read individual masses
-                gname = "PartType"//trim(string(i-1))
-                hdferr = hdf5_read_dataset(trim(gname)//"/Mass", mass)
-                if(hdferr.ne.0) &
-                     hdferr = hdf5_read_dataset(trim(gname)//"/Masses", mass)
-                ! Swift black holes have DynamicalMass instead of Mass
-                if((hdferr.ne.0).and.(i.eq.6)) &
-                     hdferr = hdf5_read_dataset(trim(gname)//"/DynamicalMasses", mass)
-                ! Report an error if we can't find any mass at all
-                if(hdferr.ne.0)then
-                   if(rinfo%ignore_missing_mass)then
-                      ! If there's no mass dataset, assign unit masses
-                      mass = 1.0
-                   else
-                      ! Complain if we were supposed to read masses but can't
-                      gadget_hdf5_read%string="Unable to read masses from "//&
-                           trim(fname)
-                      call particle_store_empty(pdata)
-                      hdferr = hdf5_close_file()
-                      return
-                   endif
-                endif
-             else
-                ! Use mass array from header
-                mass(1:npfile(i)) = massarr(i)
-             endif
-
-             ! Store the data we want to keep
-             offset = sum(npfile(1:i-1))
-             if(allocated(mask))then
-                nkeep = shrink_array(mass, mask(offset+1:))
-                res = particle_store_add_data(pdata,species_name(i), &
-                     prop_name="Mass", rdata=real(mass(1:nkeep),r_prop_kind))
-             else
-                res = particle_store_add_data(pdata,species_name(i), &
-                     prop_name="Mass", rdata=real(mass,r_prop_kind))
-             endif
-             deallocate(mass)
-             if(.not.res%success)then
-                gadget_hdf5_read%string="Unable to allocate memory"
-                call particle_store_empty(pdata)
-                hdferr = hdf5_close_file()
-                return
-             endif
-          endif
-       end do
-
-       prog_so_far = prog_so_far + sum(npfile)
-       call progress_bar_update(real(prog_so_far)/real(prog_tot))
-
        ! Read any extra properties
        do ispecies = 1, 6, 1
           if(npfile(ispecies).gt.0)then
+             !
+             ! Assign masses, if not stored individually
+             !
+             if(.not.have_mass(ispecies))then
+                if(.not.rinfo%ignore_missing_mass.and.massarr(ispecies).eq.0)then
+                   ! We were asked to read masses but we don't have any for this particle type
+                   gadget_hdf5_read%string="Unable to find particle mass dataset"
+                   call particle_store_empty(pdata)
+                   hdferr = hdf5_close_file()
+                   return
+                endif
+                ! Otherwise, construct the mass array
+                allocate(rdata(npfile(ispecies)))
+                if(massarr(ispecies).eq.0)then
+                   rdata(:) = 1.0
+                else
+                   rdata(:) = massarr(ispecies)
+                endif
+                ! Store the data we want to keep
+                offset = sum(npfile(1:ispecies-1))
+                if(allocated(mask))then
+                   nkeep = shrink_array(rdata, mask(offset+1:))
+                else
+                   nkeep = npfile(ispecies)
+                endif
+                res = particle_store_add_data(pdata,&
+                     species_name(ispecies), mass_datasets(1), &
+                     rdata=real(rdata(1:nkeep),kind=r_prop_kind))
+                deallocate(rdata)
+                if(.not.res%success)then
+                   gadget_hdf5_read%string="Unable to allocate memory"
+                   call particle_store_empty(pdata)
+                   hdferr = hdf5_close_file()
+                   return
+                endif
+             endif
+             !
+             ! Other quantities
+             !
              do iextra = 1, nextra_all, 1
                 if(read_extra(ispecies,iextra))then
+                   ! Get the dataset name
                    str = "/PartType"//&
                         trim(string(ispecies-1,fmt='(i1.1)'))//"/"// &
                         trim(extra_prop_all(iextra))
+                   ! Read the data
                    select case(extra_type(ispecies,iextra))
                    case("INTEGER")
                       allocate(idata(npfile(ispecies)))
@@ -883,16 +869,13 @@ contains
                       offset = sum(npfile(1:ispecies-1))
                       if(allocated(mask))then
                          nkeep = shrink_array(idata, mask(offset+1:))
-                         res = particle_store_add_data(pdata,&
-                              species_name(ispecies),&
-                              extra_prop_all(iextra), &
-                              idata=int(idata(1:nkeep),kind=i_prop_kind))
                       else
-                         res = particle_store_add_data(pdata,&
-                              species_name(ispecies),&
-                              extra_prop_all(iextra), &
-                              idata=int(idata,kind=i_prop_kind))
+                         nkeep = npfile(ispecies)
                       endif
+                      res = particle_store_add_data(pdata,&
+                           species_name(ispecies),&
+                           extra_prop_all(iextra), &
+                           idata=int(idata(1:nkeep),kind=i_prop_kind))
                       deallocate(idata)
                       if(.not.res%success)then
                          gadget_hdf5_read%string="Unable to allocate memory"
@@ -914,16 +897,13 @@ contains
                       offset = sum(npfile(1:ispecies-1))
                       if(allocated(mask))then
                          nkeep = shrink_array(rdata, mask(offset+1:))
-                         res = particle_store_add_data(pdata,&
-                              species_name(ispecies),&
-                              extra_prop_all(iextra), &
-                              rdata=real(rdata(1:nkeep),kind=r_prop_kind))
                       else
-                         res = particle_store_add_data(pdata,&
-                              species_name(ispecies),&
-                              extra_prop_all(iextra), &
-                              rdata=real(rdata,kind=r_prop_kind))
+                         nkeep = npfile(ispecies)
                       endif
+                      res = particle_store_add_data(pdata,&
+                           species_name(ispecies),&
+                           extra_prop_all(iextra), &
+                           rdata=real(rdata(1:nkeep),kind=r_prop_kind))
                       deallocate(rdata)
                       if(.not.res%success)then
                          gadget_hdf5_read%string="Unable to allocate memory"
@@ -946,6 +926,9 @@ contains
 
        ! Next file
     end do
+
+    ! Create mass datasets for particles with no individual masses
+    
 
     gadget_hdf5_read%success = .true.
 

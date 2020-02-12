@@ -116,6 +116,9 @@ module particle_store
      ! If this is a sample, the index of the particle in the full
      ! dataset
      integer(kind=index_kind), pointer, dimension(:) :: idx
+     ! Indexes of the mass and id properties
+     integer                   :: id_index
+     integer                   :: mass_index
   end type speciestype
 
   ! Type to store a complete set of particle data
@@ -261,6 +264,10 @@ contains
     pdata%species(i)%npos = 0
     pdata%species(i)%nvel = 0
 
+    ! Don't have ID or mass arrays yet
+    pdata%species(i)%id_index = -1
+    pdata%species(i)%mass_index = -1
+
     ! Set return status
     particle_store_new_species%success = .true.
 
@@ -272,12 +279,13 @@ contains
 ! species
 !
   type (result_type) function particle_store_new_property(pdata,species_name, &
-       prop_name, prop_type)
+       prop_name, prop_type, is_id, is_mass)
 
     implicit none
     ! Parameters
     character(len=*) :: species_name, prop_name, prop_type
     type (pdata_type) :: pdata
+    logical, intent(in), optional :: is_id, is_mass
     ! Internal
     integer :: i, j, istat
     integer :: ispecies
@@ -301,6 +309,14 @@ contains
     pdata%species(i)%nprops = pdata%species(i)%nprops + 1
     j = pdata%species(i)%nprops
     if(j.gt.maxprops)call terminate('Increase MAXPROPS!')
+
+    ! Record if this is the particle ID or mass
+    if(present(is_id))then
+       if(is_id)pdata%species(i)%id_index = j
+    endif
+    if(present(is_mass))then
+       if(is_mass)pdata%species(i)%mass_index = j
+    endif
 
     ! Determine whether this is a real or integer property
     select case(prop_type)
@@ -403,8 +419,7 @@ contains
           if(pdata%species(i)%property(k)%name.eq.prop_name) j = k
        end do
        if(j.lt.1)then
-          write(*,*)trim(prop_name),trim(pdata%species(i)%property(k)%name)
-          call terminate('Unable to identify property!')
+          call terminate('Unable to identify property '//trim(prop_name))
        endif
 
        ! Check we don't have both types of data simultaneously
@@ -640,32 +655,34 @@ contains
        end do
     endif
 
-    ! Mass can be accessed as a particle property or via the get_mass
-    ! keyword
+    ! Masss can be accessed as a particle property or via the get_mass keyword
     if(present(get_mass))then
-       i = 1
-       j = -1
-       do i = 1, pdata%nspecies, 1
-          if(pdata%species(ispecies)%property(i)%name.eq."Mass")j = i
-       end do
-       if(j.eq.-1)call terminate( &
-            'particle_store_species() - Unable to find mass in snapshot data!')
-       get_mass => pdata%species(ispecies)%property(j)%rdata
+       if(pdata%species(ispecies)%np.eq.0)then
+          ! No particles, so return a null pointer
+          nullify(get_mass)
+       else
+          ! Find the mass array
+          i = pdata%species(ispecies)%mass_index
+          if(i.lt.1)then
+             write(0,*)ispecies
+             call terminate('particle_store_species() - Unable to find Mass in snapshot data!')
+          endif
+          get_mass => pdata%species(ispecies)%property(i)%rdata
+       endif
     endif
 
-    ! IDs can be accessed as a particle property or via the get_id
-    ! keyword
+    ! IDs can be accessed as a particle property or via the get_id keyword
     if(present(get_id))then
-       i = 1
-       j = -1
-       do i = 1, pdata%nspecies, 1
-          if(pdata%species(ispecies)%property(i)%name.eq."ID")j = i
-       end do
-       if(j.eq.-1)call terminate( &
-            'particle_store_species() - Unable to find ID in snapshot data!')
-       get_id => pdata%species(ispecies)%property(j)%idata
+       if(pdata%species(ispecies)%np.eq.0)then
+          ! No particles, so return a null pointer
+          nullify(get_id)
+       else
+          ! Find the ID array
+          i = pdata%species(ispecies)%id_index
+          if(i.lt.1)call terminate('particle_store_species() - Unable to find ID in snapshot data!')
+          get_id => pdata%species(ispecies)%property(i)%idata
+       endif
     endif
-
 
     return
   end subroutine particle_store_species
@@ -979,6 +996,8 @@ contains
        allocate(psample%species(i)%vel(1:3,np_sample(i)))
        allocate(psample%species(i)%selected(np_sample(i)))
        psample%species(i)%selected = 0
+       psample%species(i)%id_index   = pdata%species(i)%id_index
+       psample%species(i)%mass_index = pdata%species(i)%mass_index
 
        do ip = 1, np_sample(i), 1
 

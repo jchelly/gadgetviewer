@@ -159,14 +159,14 @@ contains
     do i = 1, 6, 1
 
        res = particle_store_new_property(pdata,species_name(i),"Mass", &
-            "REAL")
+            "REAL", is_mass=.true.)
        if(.not.res%success)then
           dummy_read = res
           call particle_store_empty(pdata)
           return
        endif
        res = particle_store_new_property(pdata,species_name(i),"ID", &
-            "INTEGER")
+            "INTEGER", is_id=.true.)
        if(.not.res%success)then
           dummy_read = res
           call particle_store_empty(pdata)
