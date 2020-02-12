@@ -294,20 +294,7 @@ contains
           return
        endif
 
-       ! Read total particle number and number in this file
-       nptot = 0
-       hdferr = hdf5_read_attribute("/Header/NumPart_Total", nptot)
-       if(hdferr.ne.0)then
-          gadget_hdf5_open%string="Unable to read NumPart_Total from file"
-          hdferr = hdf5_close_file()
-          return
-       endif
-       nptot_hw = 0
-       hdferr = hdf5_read_attribute("/Header/NumPart_Total_HighWord", nptot_hw)
-       if(hdferr.ne.0)then
-          ! Not all Gadget files have this dataset
-          nptot_hw = 0
-       endif
+       ! Read number of particles in this file
        npfile = 0
        hdferr = hdf5_read_attribute("/Header/NumPart_ThisFile", npfile)
        if(hdferr.ne.0)then
@@ -315,7 +302,27 @@ contains
           hdferr = hdf5_close_file()
           return
        endif
-       nptot = nptot + (2_int8byte**32)*nptot_hw
+
+       ! If this is a multi file snapshot, read total number of particles
+       if(n.gt.1)then
+          nptot = 0
+          hdferr = hdf5_read_attribute("/Header/NumPart_Total", nptot)
+          if(hdferr.ne.0)then
+             gadget_hdf5_open%string="Unable to read NumPart_Total from file"
+             hdferr = hdf5_close_file()
+             return
+          endif
+          nptot_hw = 0
+          hdferr = hdf5_read_attribute("/Header/NumPart_Total_HighWord", nptot_hw)
+          if(hdferr.ne.0)then
+             ! Not all Gadget files have this dataset
+             nptot_hw = 0
+          endif
+          nptot = nptot + (2_int8byte**32)*nptot_hw
+       else
+          ! This is a single file snapshot
+          nptot = npfile
+       endif
 
        do ispecies = 1, 6, 1
           
