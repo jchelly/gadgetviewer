@@ -661,12 +661,9 @@ contains
           hdferr = hdf5_close_file()
           return
        endif
-       massarr = 0.0
        hdferr = hdf5_read_attribute("/Header/MassTable", massarr)
        if(hdferr.ne.0)then
-          gadget_hdf5_read%string="Unable to read MassTable from file"
-          hdferr = hdf5_close_file()
-          return
+          massarr = 0.0
        endif
 
        ! Create mass datasets for particles with no individual masses
