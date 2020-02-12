@@ -596,11 +596,24 @@ contains
     if(.not.associated(tree%first_node)) &
          call terminate('radius_search(): Tree has not been built yet!')
 
+    ! Start from the root node
     nout=0
     node => tree%first_node
     ich=0
     ipos(1:3)=0
     ilev=0
+
+    ! Find size and distance to top node
+    rcell=0.0
+    do j=1,3,1
+       rcell=rcell+   &
+            (((tree%lbox/real(2**(ilev)))*(ipos(j)+0.5))- &
+            (centre(j)-tree%posmin(j)))**2
+    end do
+    rcell=sqrt(rcell)
+    drmax=0.87*(tree%lbox/real(2**(ilev)))
+
+    ! Walk the tree
     do while(associated(node))
        ! See if there's a child node to visit
        nullify(child_node)
@@ -631,7 +644,7 @@ contains
 
        if(.not.associated(child_node))then
           if(node%nchild.eq.0)then
-             ! This is a 'leaf' node in the requested range -
+             ! This is a 'leaf' node in the requested range.
              ! record its particles in the output array
              ipart=node%head
 
