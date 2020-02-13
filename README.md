@@ -36,12 +36,12 @@ standard locations and you don't need any special compiler flags, you
 might get away with just doing
 
 ```
-./configure --prefix=<path>
+./configure --prefix=path
 make
 make install
 ```
 
-where <path> is the directory where the program should be installed.
+where path is the directory where the program should be installed.
 
 ### Compiling from the git repository
 
