@@ -127,8 +127,6 @@ contains
     integer :: nspecies, ispecies
     integer(kind=index_kind) :: np
     type (result_type) :: res
-    character(len=maxlen) :: propname
-    character(len=maxlen), dimension(maxspecies) :: species_name
     character(len=10) :: str
 
     write(str,'(1i3)')icat
@@ -147,22 +145,17 @@ contains
        res = gadget_groups_read(groupcat(icat)%format_subtype, isnap, &
             groupcat(icat)%path_data, id_size, nfof, nsub, nids, &
             foflen, foffset, sublen, suboffset, groupids)
-       if(.not.res%success)then
-          group_catalogue_read = res
-          call progress_bar_close()
-          return
-       endif
     case(FORMAT_TYPE_VELOCIRAPTOR)
        res = velociraptor_groups_read(isnap, groupcat(icat)%path_data, &
             nfof, nsub, nids, foflen, foffset, sublen, suboffset, groupids)
-       if(.not.res%success)then
-          group_catalogue_read = res
-          call progress_bar_close()
-          return
-       endif
     case default
        call terminate("Unrecognised subhalo format index!")
     end select
+    if(.not.res%success)then
+       group_catalogue_read = res
+       call progress_bar_close()
+       return
+    endif
 
     call progress_bar_update(0.4)
 
@@ -178,8 +171,7 @@ contains
     call progress_bar_update(0.7)
 
     ! For each particle type determine group membership
-    call particle_store_contents(pdata, get_nspecies=nspecies, &
-         get_species_names=species_name)
+    call particle_store_contents(pdata, get_nspecies=nspecies)
     do ispecies = 1, nspecies, 1
        call particle_store_species(pdata, ispecies, get_np=np, get_id=ids)
 
@@ -187,6 +179,7 @@ contains
        if(np.ge.2_int8byte**31)then
           group_catalogue_read%success = .false.
           group_catalogue_read%string  = "Not implemented for >=2**31 particles!"
+          deallocate(groupids_idx)
           call progress_bar_close()
           return
        endif
@@ -199,6 +192,7 @@ contains
        if(istat.ne.0)then
           group_catalogue_read%success = .false.
           group_catalogue_read%string  = "Unable to allocate memory"
+          deallocate(groupids_idx)
           call progress_bar_close()
           return
        endif
@@ -215,57 +209,22 @@ contains
        endif
 
        ! Add the new particle properties
-       ! Subgroups
-       if(associated(sublen))then
-          write(propname,'(1a,1i3.3)')"SubGroupIndex",icat
-          res =  particle_store_new_property(pdata,species_name(ispecies), &
-               propname, "INTEGER")
-          if(.not.res%success)then
-             deallocate(nr, fofgrnr, subgrnr, ids_idx)
-             deallocate(groupids_idx)
-             call particle_store_cleanup(pdata)
-             group_catalogue_read = res
-             call progress_bar_close()
-             return
-          endif
-          res = particle_store_add_data(pdata, species_name(ispecies), &
-               prop_name=propname, idata=subgrnr)
-          if(.not.res%success)then
-             deallocate(nr, fofgrnr, subgrnr, ids_idx)
-             deallocate(groupids_idx)
-             call particle_store_cleanup(pdata)
-             group_catalogue_read = res
-             call progress_bar_close()
-             return
-          endif
-       endif
-       
-       ! FoF groups
-       if(associated(foflen))then
-          write(propname,'(1a,1i3.3)')"FoFGroupIndex",icat
-          res =  particle_store_new_property(pdata,species_name(ispecies), &
-               propname, "INTEGER")
-          if(.not.res%success)then
-             deallocate(nr, fofgrnr, subgrnr, ids_idx)
-             deallocate(groupids_idx)
-             call particle_store_cleanup(pdata)
-             group_catalogue_read = res
-             call progress_bar_close()
-             return
-          endif
-          res = particle_store_add_data(pdata, species_name(ispecies), &
-               prop_name=propname, idata=fofgrnr)
-          if(.not.res%success)then
-             deallocate(nr, fofgrnr, subgrnr, ids_idx)
-             deallocate(groupids_idx)
-             call particle_store_cleanup(pdata)
-             group_catalogue_read = res
-             call progress_bar_close()
-             return
-          endif
-       endif
-
+       select case(groupcat(icat)%format_type)
+       case(FORMAT_TYPE_SUBFIND)
+          res = gadget_groups_add_properties(ispecies, icat, fofgrnr, subgrnr)
+       case(FORMAT_TYPE_VELOCIRAPTOR)
+          res = velociraptor_groups_add_properties(groupcat(icat)%path_data, isnap, ispecies, icat, subgrnr)
+       case default
+          call terminate("Unrecognised subhalo format index!")
+       end select
        deallocate(nr, fofgrnr, subgrnr, ids_idx)
+       if(.not.res%success)then
+          deallocate(groupids_idx)
+          group_catalogue_read = res
+          call particle_store_cleanup(pdata)
+          call progress_bar_close()
+          return
+       endif
     
        ! Next particle type
     end do

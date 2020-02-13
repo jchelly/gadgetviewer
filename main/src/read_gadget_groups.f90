@@ -39,6 +39,7 @@ module gadget_groups
   use byteswapper
   use f90_util
   use string_module
+  use particle_store
 
   implicit none
   private
@@ -46,6 +47,7 @@ module gadget_groups
 
   public :: gadget_groups_read
   public :: gadget_groups_format_list
+  public :: gadget_groups_add_properties
 
 !
 ! Group format definitions
@@ -697,4 +699,44 @@ contains
   end subroutine gadget_groups_format_list
 
 
+  type (result_type) function gadget_groups_add_properties(ispecies, icat, fofgrnr, subgrnr) result(res)
+
+    implicit none
+    integer, intent(in) :: ispecies, icat
+    integer(kind=i_prop_kind), dimension(:), pointer :: fofgrnr, subgrnr
+    integer :: nspecies
+    character(len=maxlen), dimension(maxspecies) :: species_name
+    character(len=maxlen) :: propname
+
+    call particle_store_contents(pdata, get_nspecies=nspecies, &
+         get_species_names=species_name)
+
+    ! Subgroups
+    if(associated(subgrnr))then
+       write(propname,'(1a,1i3.3)')"SubGroupIndex",icat
+       res =  particle_store_new_property(pdata,species_name(ispecies), &
+            propname, "INTEGER")
+       if(.not.res%success)return
+       res = particle_store_add_data(pdata, species_name(ispecies), &
+            prop_name=propname, idata=subgrnr)
+       if(.not.res%success)return
+    endif
+       
+    ! FoF groups
+    if(associated(fofgrnr))then
+       write(propname,'(1a,1i3.3)')"FoFGroupIndex",icat
+       res =  particle_store_new_property(pdata,species_name(ispecies), &
+            propname, "INTEGER")
+       if(.not.res%success)return
+       res = particle_store_add_data(pdata, species_name(ispecies), &
+            prop_name=propname, idata=fofgrnr)
+       if(.not.res%success)return
+    endif
+    
+    res%success = .true.
+    res%string  = ""
+
+    return
+  end function gadget_groups_add_properties
+ 
 end module gadget_groups

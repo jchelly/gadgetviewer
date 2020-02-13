@@ -8,12 +8,14 @@ module velociraptor_groups
   use f90_util
   use read_hdf5
   use string_module
+  use particle_store
 
   implicit none
   private
   save
 
   public :: velociraptor_groups_read
+  public :: velociraptor_groups_add_properties
 
 contains
 
@@ -40,7 +42,7 @@ contains
     integer(kind=int8byte) :: num_of_groups(1), total_num_of_groups(1)
     integer(kind=int8byte) :: num_of_particles_in_groups(1)
     integer(kind=int8byte) :: total_num_of_particles_in_all_groups(1)
-    ! Offset into lengt/offset arrays
+    ! Offset into length/offset arrays
     integer(kind=int8byte) :: group_offset, id_offset
 
     ! Nullify input pointers
@@ -186,4 +188,139 @@ contains
 
   end function velociraptor_groups_read
 
+
+  type (result_type) function velociraptor_groups_add_properties(path_data, &
+       isnap, ispecies, icat, subgrnr) result(res)
+
+    implicit none
+    ! Parameters
+    type (path_data_type), intent(in) :: path_data
+    integer,               intent(in) :: isnap, ispecies, icat
+    integer(kind=i_prop_kind), dimension(:), pointer :: subgrnr
+    ! Internal
+    integer :: nspecies
+    character(len=maxlen), dimension(maxspecies) :: species_name
+    character(len=maxlen) :: propname
+    integer :: ifile, nfiles, hdferr
+    ! ! Filenames
+    ! character(len=500) :: catalog_groups_file
+    ! character(len=500) :: properties_file
+    ! ! Velociraptor file contents
+    ! integer(kind=int8byte) :: num_of_files(1)
+    ! integer(kind=int8byte) :: num_of_groups(1), total_num_of_groups(1)
+    ! ! Offset into length/offset arrays
+    ! integer(kind=int8byte) :: group_offset
+    ! ! Properties to read
+    ! integer(kind=i_prop_kind), dimension(:), allocatable :: ID, hostHaloID
+    ! ! New particle property array
+    ! integer(kind=i_prop_kind), dimension(:), allocatable :: part_prop
+
+    call particle_store_contents(pdata, get_nspecies=nspecies, &
+         get_species_names=species_name)
+
+    ! Add the group index as a new particle property
+    if(associated(subgrnr))then
+       write(propname,'(1a,1i3.3)')"VR_HaloIndex",icat
+       res =  particle_store_new_property(pdata,species_name(ispecies), &
+            propname, "INTEGER")
+       if(.not.res%success)return
+       res = particle_store_add_data(pdata, species_name(ispecies), &
+            prop_name=propname, idata=subgrnr)
+       if(.not.res%success)return
+    endif
+    
+    ! NOTE: this doesn't work because we don't want to read all files for each species
+
+    ! ! Read the .properties file(s) and add some more particle properties
+    ! nfiles = 1
+    ! group_offset = 0
+    ! do while(ifile.lt.nfiles)
+
+    !    ! Guess the name of the .properties file
+    !    call gadget_path_generate(isnap, ifile, catalog_groups_file, path_data)
+    !    if(replace_string(catalog_groups_file, ".catalog_groups", ".properties", &
+    !         properties_file, back=.true.).ne.0)then
+    !       call cleanup()
+    !       res%success = .false.
+    !       res%string  = "Can't guess .properties file name from "//trim(catalog_groups_file)
+    !       return
+    !    endif
+
+    !    ! Open the file
+    !    if(hdf5_open_file(properties_file).ne.0)then
+    !       call cleanup()
+    !       res%success = .false.
+    !       res%string  = "Unable to open file: "//trim(properties_file)
+    !       return          
+    !    endif
+
+    !    ! Get number of files, groups etc
+    !    if(hdf5_read_dataset("Num_of_files",  num_of_files).ne.0)then
+    !       call cleanup()
+    !       res%success = .false.
+    !       res%string  = "Unable to read Num_of_files dataset"
+    !       return
+    !    endif
+    !    nfiles = num_of_files(1)
+    !    if(hdf5_read_dataset("Num_of_groups", num_of_groups).ne.0)then
+    !       call cleanup()
+    !       res%success = .false.
+    !       res%string  = "Unable to read Num_of_groups dataset"
+    !       return
+    !    endif
+    !    if(hdf5_read_dataset("Total_num_of_groups", total_num_of_groups).ne.0)then
+    !       call cleanup()
+    !       res%success = .false.
+    !       res%string  = "Unable to read Total_num_of_groups dataset"
+    !       return
+    !    endif
+
+    !    ! On reading first file, allocate storage
+    !    if(ifile.eq.0)then
+    !       allocate(ID(total_num_of_groups(1)))
+    !       allocate(hostHaloID(total_num_of_groups(1)))
+    !    endif
+
+    !    ! Read the data
+    !    if(hdf5_read_dataset("ID", ID(group_offset+1:group_offset+num_of_groups(1))).ne.0)then
+    !       res%success = .false.
+    !       res%string  = "Unable to read ID dataset"
+    !       call cleanup()
+    !       return
+    !    endif
+    !    if(hdf5_read_dataset("hostHaloID", hostHaloID(group_offset+1:group_offset+num_of_groups(1))).ne.0)then
+    !       res%success = .false.
+    !       res%string  = "Unable to read ID dataset"
+    !       call cleanup()
+    !       return
+    !    endif
+
+    !    ! Next file
+    !    hdferr = hdf5_close_file()
+    !    group_offset = group_offset + num_of_groups(1)
+    !    ifile = ifile + 1
+    ! end do
+
+
+
+    ! deallocate(ID, hostHaloID)
+    res%success = .true.
+    res%string  = ""
+
+    return
+
+  ! contains
+
+  !   subroutine cleanup()
+
+  !     implicit none
+
+  !     if(allocated(ID))deallocate(ID)
+  !     if(allocated(hostHaloID))deallocate(hostHaloID)
+
+  !     return
+  !   end subroutine cleanup
+
+  end function velociraptor_groups_add_properties
+  
 end module velociraptor_groups
