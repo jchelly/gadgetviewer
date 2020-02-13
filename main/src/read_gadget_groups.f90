@@ -207,8 +207,8 @@ module gadget_groups
 contains
 
   type (result_type) function gadget_groups_read(iformat, isnap, &
-       tab_path, ids_path, &
-       id_size, nfof, nsub, nids, foflen, foffset, sublen, suboffset, groupids)
+       path_data, id_size, nfof, nsub, nids, foflen, foffset, &
+       sublen, suboffset, groupids)
 !
 ! Read the specified group files
 !
@@ -218,12 +218,12 @@ contains
     integer, intent(out) :: nfof, nsub, nids
     integer, dimension(:), pointer :: foflen, foffset, sublen, suboffset
     integer(kind=i_prop_kind), dimension(:), pointer :: groupids
-    type (path_data_type) :: tab_path, ids_path
+    type (path_data_type) :: path_data
     ! Internal
     integer :: istat
     integer :: ifile
     integer :: ios
-    character(len=500) :: fname
+    character(len=500) :: tab_file, ids_file
     type (group_format_type), pointer :: gf
     integer :: nsubread, nfofread, nidsread
     integer :: filepos
@@ -237,7 +237,7 @@ contains
     integer(kind=int4byte), dimension(:), allocatable :: i4buf
     integer(kind=int8byte), dimension(:), allocatable :: i8buf
     integer :: ifof, isub
-    integer :: ifirst, ilast 
+    integer :: ifirst, ilast, i 
     logical :: fexist
 
     ! Nullify input pointers
@@ -253,25 +253,26 @@ contains
     nfiles = 1
     do while(ifile.lt.nfiles)
 
-       call gadget_path_generate(isnap, ifile, fname, tab_path)
+       ! Generate the path to the tab file
+       call gadget_path_generate(isnap, ifile, tab_file, path_data)
 
        ! Special case: if we can't find a second file it may be that all of the groups
        ! are in one file (TODO - add a check on the number of groups/ids etc)
-       inquire(file=fname, exist=fexist, iostat=ios)
+       inquire(file=tab_file, exist=fexist, iostat=ios)
        if(ios.eq.0)then
           if(.not.fexist.and.ifile.eq.1)then
              nfiles = 1
              exit
           endif
        else
-          gadget_groups_read%string  = "Unable to access file: "//trim(fname)
+          gadget_groups_read%string  = "Unable to access file: "//trim(tab_file)
           gadget_groups_read%success = .false.
           return
        endif
 
-       call open_binary(fname, ios)
+       call open_binary(tab_file, ios)
        if(ios.ne.0)then
-          gadget_groups_read%string  = "Unable to open file: "//trim(fname)
+          gadget_groups_read%string  = "Unable to open file: "//trim(tab_file)
           gadget_groups_read%success = .false.
           return
        endif
@@ -279,7 +280,7 @@ contains
        call read_binary(nfiles, ios, pos=gf%nfiles_offset)
        if(ios.ne.0)then
           gadget_groups_read%string  = "Unable to read from file: "//&
-               trim(fname)
+               trim(tab_file)
           gadget_groups_read%success = .false.
           return
        endif
@@ -291,7 +292,7 @@ contains
           call read_binary(nfoffile(ifile), ios, pos=gf%nfof_offset)
           if(ios.ne.0)then
              gadget_groups_read%string  = "Unable to read from file: "//&
-                  trim(fname)
+                  trim(tab_file)
              gadget_groups_read%success = .false.
              return
           endif
@@ -303,7 +304,7 @@ contains
           call read_binary(nsubfile(ifile), ios, pos=gf%nsub_offset)
           if(ios.ne.0)then
              gadget_groups_read%string  = "Unable to read from file: "//&
-                  trim(fname)
+                  trim(tab_file)
              gadget_groups_read%success = .false.
              return
           endif
@@ -314,17 +315,28 @@ contains
 
        call close_binary()
 
-       call gadget_path_generate(isnap, ifile, fname, ids_path)
-       call open_binary(fname, ios)
+       ! Guess ids file name by replacing "tab" with "ids" in tab_file
+       i = index(tab_file, "tab", back=.true.)
+       if(i.gt.0)then
+          ids_file = trim(tab_file)
+          ids_file(i:i+2) = "ids"
+       else
+          gadget_groups_read%success = .false.
+          gadget_groups_read%string  = "Can't guess ids file name from "//trim(ids_file)
+          return
+       endif
+
+       ! Read the subhalo_ids file
+       call open_binary(ids_file, ios)
        if(ios.ne.0)then
-          gadget_groups_read%string  = "Unable to open file: "//trim(fname)
+          gadget_groups_read%string  = "Unable to open file: "//trim(ids_file)
           gadget_groups_read%success = .false.
           return
        endif
        call read_binary(nidsfile(ifile), ios, pos=gf%nids_offset)
        if(ios.ne.0)then
           gadget_groups_read%string  = "Unable to read from file: "//&
-               trim(fname)
+               trim(ids_file)
           gadget_groups_read%success = .false.
           return
        endif
@@ -382,10 +394,10 @@ contains
 
     do ifile = 0, nfiles-1, 1
 
-       call gadget_path_generate(isnap, ifile, fname, tab_path)
-       call open_binary(fname, ios)
+       call gadget_path_generate(isnap, ifile, tab_file, path_data)
+       call open_binary(tab_file, ios)
        if(ios.ne.0)then
-          gadget_groups_read%string  = "Unable to open file: "//trim(fname)
+          gadget_groups_read%string  = "Unable to open file: "//trim(tab_file)
           gadget_groups_read%success = .false.
           call cleanup()
           return
@@ -409,7 +421,7 @@ contains
           call read_binary(i4buf, ios, pos=filepos)
           if(ios.ne.0)then
              gadget_groups_read%string  = "Unable to read from file: "//&
-                  trim(fname)
+                  trim(tab_file)
              gadget_groups_read%success = .false.
              call cleanup()
              return
@@ -424,7 +436,7 @@ contains
           call read_binary(i4buf, ios, pos=filepos)
           if(ios.ne.0)then
              gadget_groups_read%string  = "Unable to read from file: "//&
-                  trim(fname)
+                  trim(tab_file)
              gadget_groups_read%success = .false.
              call cleanup()
              return
@@ -453,7 +465,7 @@ contains
           call read_binary(i4buf, ios, pos=filepos)
           if(ios.ne.0)then
              gadget_groups_read%string  = "Unable to read from file: "//&
-                  trim(fname)
+                  trim(tab_file)
              gadget_groups_read%success = .false.
              call cleanup()
              return
@@ -468,7 +480,7 @@ contains
           call read_binary(i4buf, ios, pos=filepos)
           if(ios.ne.0)then
              gadget_groups_read%string  = "Unable to read from file: "//&
-                  trim(fname)
+                  trim(tab_file)
              gadget_groups_read%success = .false.
              call cleanup()
              return
@@ -505,10 +517,22 @@ contains
           return
        endif
 
-       call gadget_path_generate(isnap, ifile, fname, ids_path)
-       call open_binary(fname, ios)
+       ! Guess ids file name by replacing "tab" with "ids" in tab_file
+       call gadget_path_generate(isnap, ifile, tab_file, path_data)
+       i = index(tab_file, "tab", back=.true.)
+       if(i.gt.0)then
+          ids_file = trim(tab_file)
+          ids_file(i:i+2) = "ids"
+       else
+          gadget_groups_read%success = .false.
+          gadget_groups_read%string  = "Can't guess ids file name from "//trim(tab_file)
+          return
+       endif
+
+       ! Open the file
+       call open_binary(ids_file, ios)
        if(ios.ne.0)then
-          gadget_groups_read%string  = "Unable to open file: "//trim(fname)
+          gadget_groups_read%string  = "Unable to open file: "//trim(ids_file)
           gadget_groups_read%success = .false.
           call cleanup()
           return
@@ -529,7 +553,7 @@ contains
        endif
        if(ios.ne.0)then
           gadget_groups_read%string  = "Unable to read from file: "//&
-               trim(fname)
+               trim(ids_file)
           gadget_groups_read%success = .false.
           call cleanup()
           return

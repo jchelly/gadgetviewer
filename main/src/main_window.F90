@@ -1293,7 +1293,7 @@ contains
                gui_file_open, ok, fname)
           if(ok)then
              call gui_spin_button_get_value(snapshot_spinbox,isnap)
-             res = group_catalogue_add(isnap, i, fname)
+             res = group_catalogue_add(isnap, FORMAT_TYPE_SUBFIND, i, fname)
              if(.not.res%success)then
                 bt=gui_display_dialog(mainwin,"error", res%string)
              else

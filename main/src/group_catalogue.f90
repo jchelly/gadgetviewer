@@ -15,13 +15,17 @@ module group_catalogue
   public :: group_catalogue_read
   public :: group_catalogue_read_all
 
+  ! Format types
+  integer, parameter, public :: FORMAT_TYPE_SUBFIND      = 0
+  integer, parameter, public :: FORMAT_TYPE_VELOCIRAPTOR = 1
+
   ! List of currently loaded catalogues
   integer, parameter :: ngroupcatmax = 10
   integer            :: ngroupcat
   type groupcat_type
-     integer         :: iformat
-     type(path_data_type) :: tab_path
-     type(path_data_type) :: ids_path
+     integer               :: format_type
+     integer               :: format_subtype
+     type(path_data_type)  :: path_data
   end type groupcat_type
   type (groupcat_type), dimension(ngroupcatmax) :: groupcat
 
@@ -40,19 +44,19 @@ contains
   end subroutine group_catalogue_init
 
 
-  type (result_type) function group_catalogue_add(isnap, iformat, tab_file)
+  type (result_type) function group_catalogue_add(isnap, format_type, &
+       format_subtype, input_filename)
 !
 ! Add a new group catalogue
 !
     implicit none
-    integer               :: iformat
-    character(len=*)      :: tab_file
-    character(len=maxlen) :: ids_file
+    integer               :: format_type, format_subtype
+    character(len=*)      :: input_filename
     integer               :: isnap, jsnap
     type(result_type)     :: res
     integer               :: icat
-    integer               :: i
 
+    ! Check we don't have too many catalogues
     icat = ngroupcat + 1
     if(icat.gt.ngroupcatmax)then
        group_catalogue_add%success = .false.
@@ -60,32 +64,17 @@ contains
        return
     endif
 
-    ! Guess ids file name by replacing "tab" with "ids" in tab_file
-    i = index(tab_file, "tab", back=.true.)
-    if(i.gt.0)then
-       ids_file = trim(tab_file)
-       ids_file(i:i+2) = "ids"
-    else
-       group_catalogue_add%success = .false.
-       group_catalogue_add%string  = "Tab file name format not recognised"
-       return
-    endif
-
-    res = gadget_path_extract(tab_file, jsnap, groupcat(icat)%tab_path)
+    ! Try to interpret the filename
+    res = gadget_path_extract(input_filename, jsnap, groupcat(icat)%path_data)
     if(.not.res%success)then
        group_catalogue_add%success = .false.
-       group_catalogue_add%string  = "Tab file name format not recognised"
+       group_catalogue_add%string  = "Group file name format not recognised"
        return
     endif
 
-    res = gadget_path_extract(ids_file, jsnap, groupcat(icat)%ids_path)
-    if(.not.res%success)then
-       group_catalogue_add%success = .false.
-       group_catalogue_add%string  = "IDs file name format not recognised"
-       return
-    endif
-
-    groupcat(icat)%iformat = iformat
+    ! Store format info
+    groupcat(icat)%format_type    = format_type
+    groupcat(icat)%format_subtype = format_subtype
 
     ! Try to read the files
     res = group_catalogue_read(icat, isnap)
@@ -152,15 +141,21 @@ contains
     call particle_store_get_idsize(pdata, id_size)
 
     ! Read the data from the file
-    res = gadget_groups_read(groupcat(icat)%iformat, isnap, &
-         groupcat(icat)%tab_path, groupcat(icat)%ids_path, &
-         id_size, nfof, nsub, nids, &
-         foflen, foffset, sublen, suboffset, groupids)
-    if(.not.res%success)then
-       group_catalogue_read = res
-       call progress_bar_close()
-       return
-    endif
+    select case(groupcat(icat)%format_type)
+    case(FORMAT_TYPE_SUBFIND)
+       res = gadget_groups_read(groupcat(icat)%format_subtype, isnap, &
+            groupcat(icat)%path_data, id_size, nfof, nsub, nids, &
+            foflen, foffset, sublen, suboffset, groupids)
+       if(.not.res%success)then
+          group_catalogue_read = res
+          call progress_bar_close()
+          return
+       endif
+    case(FORMAT_TYPE_VELOCIRAPTOR)
+       call terminate("Velociraptor format not implemented!")
+    case default
+       call terminate("Unrecognised subhalo format index!")
+    end select
 
     call progress_bar_update(0.4)
 
