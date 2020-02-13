@@ -322,7 +322,7 @@ contains
           ids_file(i:i+2) = "ids"
        else
           gadget_groups_read%success = .false.
-          gadget_groups_read%string  = "Can't guess ids file name from "//trim(ids_file)
+          gadget_groups_read%string  = "Can't guess ids file name from "//trim(tab_file)
           return
        endif
 

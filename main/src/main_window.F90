@@ -330,7 +330,7 @@ contains
     call gadget_groups_format_list(ngroupformat, groupformat)
     do i = 1, ngroupformat, 1
        call gui_create_menu_item(groupformat_item(i), file_read_groups, &
-            groupformat(i))
+            groupformat(i), separator=(i.eq.1))
     end do
 
     call gui_create_menu(file_aux, file_menu, "Auxilliary data")
