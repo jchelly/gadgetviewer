@@ -86,6 +86,7 @@ module main_window
   type (gui_menu_item)   :: file_save_default
   type (gui_menu_item)   :: file_exit
   type (gui_menu_item), dimension(:), allocatable :: groupformat_item
+  type (gui_menu_item)   :: file_read_velociraptor
 
   ! View menu
   type (gui_menu)        :: view_menu
@@ -316,15 +317,11 @@ contains
          "Open HDF5 (type 3) gadget file...")
 #endif
 
-    call gui_create_menu(file_aux, file_menu, "Auxilliary data")
-    call gui_create_menu_item(file_read_additional, file_aux, &
-         "Read additional particle properties...")
-    call gui_create_menu_item(file_read_catalogue, file_aux, &
-         "Read labelled points...")
-
     ! Set up list of group formats we can read
-    call gui_create_menu(file_read_groups, file_aux, &
+    call gui_create_menu(file_read_groups, file_menu, &
          "Read groups...")
+    call gui_create_menu_item(file_read_velociraptor, file_read_groups, &
+         "VELOCiraptor halos")
     call gadget_groups_format_list(ngroupformat)
     allocate(groupformat(ngroupformat), groupformat_item(ngroupformat), stat=istat)
     if(istat.ne.0)then
@@ -335,6 +332,12 @@ contains
        call gui_create_menu_item(groupformat_item(i), file_read_groups, &
             groupformat(i))
     end do
+
+    call gui_create_menu(file_aux, file_menu, "Auxilliary data")
+    call gui_create_menu_item(file_read_additional, file_aux, &
+         "Read additional particle properties...")
+    call gui_create_menu_item(file_read_catalogue, file_aux, &
+         "Read labelled points...")
 
     call gui_create_menu_item(file_summary, file_menu, &
          "Simulation details", separator=.true.)
@@ -631,6 +634,7 @@ contains
     logical            :: status
     integer            :: ifunction, ibutton
     integer            :: istat
+    integer            :: group_type, group_subtype
 
     ! Ignore events while the progress bar is displayed
     if(progress_bar_displayed())return
@@ -1286,33 +1290,41 @@ contains
     endif
 
     ! Group catalogue reader
+    group_type    = -1
+    group_subtype = -1
     do i = 1, ngroupformat, 1
        if(gui_menu_item_clicked(groupformat_item(i)))then
-          call gui_select_file(mainwin, &
-               "Select a group tab file", &
-               gui_file_open, ok, fname)
-          if(ok)then
-             call gui_spin_button_get_value(snapshot_spinbox,isnap)
-             res = group_catalogue_add(isnap, FORMAT_TYPE_SUBFIND, i, fname)
-             if(.not.res%success)then
-                bt=gui_display_dialog(mainwin,"error", res%string)
-             else
-                bt=gui_display_dialog(mainwin,"info", &
-                     "Finished reading group catalogue")
-                res = sample_region(keep_coords=.true.)
-                if(.not.res%success)then
-                   bt=gui_display_dialog(mainwin,"error",res%string)
-                   call particle_store_empty(psample)
-                   call particle_store_empty(pdata)
-                else
-                   call main_window_update()
-                endif
-                call info_window_update()
-                call main_window_redraw()
-             endif
-          endif
+          group_type    = FORMAT_TYPE_SUBFIND
+          group_subtype = i
        endif
     end do
+    if(gui_menu_item_clicked(file_read_velociraptor))then
+       group_type=FORMAT_TYPE_VELOCIRAPTOR
+    endif
+    if(group_type.ge.0)then
+       call gui_select_file(mainwin, "Select a group file", &
+            gui_file_open, ok, fname)
+       if(ok)then
+          call gui_spin_button_get_value(snapshot_spinbox,isnap)
+          res = group_catalogue_add(isnap, group_type, group_subtype, fname)
+          if(.not.res%success)then
+             bt=gui_display_dialog(mainwin,"error", res%string)
+          else
+             bt=gui_display_dialog(mainwin,"info", &
+                  "Finished reading group catalogue")
+             res = sample_region(keep_coords=.true.)
+             if(.not.res%success)then
+                bt=gui_display_dialog(mainwin,"error",res%string)
+                call particle_store_empty(psample)
+                call particle_store_empty(pdata)
+             else
+                call main_window_update()
+             endif
+             call info_window_update()
+             call main_window_redraw()
+          endif
+       endif
+    endif
 
     return
 
@@ -1397,8 +1409,7 @@ contains
     if(plot_lib.ne."None")then
        call gui_set_sensitive(options_plot,    data_loaded)
     endif
-    call gui_set_sensitive(file_read_additional, data_loaded)
-    call gui_set_sensitive(file_read_catalogue,  data_loaded)
+    call gui_set_sensitive(file_aux,             data_loaded)
     call gui_set_sensitive(file_read_groups,     data_loaded)
     call gui_set_sensitive(file_summary,         data_loaded)
     call gui_set_sensitive(file_load_selection,  data_loaded)

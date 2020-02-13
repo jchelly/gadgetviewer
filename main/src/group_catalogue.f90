@@ -5,6 +5,7 @@ module group_catalogue
   use particle_store
   use return_status
   use gadget_groups
+  use velociraptor_groups
   use sort
   use progress_bar
 
@@ -152,7 +153,13 @@ contains
           return
        endif
     case(FORMAT_TYPE_VELOCIRAPTOR)
-       call terminate("Velociraptor format not implemented!")
+       res = velociraptor_groups_read(isnap, groupcat(icat)%path_data, &
+            nfof, nsub, nids, foflen, foffset, sublen, suboffset, groupids)
+       if(.not.res%success)then
+          group_catalogue_read = res
+          call progress_bar_close()
+          return
+       endif
     case default
        call terminate("Unrecognised subhalo format index!")
     end select
