@@ -36,7 +36,7 @@ module view_parameters
   real, parameter    :: nearclip_default = -0.75
   real, parameter    :: farclip_default  = 0.75
   real, parameter    :: z_offset_default = 0.1
-  integer, parameter :: npmax_display_default = 10000000
+  integer, parameter :: npmax_display_default = 2000000
 
   ! Perspective
   logical, public :: perspective_projection = .true.

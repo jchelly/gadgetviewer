@@ -208,7 +208,7 @@ particle properties may also be loaded depending on the file format
 
 ### Random sampling
 
-By default the program shows up to 500,000 particles. If there are more
+By default the program shows up to 2,000,000 particles. If there are more
 than this a random sample is shown. If you zoom in on a particular
 region of the simulation you can make it draw the sample from just this
 region by clicking the resample button. Alternatively you can activate
