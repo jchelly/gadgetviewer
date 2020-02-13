@@ -931,9 +931,6 @@ contains
        ! Next file
     end do
 
-    ! Create mass datasets for particles with no individual masses
-    
-
     gadget_hdf5_read%success = .true.
 
     ! Set redshift
