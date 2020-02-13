@@ -38,6 +38,7 @@ module gadget_groups
   use gadget_path
   use byteswapper
   use f90_util
+  use string_module
 
   implicit none
   private
@@ -312,15 +313,11 @@ contains
           ! Negative offset means nsub isn't stored in the file
           nsubfile(ifile) = 0
        endif
-
        call close_binary()
 
        ! Guess ids file name by replacing "tab" with "ids" in tab_file
-       i = index(tab_file, "tab", back=.true.)
-       if(i.gt.0)then
-          ids_file = trim(tab_file)
-          ids_file(i:i+2) = "ids"
-       else
+       call gadget_path_generate(isnap, ifile, tab_file, path_data)
+       if(replace_string(tab_file, "tab", "ids", ids_file, back=.true.).ne.0)then
           gadget_groups_read%success = .false.
           gadget_groups_read%string  = "Can't guess ids file name from "//trim(tab_file)
           return
@@ -519,11 +516,7 @@ contains
 
        ! Guess ids file name by replacing "tab" with "ids" in tab_file
        call gadget_path_generate(isnap, ifile, tab_file, path_data)
-       i = index(tab_file, "tab", back=.true.)
-       if(i.gt.0)then
-          ids_file = trim(tab_file)
-          ids_file(i:i+2) = "ids"
-       else
+       if(replace_string(tab_file, "tab", "ids", ids_file, back=.true.).ne.0)then
           gadget_groups_read%success = .false.
           gadget_groups_read%string  = "Can't guess ids file name from "//trim(tab_file)
           return

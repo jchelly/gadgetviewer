@@ -321,7 +321,7 @@ contains
     call gui_create_menu(file_read_groups, file_menu, &
          "Read groups...")
     call gui_create_menu_item(file_read_velociraptor, file_read_groups, &
-         "VELOCiraptor halos")
+         "VELOCIraptor .catalog_groups")
     call gadget_groups_format_list(ngroupformat)
     allocate(groupformat(ngroupformat), groupformat_item(ngroupformat), stat=istat)
     if(istat.ne.0)then

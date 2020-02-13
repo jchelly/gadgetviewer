@@ -5,8 +5,9 @@ module velociraptor_groups
   use data_types
   use return_status
   use gadget_path
-  use byteswapper
   use f90_util
+  use read_hdf5
+  use string_module
 
   implicit none
   private
@@ -29,15 +30,143 @@ contains
     integer, dimension(:), pointer :: foflen, foffset, sublen, suboffset
     integer(kind=i_prop_kind), dimension(:), pointer :: groupids
     type (path_data_type) :: path_data
+    ! Internal
+    integer(kind=int8byte) :: igroup
+    integer :: ifile, nfiles, hdferr
+    character(len=500) :: catalog_groups_file
+    character(len=500) :: catalog_particles_file
+    ! Velociraptor file contents
+    integer(kind=int8byte) :: num_of_files(1)
+    integer(kind=int8byte) :: num_of_groups(1), total_num_of_groups(1)
+    integer(kind=int8byte) :: num_of_particles_in_groups(1)
+    integer(kind=int8byte) :: total_num_of_particles_in_all_groups(1)
+    ! Offset into lengt/offset arrays
+    integer(kind=int8byte) :: group_offset, id_offset
 
     ! Nullify input pointers
     nullify(foflen, foffset, sublen, suboffset, groupids)
 
-    ! ... TODO: do something ...
+    ! Loop over catalog files in this output
+    nfiles = 1
+    group_offset = 0
+    id_offset = 0
+    do while(ifile.lt.nfiles)
+       
+       ! Read the .catalog_groups file header
+       call gadget_path_generate(isnap, ifile, catalog_groups_file, path_data)
+       if(hdf5_open_file(catalog_groups_file).ne.0)then
+          velociraptor_groups_read%success = .false.
+          velociraptor_groups_read%string  = "Unable to open file: "//trim(catalog_groups_file)
+          call cleanup()
+          return          
+       endif
+       if(hdf5_read_dataset("Num_of_files",  num_of_files).ne.0)then
+          velociraptor_groups_read%success = .false.
+          velociraptor_groups_read%string  = "Unable to read Num_of_files dataset"
+          call cleanup()
+          return
+       endif
+       nfiles = num_of_files(1)
+       if(hdf5_read_dataset("Num_of_groups", num_of_groups).ne.0)then
+          velociraptor_groups_read%success = .false.
+          velociraptor_groups_read%string  = "Unable to read Num_of_groups dataset"
+          call cleanup()
+          return
+       endif
+       if(hdf5_read_dataset("Total_num_of_groups", total_num_of_groups).ne.0)then
+          velociraptor_groups_read%success = .false.
+          velociraptor_groups_read%string  = "Unable to read Total_num_of_groups dataset"
+          call cleanup()
+          return
+       endif
 
-    velociraptor_groups_read%success = .false.
-    velociraptor_groups_read%string  = "Not implemented yet!"
+       ! Allocate storage for lengths and offsets on first file
+       if(ifile.eq.0)then
+          allocate(sublen(total_num_of_groups(1)))
+          allocate(suboffset(total_num_of_groups(1)))
+       endif
+       
+       ! Read group offsets
+       if(hdf5_read_dataset("Offset", suboffset(group_offset+1:group_offset+num_of_groups(1))).ne.0)then
+          velociraptor_groups_read%success = .false.
+          velociraptor_groups_read%string  = "Unable to read Offset dataset"
+          call cleanup()
+          return
+       endif
+       
+       ! Close catalog_groups file
+       hdferr = hdf5_close_file()
 
+       ! Guess the name of the .catalog_particles file
+       if(replace_string(catalog_groups_file, ".catalog_groups", ".catalog_particles", &
+            catalog_particles_file, back=.true.).ne.0)then
+          velociraptor_groups_read%success = .false.
+          velociraptor_groups_read%string  = "Can't guess .catalog_particles file name from "//trim(catalog_groups_file)
+          return
+       endif
+
+       ! Open the file
+       if(hdf5_open_file(catalog_particles_file).ne.0)then
+          velociraptor_groups_read%success = .false.
+          velociraptor_groups_read%string  = "Unable to open file: "//trim(catalog_particles_file)
+          call cleanup()
+          return          
+       endif
+       
+       ! Read header
+       if(hdf5_read_dataset("Num_of_particles_in_groups",  num_of_particles_in_groups).ne.0)then
+          velociraptor_groups_read%success = .false.
+          velociraptor_groups_read%string  = "Unable to read Num_of_particles_in_groups dataset"
+          call cleanup()
+          return
+       endif
+       if(hdf5_read_dataset("Total_num_of_particles_in_all_groups",  total_num_of_particles_in_all_groups).ne.0)then
+          velociraptor_groups_read%success = .false.
+          velociraptor_groups_read%string  = "Unable to read Total_num_of_particles_in_all_groups dataset"
+          call cleanup()
+          return
+       endif
+       
+       ! Allocate storage for IDs
+       if(ifile.eq.0)then
+          allocate(groupids(total_num_of_particles_in_all_groups(1)))
+       endif
+
+       ! Read the IDs from this file
+       if(hdf5_read_dataset("Particle_IDs", groupids(id_offset+1:id_offset+num_of_particles_in_groups(1))).ne.0)then
+          velociraptor_groups_read%success = .false.
+          velociraptor_groups_read%string  = "Unable to read Particle_IDs dataset"
+          call cleanup()
+          return
+       endif
+
+       ! Make offsets relative to the start of the first file and start at 1 rather than 0
+       suboffset(group_offset+1:group_offset+num_of_groups(1)) = &
+            suboffset(group_offset+1:group_offset+num_of_groups(1)) + id_offset + 1
+
+       ! Next file
+       group_offset = group_offset + num_of_groups(1)
+       id_offset    = id_offset    + num_of_particles_in_groups(1)
+       ifile = ifile + 1
+    end do
+
+    ! Compute group sizes from offsets
+    allocate(sublen(total_num_of_groups(1)))
+    do igroup = 1, total_num_of_groups(1)-1, 1
+       sublen(igroup) = suboffset(igroup+1) - suboffset(igroup)
+    end do
+    if(total_num_of_groups(1).gt.0)then
+       sublen(total_num_of_groups(1)) = id_offset - suboffset(total_num_of_groups(1)) + 1
+    endif
+
+    ! Return number of groups etc
+    nfof = 0
+    nsub = total_num_of_groups(1)
+    nids = total_num_of_particles_in_all_groups(1)
+
+    velociraptor_groups_read%success = .true.
+    velociraptor_groups_read%string  = ""
+    
     return
 
   contains

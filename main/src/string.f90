@@ -138,5 +138,37 @@ contains
   end subroutine split_string
 
 
+  integer function replace_string(str, find, replace, result, back)
+!
+! Replace any instances of find with replace in str.
+! Returns non zero on failure.
+!
+! Replaces last instance if back=.true., first instance
+! otherwise. 
+!
+    implicit none
+    character(len=*), intent(in)    :: str, find
+    character(len=*), intent(in)    :: replace
+    character(len=*), intent(inout) :: result
+    logical, intent(in), optional :: back
+    logical :: from_back
+    integer :: i
+
+    from_back = .false.
+    if(present(back))from_back = back
+
+    ! Check for string to replace
+    i = index(str, find, back=back)
+    if(i.lt.0)then
+       ! Not found
+       replace_string = -1
+       return
+    endif
+    
+    result = str(1:i-1)//trim(replace)//str(i+len_trim(find):)
+    replace_string = 0
+
+    return
+  end function replace_string
 
 end module String_Module
