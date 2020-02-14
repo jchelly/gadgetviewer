@@ -333,7 +333,7 @@ contains
             groupformat(i))
     end do
     call gui_create_menu_item(file_read_velociraptor, file_read_groups, &
-         "VELOCIraptor .catalog_groups")
+         "VELOCIraptor HDF5")
 
     call gui_create_menu(file_aux, file_menu, "Auxilliary data")
     call gui_create_menu_item(file_read_additional, file_aux, &

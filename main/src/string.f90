@@ -159,7 +159,7 @@ contains
 
     ! Check for string to replace
     i = index(str, find, back=back)
-    if(i.lt.0)then
+    if(i.le.0)then
        ! Not found
        replace_string = -1
        return

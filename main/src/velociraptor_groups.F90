@@ -17,7 +17,42 @@ module velociraptor_groups
   public :: velociraptor_groups_read
   public :: velociraptor_groups_add_properties
 
+  character(len=25), dimension(9) :: vr_file_type = (/&
+       "catalog_groups           ", &
+       "catalog_particles        ", &
+       "catalog_particles.unbound", &
+       "catalog_partypes         ", &
+       "catalog_partypes.unbound ", &
+       "catalog_SOlist           ", &
+       "hierarchy                ", &
+       "profiles                 ", &
+       "properties               "/)
+
 contains
+
+  integer function velociraptor_filename(path_data, isnap, ifile, filetype, fname) result(res)
+!
+! Generate the path to a Velociraptor file given the name of any one file from the set.
+!
+    implicit none
+    type (path_data_type) :: path_data
+    integer               :: isnap, ifile
+    character(len=*)      :: filetype, fname
+    character(len=500)    :: tmp
+    integer :: i
+
+    call gadget_path_generate(isnap, ifile, tmp, path_data)
+    do i = 1, size(vr_file_type), 1
+       if(replace_string(tmp, trim(vr_file_type(i)), trim(filetype), fname, back=.true.).eq.0)then
+          res = 0
+          return
+       endif
+    end do
+    
+    res = 1
+    return
+  end function velociraptor_filename
+
 
   type (result_type) function velociraptor_groups_read(isnap, &
        path_data, nfof, nsub, nids, foflen, foffset, &
@@ -53,9 +88,14 @@ contains
     group_offset = 0
     id_offset = 0
     do while(ifile.lt.nfiles)
-       
-       ! Read the .catalog_groups file header
-       call gadget_path_generate(isnap, ifile, catalog_groups_file, path_data)
+
+       ! Find the catalog_groups file
+       if(velociraptor_filename(path_data, isnap, ifile, "catalog_groups", catalog_groups_file).ne.0)then
+          res%success = .false.
+          res%string  = "Unable to determine name of catalog_groups file"
+       endif
+
+       ! Open the file and read the header
        if(hdf5_open_file(catalog_groups_file).ne.0)then
           res%success = .false.
           res%string  = "Unable to open file: "//trim(catalog_groups_file)
@@ -98,12 +138,10 @@ contains
        ! Close catalog_groups file
        hdferr = hdf5_close_file()
 
-       ! Guess the name of the .catalog_particles file
-       if(replace_string(catalog_groups_file, ".catalog_groups", ".catalog_particles", &
-            catalog_particles_file, back=.true.).ne.0)then
+       ! Find the catalog_particles file
+       if(velociraptor_filename(path_data, isnap, ifile, "catalog_particles", catalog_particles_file).ne.0)then
           res%success = .false.
-          res%string  = "Can't guess .catalog_particles file name from "//trim(catalog_groups_file)
-          return
+          res%string  = "Unable to determine name of catalog_particles file"
        endif
 
        ! Open the file
@@ -167,13 +205,9 @@ contains
     do ifile = 0, nfiles-1, 1
 
        ! Guess the name of the .properties file
-       call gadget_path_generate(isnap, ifile, catalog_groups_file, path_data)
-       if(replace_string(catalog_groups_file, ".catalog_groups", ".properties", &
-            properties_file, back=.true.).ne.0)then
-          call cleanup()
+       if(velociraptor_filename(path_data, isnap, ifile, "properties", properties_file).ne.0)then
           res%success = .false.
-          res%string  = "Can't guess .properties file name from "//trim(catalog_groups_file)
-          return
+          res%string  = "Unable to determine name of catalog_particles file"
        endif
 
        ! Open the file
