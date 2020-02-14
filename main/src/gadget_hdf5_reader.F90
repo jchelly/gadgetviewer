@@ -448,6 +448,7 @@ contains
     real, dimension(7) :: massarr
     integer :: istat
     real(kind=real8byte) :: boxsize, boxsize_array(3)
+    integer :: num_dimensions
     ! Temporary storage for particles
     real(kind=pos_kind),       dimension(:,:), allocatable :: pos
 #ifdef READ_VEL
@@ -518,6 +519,15 @@ contains
     hdferr = hdf5_read_attribute("/Header/Redshift", redshift)
     if(hdferr.ne.0)then
        redshift = -1.0
+    endif
+
+    ! Check number of dimensions
+    hdferr = hdf5_read_attribute("/Header/Dimension", num_dimensions)
+    if(hdferr.eq.0)then
+       if(num_dimensions.ne.3)then
+          gadget_hdf5_read%string="Can only handle three dimensional outputs!"
+          return
+       endif
     endif
 
     ! Read box size:
