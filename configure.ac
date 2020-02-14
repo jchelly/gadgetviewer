@@ -120,6 +120,25 @@ fi
 AC_SUBST(extra_fcflags)
 
 #
+# Try to enable compiler run time checks if requested
+#
+AC_ARG_ENABLE([checks],
+	[AS_HELP_STRING([--enable-checks], [enable compiler runtime checks (default=no)])],
+	[with_checks="${enableval}"],
+	[with_checks="no"]
+)
+if test "$with_checks" = "yes"; then
+# GNU
+  AX_CHECK_COMPILE_FLAG([-fcheck=all,no-array-temps], [extra_fcflags="${extra_fcflags} -fcheck=all,no-array-temps"], [], [], [])
+  AX_CHECK_COMPILE_FLAG([-finit-real=snan],           [extra_fcflags="${extra_fcflags} -finit-real=snan"],           [], [], [])
+  AX_CHECK_COMPILE_FLAG([-finit-integer=-10000000],   [extra_fcflags="${extra_fcflags} -finit-integer=-10000000"],   [], [], [])
+  AX_CHECK_COMPILE_FLAG([-ffpe-trap=invalid,zero,overflow], [extra_fcflags="${extra_fcflags} -ffpe-trap=invalid,zero,overflow"], [], [], [])
+# Intel
+  AX_CHECK_COMPILE_FLAG([-check all,noarg_temp_created], [extra_fcflags="${extra_fcflags} -check all,noarg_temp_created"], [], [], [])
+fi
+
+
+#
 # Check we can read command line arguments from Fortran
 #
 AC_MSG_CHECKING([if we have Fortran 2003 command line functions])
@@ -270,7 +289,7 @@ AC_MSG_RESULT([
   Compilers
 
     Fortran compiler: ${FC}
-    Fortran flags   : ${FCFLAGS} ${extra_fcflags} ${OPENMP_FCFLAGS} 
+    Fortran flags   : ${OPENMP_FCFLAGS} ${extra_fcflags} ${FCFLAGS}
     C compiler      : ${CC}
     C flags         : ${CFLAGS}
 
