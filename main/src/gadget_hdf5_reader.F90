@@ -54,7 +54,10 @@ module gadget_hdf5_reader
 
   ! Possible names of the Mass and ID datasets
   character(len=maxlen), dimension(1) :: id_datasets   = (/"ParticleIDs"/)
-  character(len=maxlen), dimension(3) :: mass_datasets = (/"Mass","Masses","DynamicalMasses"/)
+  character(len=maxlen), dimension(3) :: mass_datasets = (/&
+       "Mass           ",&
+       "Masses         ",&
+       "DynamicalMasses"/)
 
 contains
 

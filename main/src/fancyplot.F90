@@ -151,8 +151,6 @@ contains
     integer                        :: nspecies
     integer(kind=index_kind), dimension(maxspecies) :: np
     real(kind=pos_kind), dimension(:,:), pointer :: pos
-    ! Transformed z coord of a particle
-    real :: z_trans
     real(kind=pos_kind), dimension(3) :: pos_trans
     ! Projected coordinates
     integer, dimension(2) :: ip
@@ -252,7 +250,7 @@ contains
 
           ! Use OpenMP to parallelise image generation
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP& PRIVATE(i,j,z_trans,clipfac,hnorm,ip,is,l,k,hs,mp,ithread,offset,pos_trans)
+!$OMP& PRIVATE(i,j,clipfac,hnorm,ip,is,l,k,hs,mp,ithread,offset,pos_trans)
 #ifdef _OPENMP
           ithread = omp_get_thread_num()
 #else
@@ -266,7 +264,6 @@ contains
 
              ! Get the coordinates of this particle in the view
              ! coordinate system
-             !ip = project(pos(1:3,i),trans,width,height,fov_x,fov_y,z_trans)
              !
              ! Inline version of project()
              !
@@ -300,13 +297,13 @@ contains
              mp = mass(i)*mass_factor
 
              ! Check if particle is in front of the view point
-             if(z_trans.gt.nearclip.and.z_trans.lt.farclip)then
+             if(pos_trans(3).gt.nearclip.and.pos_trans(3).lt.farclip)then
                 
                 ! Fade out as the particle approaches clipping planes
-                if(z_trans.lt.nearclip_fade)then
-                   clipfac = 1.0 - abs(z_trans-nearclip_fade)*invdzfade
-                else if(z_trans.gt.farclip-dzfade)then
-                   clipfac = 1.0 - abs(z_trans-farclip_fade)*invdzfade
+                if(pos_trans(3).lt.nearclip_fade)then
+                   clipfac = 1.0 - abs(pos_trans(3)-nearclip_fade)*invdzfade
+                else if(pos_trans(3).gt.farclip-dzfade)then
+                   clipfac = 1.0 - abs(pos_trans(3)-farclip_fade)*invdzfade
                 else
                    clipfac = 1.0
                 endif
@@ -315,11 +312,11 @@ contains
                 if(use_fixed_hsml(ispecies))then
                    is = ((fixed_hsml(ispecies)*scale_smooth(ispecies)* &
                         trans%scale)/ &
-                        (1.0+z_trans))/fov_x*width
+                        (1.0+pos_trans(3)))/fov_x*width
                 else
                    hs = min(hsml(i),maxphyssmooth(ispecies))
                    is = ((hs*scale_smooth(ispecies)*trans%scale)/ &
-                        (1.0+z_trans))/fov_x*width
+                        (1.0+pos_trans(3)))/fov_x*width
                 endif
 
                 ! Normalisation for 'splat' to add to the image
