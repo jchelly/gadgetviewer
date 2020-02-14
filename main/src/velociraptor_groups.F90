@@ -199,7 +199,7 @@ contains
        endif
        if(hdf5_read_dataset("hostHaloID", hostHaloID(group_offset+1:group_offset+num_of_groups(1))).ne.0)then
           res%success = .false.
-          res%string  = "Unable to read ID dataset"
+          res%string  = "Unable to read hostHaloID dataset"
           call cleanup()
           return
        endif
@@ -209,6 +209,11 @@ contains
        group_offset = group_offset + num_of_groups(1)       
     end do
     
+    ! Set hostHaloID=ID for field halos
+    do igroup = 1, total_num_of_groups(1), 1
+       if(hostHaloID(igroup).lt.0)hostHaloID(igroup) = ID(igroup)
+    end do
+
     ! Return number of groups etc
     nfof = 0
     nsub = total_num_of_groups(1)
@@ -263,9 +268,9 @@ contains
     ! Add the group index as a new particle property
     if(allocated(subgrnr))then
        if(icat.gt.1)then
-          write(propname,'(1a,1i3.3)')"VR_Index",icat
+          write(propname,'(1a,1i3.3)')"VR_index",icat
        else
-          propname = "VR_Index"
+          propname = "VR_index"
        endif
        res =  particle_store_new_property(pdata,species_name(ispecies), &
             propname, "INTEGER")
