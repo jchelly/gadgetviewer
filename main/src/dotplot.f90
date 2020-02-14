@@ -91,7 +91,6 @@ contains
     integer(kind=index_kind), dimension(maxspecies) :: np
     real(kind=pos_kind), dimension(:,:), pointer :: pos
     ! Transformed z coord of a particle
-    real :: z_trans
     real(kind=pos_kind), dimension(3) :: pos_trans
     ! Projected coordinates
     integer, dimension(2) :: ip
@@ -120,7 +119,6 @@ contains
              ! Get the coordinates of this particle in the view
              ! coordinate system
              if(selected(i).eq.0.and.draw_selected_only)cycle
-             !ip = project(pos(1:3,i),trans,width,height,fov_x,fov_y,z_trans)
              !
              ! Inline version of project()
              !
@@ -151,11 +149,11 @@ contains
              !
              if(ip(1).ge.0.and.ip(2).ge.0.and.&
                   ip(1).lt.width.and.ip(2).lt.height)then
-                if(z_trans.lt.zbuf(ip(1)+width*ip(2)))then
+                if(pos_trans(3).lt.zbuf(ip(1)+width*ip(2)))then
                    image(0+3*ip(1)+3*width*ip(2)) = col(1,ispecies)
                    image(1+3*ip(1)+3*width*ip(2)) = col(2,ispecies)
                    image(2+3*ip(1)+3*width*ip(2)) = col(3,ispecies)
-                   zbuf(ip(1)+width*ip(2)) = z_trans
+                   zbuf(ip(1)+width*ip(2)) = pos_trans(3)
                 endif
              endif
           end do
