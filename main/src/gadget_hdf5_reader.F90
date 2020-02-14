@@ -544,7 +544,6 @@ contains
        ! Have a 3D box size - just use the largest dimension
        boxsize = maxval(boxsize_array)
     endif
-    write(0,*)"Boxsize = ", boxsize
     
     ! Read time - prefer Time_GYR if present
     hdferr = hdf5_read_attribute("/Header/Time_GYR", time)
