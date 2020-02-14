@@ -48,6 +48,7 @@ contains
     integer(kind=int8byte) :: group_offset, id_offset
 
     ! Loop over catalog files in this output
+    ifile = 0
     nfiles = 1
     group_offset = 0
     id_offset = 0
@@ -261,7 +262,11 @@ contains
 
     ! Add the group index as a new particle property
     if(allocated(subgrnr))then
-       write(propname,'(1a,1i3.3)')"VR_Index",icat
+       if(icat.gt.1)then
+          write(propname,'(1a,1i3.3)')"VR_Index",icat
+       else
+          propname = "VR_Index"
+       endif
        res =  particle_store_new_property(pdata,species_name(ispecies), &
             propname, "INTEGER")
        if(.not.res%success)return
@@ -273,11 +278,10 @@ contains
     call particle_store_species(pdata, ispecies, get_np=np)
     allocate(iprop(np))
 
-    ! Bounds check - subgrnr should be either -1 or in range 1-ngroups
+    ! Bounds check - subgrnr should be either 0 (no group) or in range 1-ngroups
     do ipart = 1, np, 1
        if(subgrnr(ipart).gt.size(ID))call terminate("VR group index out of range (1)!")
-       if(subgrnr(ipart).eq.0)       call terminate("VR group index out of range (2)!")
-       if(subgrnr(ipart).lt.-1)      call terminate("VR group index out of range (3)!")
+       if(subgrnr(ipart).lt.0)       call terminate("VR group index out of range (2)!")
     end do
     
     ! Look up VR halo ID for each particle
@@ -285,7 +289,11 @@ contains
     do ipart = 1, np, 1
        if(subgrnr(ipart).gt.0)iprop(ipart) = ID(subgrnr(ipart))
     end do
-    write(propname,'(1a,1i3.3)')"VR_ID",icat
+    if(icat.gt.1)then
+       write(propname,'(1a,1i3.3)')"VR_ID",icat
+    else
+       propname = "VR_ID"
+    endif
     res =  particle_store_new_property(pdata,species_name(ispecies), &
          propname, "INTEGER")
     if(res%success)res = particle_store_add_data(pdata, species_name(ispecies), &
@@ -300,7 +308,11 @@ contains
     do ipart = 1, np, 1
        if(subgrnr(ipart).gt.0)iprop(ipart) = hostHaloID(subgrnr(ipart))
     end do
-    write(propname,'(1a,1i3.3)')"VR_hostHaloID",icat
+    if(icat.gt.1)then
+       write(propname,'(1a,1i3.3)')"VR_hostHaloID",icat
+    else
+       propname = "VR_hostHaloID"
+    endif
     res =  particle_store_new_property(pdata,species_name(ispecies), &
          propname, "INTEGER")
     if(res%success)res = particle_store_add_data(pdata, species_name(ispecies), &

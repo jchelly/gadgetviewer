@@ -711,7 +711,11 @@ contains
 
     ! Subgroups
     if(allocated(subgrnr))then
-       write(propname,'(1a,1i3.3)')"SubGroupIndex",icat
+       if(icat.gt.1)then
+          write(propname,'(1a,1i3.3)')"SubGroupIndex_",icat
+       else
+          propname = "SubGroupIndex"
+       endif
        res =  particle_store_new_property(pdata,species_name(ispecies), &
             propname, "INTEGER")
        if(.not.res%success)return
@@ -722,7 +726,11 @@ contains
        
     ! FoF groups
     if(allocated(fofgrnr))then
-       write(propname,'(1a,1i3.3)')"FoFGroupIndex",icat
+       if(icat.gt.1)then
+          write(propname,'(1a,1i3.3)')"FoFGroupIndex",icat
+       else
+          propname = "FoFGroupIndex"
+       endif
        res =  particle_store_new_property(pdata,species_name(ispecies), &
             propname, "INTEGER")
        if(.not.res%success)return
