@@ -85,6 +85,7 @@ module main_window
   type (gui_menu_item)   :: file_load_settings
   type (gui_menu_item)   :: file_save_default
   type (gui_menu_item)   :: file_exit
+  type (gui_menu)         :: file_subfind
   type (gui_menu_item), dimension(:), allocatable :: groupformat_item
   type (gui_menu_item)   :: file_read_velociraptor
 
@@ -320,8 +321,7 @@ contains
     ! Set up list of group formats we can read
     call gui_create_menu(file_read_groups, file_menu, &
          "Read groups...")
-    call gui_create_menu_item(file_read_velociraptor, file_read_groups, &
-         "VELOCIraptor .catalog_groups")
+    call gui_create_menu(file_subfind, file_read_groups, "Subfind")
     call gadget_groups_format_list(ngroupformat)
     allocate(groupformat(ngroupformat), groupformat_item(ngroupformat), stat=istat)
     if(istat.ne.0)then
@@ -329,9 +329,11 @@ contains
     endif
     call gadget_groups_format_list(ngroupformat, groupformat)
     do i = 1, ngroupformat, 1
-       call gui_create_menu_item(groupformat_item(i), file_read_groups, &
-            groupformat(i), separator=(i.eq.1))
+       call gui_create_menu_item(groupformat_item(i), file_subfind, &
+            groupformat(i))
     end do
+    call gui_create_menu_item(file_read_velociraptor, file_read_groups, &
+         "VELOCIraptor .catalog_groups")
 
     call gui_create_menu(file_aux, file_menu, "Auxilliary data")
     call gui_create_menu_item(file_read_additional, file_aux, &
