@@ -447,7 +447,7 @@ contains
     character(len=50), dimension(6) :: species_name
     real, dimension(7) :: massarr
     integer :: istat
-    real(kind=real8byte) :: boxsize
+    real(kind=real8byte) :: boxsize, boxsize_array(3)
     ! Temporary storage for particles
     real(kind=pos_kind),       dimension(:,:), allocatable :: pos
 #ifdef READ_VEL
@@ -520,11 +520,21 @@ contains
        redshift = -1.0
     endif
 
-    ! Read box size
-    hdferr = hdf5_read_attribute("/Header/BoxSize", boxsize)
+    ! Read box size:
+    ! this is a scalar in Gadget but a 3 element array in Swift
+    hdferr = hdf5_read_attribute("/Header/BoxSize", boxsize_array)
     if(hdferr.ne.0)then
-       boxsize = 0.0
+       ! Try reading it as a scalar
+       hdferr = hdf5_read_attribute("/Header/BoxSize", boxsize)
+       if(hdferr.ne.0)then
+          ! No box size, so assume non-periodic simulation
+          boxsize = 0.0
+       endif
+    else
+       ! Have a 3D box size - just use the largest dimension
+       boxsize = maxval(boxsize_array)
     endif
+    write(0,*)"Boxsize = ", boxsize
     
     ! Read time - prefer Time_GYR if present
     hdferr = hdf5_read_attribute("/Header/Time_GYR", time)
