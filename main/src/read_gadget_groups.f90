@@ -219,8 +219,8 @@ contains
     ! Parameters
     integer, intent(in) :: iformat, id_size, isnap
     integer, intent(out) :: nfof, nsub, nids
-    integer, dimension(:), pointer :: foflen, foffset, sublen, suboffset
-    integer(kind=i_prop_kind), dimension(:), pointer :: groupids
+    integer, dimension(:), allocatable :: foflen, foffset, sublen, suboffset
+    integer(kind=i_prop_kind), dimension(:), allocatable :: groupids
     type (path_data_type) :: path_data
     ! Internal
     integer :: istat
@@ -243,8 +243,6 @@ contains
     integer :: ifirst, ilast, i 
     logical :: fexist
 
-    ! Nullify input pointers
-    nullify(foflen, foffset, sublen, suboffset, groupids)
     nfoffile = 0
     nsubfile = 0
     nidsfile = 0
@@ -661,11 +659,11 @@ contains
 
       implicit none
 
-      if(associated(foflen))    deallocate(foflen)
-      if(associated(foffset))   deallocate(foffset)
-      if(associated(sublen))    deallocate(sublen)
-      if(associated(suboffset)) deallocate(suboffset)
-      if(associated(groupids))  deallocate(groupids)
+      if(allocated(foflen))    deallocate(foflen)
+      if(allocated(foffset))   deallocate(foffset)
+      if(allocated(sublen))    deallocate(sublen)
+      if(allocated(suboffset)) deallocate(suboffset)
+      if(allocated(groupids))  deallocate(groupids)
 
       if(allocated(i4buf))deallocate(i4buf)
       if(allocated(i8buf))deallocate(i8buf)
@@ -703,7 +701,7 @@ contains
 
     implicit none
     integer, intent(in) :: ispecies, icat
-    integer(kind=i_prop_kind), dimension(:), pointer :: fofgrnr, subgrnr
+    integer(kind=i_prop_kind), dimension(:), allocatable :: fofgrnr, subgrnr
     integer :: nspecies
     character(len=maxlen), dimension(maxspecies) :: species_name
     character(len=maxlen) :: propname
@@ -712,7 +710,7 @@ contains
          get_species_names=species_name)
 
     ! Subgroups
-    if(associated(subgrnr))then
+    if(allocated(subgrnr))then
        write(propname,'(1a,1i3.3)')"SubGroupIndex",icat
        res =  particle_store_new_property(pdata,species_name(ispecies), &
             propname, "INTEGER")
@@ -723,7 +721,7 @@ contains
     endif
        
     ! FoF groups
-    if(associated(fofgrnr))then
+    if(allocated(fofgrnr))then
        write(propname,'(1a,1i3.3)')"FoFGroupIndex",icat
        res =  particle_store_new_property(pdata,species_name(ispecies), &
             propname, "INTEGER")

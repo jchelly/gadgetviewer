@@ -117,12 +117,13 @@ contains
     implicit none
     integer :: icat, isnap
     integer :: nfof, nsub, nids, id_size
-    integer, dimension(:), pointer :: foflen, foffset, sublen, suboffset
-    integer(kind=i_prop_kind), dimension(:), pointer :: groupids
-    integer(kind=i_prop_kind), dimension(:), pointer :: fofgrnr, subgrnr
-    integer, dimension(:), pointer :: groupids_idx, ids_idx
+    integer, dimension(:), allocatable :: foflen, foffset, sublen, suboffset
+    integer(kind=i_prop_kind), dimension(:), allocatable :: groupids
+    integer(kind=i_prop_kind), dimension(:), allocatable :: fofgrnr, subgrnr
+    integer(kind=i_prop_kind), dimension(:), allocatable :: ID, hostHaloID
+    integer, dimension(:), allocatable :: groupids_idx, ids_idx
     integer(kind=i_prop_kind), dimension(:), pointer :: ids
-    integer, dimension(:), pointer :: nr
+    integer, dimension(:), allocatable :: nr
     integer :: istat
     integer :: nspecies, ispecies
     integer(kind=index_kind) :: np
@@ -133,8 +134,6 @@ contains
     call progress_bar_display("Reading group catalogue "// &
          trim(adjustl(str))//"...")
     call progress_bar_update(0.0)
-
-    nullify(foflen, foffset, sublen, suboffset, groupids, fofgrnr, subgrnr)
 
     ! Get size of particle IDs
     call particle_store_get_idsize(pdata, id_size)
@@ -147,12 +146,14 @@ contains
             foflen, foffset, sublen, suboffset, groupids)
     case(FORMAT_TYPE_VELOCIRAPTOR)
        res = velociraptor_groups_read(isnap, groupcat(icat)%path_data, &
-            nfof, nsub, nids, foflen, foffset, sublen, suboffset, groupids)
+            nfof, nsub, nids, foflen, foffset, sublen, suboffset, groupids, &
+            ID, hostHaloID)
     case default
        call terminate("Unrecognised subhalo format index!")
     end select
     if(.not.res%success)then
        group_catalogue_read = res
+       call cleanup()
        call progress_bar_close()
        return
     endif
@@ -164,6 +165,8 @@ contains
     if(istat.ne.0)then
        group_catalogue_read%success = .false.
        group_catalogue_read%string  = "Unable to allocate memory"
+       call cleanup()
+       call progress_bar_close()
        return
     endif
     call openmp_sort_index(groupids, groupids_idx)
@@ -179,7 +182,7 @@ contains
        if(np.ge.2_int8byte**31)then
           group_catalogue_read%success = .false.
           group_catalogue_read%string  = "Not implemented for >=2**31 particles!"
-          deallocate(groupids_idx)
+          call cleanup()
           call progress_bar_close()
           return
        endif
@@ -192,7 +195,7 @@ contains
        if(istat.ne.0)then
           group_catalogue_read%success = .false.
           group_catalogue_read%string  = "Unable to allocate memory"
-          deallocate(groupids_idx)
+          call cleanup()
           call progress_bar_close()
           return
        endif
@@ -201,10 +204,10 @@ contains
        call openmp_sort_index(ids, ids_idx)
 
        ! Determine group membership for each particle
-       if(associated(foflen))then
+       if(allocated(foflen))then
           call find_grnr(nfof, foflen, foffset, fofgrnr)
        endif
-       if(associated(sublen))then
+       if(allocated(sublen))then
           call find_grnr(nsub, sublen, suboffset, subgrnr)
        endif
 
@@ -213,16 +216,17 @@ contains
        case(FORMAT_TYPE_SUBFIND)
           res = gadget_groups_add_properties(ispecies, icat, fofgrnr, subgrnr)
        case(FORMAT_TYPE_VELOCIRAPTOR)
-          res = velociraptor_groups_add_properties(groupcat(icat)%path_data, isnap, ispecies, icat, subgrnr)
+          res = velociraptor_groups_add_properties(groupcat(icat)%path_data, isnap, &
+               ispecies, icat, subgrnr, ID, hostHaloID)
        case default
           call terminate("Unrecognised subhalo format index!")
        end select
        deallocate(nr, fofgrnr, subgrnr, ids_idx)
        if(.not.res%success)then
-          deallocate(groupids_idx)
           group_catalogue_read = res
           call particle_store_cleanup(pdata)
           call progress_bar_close()
+          call cleanup()
           return
        endif
     
@@ -241,6 +245,27 @@ contains
     return
     
   contains
+
+    subroutine cleanup()
+
+      implicit none
+
+      if(allocated(foflen))     deallocate(foflen)
+      if(allocated(foffset))    deallocate(foffset)
+      if(allocated(sublen))     deallocate(sublen)
+      if(allocated(suboffset))  deallocate(suboffset)
+      if(allocated(groupids))   deallocate(groupids)
+      if(allocated(fofgrnr))    deallocate(fofgrnr)
+      if(allocated(subgrnr))    deallocate(subgrnr)
+      if(allocated(ID))         deallocate(ID)
+      if(allocated(hostHaloID)) deallocate(hostHaloID)
+      if(allocated(groupids_idx)) deallocate(groupids_idx)
+      if(allocated(ids_idx))      deallocate(ids_idx)
+      if(allocated(nr))           deallocate(nr)
+
+      return
+    end subroutine cleanup
+
 
     subroutine find_grnr(ngroup, len, offset, grnr)
 
