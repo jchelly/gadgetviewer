@@ -155,7 +155,7 @@ contains
 
     ! Read the data
     call readattrib(trim(name)//achar(0), int(HDF5_REAL4, kind=C_INT), &
-         data, ios)
+         data, int(0, kind=C_INT), int(0, kind=C_LONG_LONG), ios)
     res = ios
 
     return
@@ -172,7 +172,7 @@ contains
 
     ! Read the data
     call readattrib(trim(name)//achar(0), int(HDF5_REAL8, kind=C_INT), &
-         data, ios)
+         data, int(0, kind=C_INT), int(0, kind=C_LONG_LONG), ios)
     res = ios
 
     return
@@ -190,7 +190,7 @@ contains
 
     ! Read the data
     call readattrib(trim(name)//achar(0), int(HDF5_INTEGER4, kind=C_INT), &
-         data, ios)
+         data, int(0, kind=C_INT), int(0, kind=C_LONG_LONG), ios)
     res = ios
 
     return
@@ -208,7 +208,7 @@ contains
 
     ! Read the data
     call readattrib(trim(name)//achar(0), int(HDF5_INTEGER8, kind=C_INT), &
-         data, ios)
+         data, int(0, kind=C_INT), int(0, kind=C_LONG_LONG), ios)
     res = ios
 
     return
@@ -226,7 +226,7 @@ contains
 
     ! Read the data
     call readattrib(trim(name)//achar(0), int(HDF5_REAL4, kind=C_INT), &
-         data, ios)
+         data, int(1, kind=C_INT), int(size(data), kind=C_LONG_LONG), ios)
     res = ios
 
     return
@@ -244,7 +244,7 @@ contains
 
     ! Read the data
     call readattrib(trim(name)//achar(0), int(HDF5_REAL8, kind=C_INT), &
-         data, ios)
+         data, int(1, kind=C_INT), int(size(data), kind=C_LONG_LONG), ios)
     res = ios
 
     return
@@ -262,7 +262,7 @@ contains
 
     ! Read the data
     call readattrib(trim(name)//achar(0), int(HDF5_INTEGER4, kind=C_INT), &
-         data, ios)
+         data, int(1, kind=C_INT), int(size(data), kind=C_LONG_LONG), ios)
     res = ios
 
     return
@@ -280,7 +280,7 @@ contains
 
     ! Read the data
     call readattrib(trim(name)//achar(0), int(HDF5_INTEGER8, kind=C_INT), &
-         data, ios)
+         data, int(1, kind=C_INT), int(size(data), kind=C_LONG_LONG), ios)
     res = ios
 
     return

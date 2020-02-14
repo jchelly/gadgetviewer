@@ -185,11 +185,16 @@ void READDATASET_F90(char *name, int *type, void *data,
   Read an attribute
 */
 #define READATTRIB_F90 FC_FUNC (readattrib, READATTRIB)
-void READATTRIB_F90(char *name, int *type, void *data, int *iostat)
+void READATTRIB_F90(char *name, int *type, void *data, int *rank, 
+                    long long *count, int *iostat)
 {
   char dset_name[500];
 
   *iostat = 1;
+  hid_t parent_id   = -1;
+  hid_t attr_id     = -1;
+  hid_t filetype_id = -1;
+  hid_t dspace_id   = -1;
 
   /* Find parent group or dataset */
   int i = strlen(name)-1;
@@ -197,54 +202,73 @@ void READATTRIB_F90(char *name, int *type, void *data, int *iostat)
     i = i - 1;
   if(i==0)
       return;
-
   strncpy(dset_name, name, (size_t) i);
   dset_name[i] = (char) 0;
 
   /* Open group or dataset */
-  hid_t parent_id;
-  int   is_group = 0;
+  int is_group = 0;
   parent_id = h5_open_group(file_id, dset_name); 
   if(parent_id < 0)
     parent_id = h5_open_dataset(file_id, dset_name); 
   else
     is_group = 1;
   if (parent_id < 0)
-    return;
+    goto cleanup;
   
   /* Open attribute */
-  hid_t attr_id = h5_open_attribute(parent_id, &(name[i+1])); 
-  if(attr_id >= 0)
+  if((attr_id = h5_open_attribute(parent_id, &(name[i+1]))) < 0)goto cleanup;
+
+  /* Get type in file */
+  if((filetype_id = H5Aget_type(attr_id)) < 0)goto cleanup;
+
+   /* Determine memory data type to use */
+  hid_t memtype_id = hdf5_type[*type];
+
+  /* Special case for unsigned integers - treat as unsigned in memory */
+  H5T_sign_t  sign  = H5Tget_sign(filetype_id);
+  H5T_class_t class = H5Tget_class(filetype_id);
+  if((sign==H5T_SGN_NONE) && (class==H5T_INTEGER))
     {
-        /* Get type in file */
-        hid_t filetype_id = H5Aget_type(attr_id);
-
-        /* Determine memory data type to use */
-        hid_t memtype_id = hdf5_type[*type];
-
-        /* Special case for unsigned integers - treat as unsigned in memory */
-        H5T_sign_t  sign  = H5Tget_sign(filetype_id);
-        H5T_class_t class = H5Tget_class(filetype_id);
-        if((sign==H5T_SGN_NONE) && (class==H5T_INTEGER))
-            {
-                if(*type==0)memtype_id = hdf5_type[4];
-                if(*type==1)memtype_id = hdf5_type[5];
-            }
-
-        /* Try to read attribute */
-        if(H5Aread(attr_id, memtype_id, data) == 0)
-            *iostat = 0;
-	
-        /* Close attribute */
-        H5Aclose(attr_id);
-        H5Tclose(filetype_id);
+      if(*type==0)memtype_id = hdf5_type[4];
+      if(*type==1)memtype_id = hdf5_type[5];
     }
+
+  /* Get dimensions in the file */
+  if((dspace_id = H5Aget_space(attr_id)) < 0)goto cleanup;
+  int file_rank;
+  if((file_rank = H5Sget_simple_extent_ndims(dspace_id)) < 0)goto cleanup;
+  hsize_t file_size[32];
+  if(H5Sget_simple_extent_dims(dspace_id, file_size, NULL) < 0)goto cleanup;
   
-  /* Close group/dataset */
-  if(is_group)
-    H5Gclose(parent_id);
-  else
-    H5Dclose(parent_id);
+  /* Check data fits in the variable we were given */
+  int ok = 1;
+  if(file_rank != (*rank)) {
+    ok = 0;
+  } else {
+    int i;
+    for(i=0;i<file_rank;i+=1) {
+      if(count[i] < file_size[i]) ok = 0;
+    }
+  }
+  /* Special case: treat scalar and 1 element array as equivalent */
+  if((*rank==0) && (file_rank==1) && (file_size[0]==1)) ok=1;
+  if((file_rank==0) && (*rank==1) && (count[0]==1)) ok=1;
+  if(!ok)goto cleanup;
+
+  /* Try to read the attribute */
+  if(H5Aread(attr_id, memtype_id, data) == 0)
+    *iostat = 0;
+
+ cleanup:
+  if(parent_id >= 0) {
+    if(is_group)
+      H5Gclose(parent_id);
+    else
+      H5Dclose(parent_id);
+  }
+  if(attr_id >= 0)H5Aclose(attr_id);
+  if(filetype_id >= 0)H5Tclose(filetype_id);
+  if(dspace_id >= 0)H5Tclose(dspace_id);
 
   return;
 }
