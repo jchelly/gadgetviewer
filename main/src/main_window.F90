@@ -334,6 +334,9 @@ contains
     end do
     call gui_create_menu_item(file_read_velociraptor, file_read_groups, &
          "VELOCIraptor HDF5")
+#ifndef HAVE_HDF5
+    call gui_set_sensitive(file_read_velociraptor,.false.)
+#endif
 
     call gui_create_menu(file_aux, file_menu, "Auxilliary data")
     call gui_create_menu_item(file_read_additional, file_aux, &
@@ -366,7 +369,6 @@ contains
 #ifndef HAVE_HDF5
 #ifdef SPECIFIC_FORMAT
     call gui_set_sensitive(file_open_hdf5_gadget,.false.)
-
 #endif
 #endif
 

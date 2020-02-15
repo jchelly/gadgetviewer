@@ -2,11 +2,14 @@ module velociraptor_groups
 !
 ! Read group catalogues output by Velociraptor halo finder
 !
+#include "../../config.h"
   use data_types
   use return_status
   use gadget_path
   use f90_util
+#ifdef HAVE_HDF5
   use read_hdf5
+#endif
   use string_module
   use particle_store
 
@@ -68,6 +71,7 @@ contains
     integer(kind=i_prop_kind), dimension(:), allocatable :: groupids
     type (path_data_type) :: path_data
     integer(kind=i_prop_kind), dimension(:), allocatable :: ID, hostHaloID
+#ifdef HAVE_HDF5
     ! Internal
     integer(kind=int8byte) :: igroup
     integer :: ifile, nfiles, hdferr
@@ -255,6 +259,14 @@ contains
 
     res%success = .true.
     res%string  = ""
+
+#else
+    nfof = 0
+    nsub = 0
+    nids = 0
+    res%success = .false.
+    res%string  = "HDF5 support is required to read Velociraptor output"
+#endif
     
     return
 
