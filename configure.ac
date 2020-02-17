@@ -117,7 +117,6 @@ if test "$with_optimization" = "yes"; then
   AX_CHECK_COMPILE_FLAG([-no-prec-div],     [extra_fcflags="${extra_fcflags} -no-prec-div"],     [], [], [])
   AX_CHECK_COMPILE_FLAG([-fp-model fast=2], [extra_fcflags="${extra_fcflags} -fp-model fast=2"], [], [], [])
 fi
-AC_SUBST(extra_fcflags)
 
 #
 # Try to enable compiler run time checks if requested
@@ -138,7 +137,7 @@ if test "$with_checks" = "yes"; then
 # Intel
   AX_CHECK_COMPILE_FLAG([-check all,noarg_temp_created], [extra_fcflags="${extra_fcflags} -check all,noarg_temp_created"],       [], [], [])
 fi
-
+AC_SUBST(extra_fcflags)
 
 #
 # Check we can read command line arguments from Fortran
