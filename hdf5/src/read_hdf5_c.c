@@ -375,6 +375,70 @@ void DATASETSIZE_F90(char *name, int *rank, long long *dims, int *max_dims, int 
 
 
 /*
+  Get size of an attribute
+*/
+#define ATTRIBSIZE_F90 FC_FUNC (attribsize, ATTRIBSIZE)
+void ATTRIBSIZE_F90(char *name, int *rank, long long *dims, int *max_dims, int *iostat)
+{
+  char *dset_name   = NULL;
+  hid_t parent_id   = -1;
+  hid_t attr_id     = -1;
+  hid_t dspace_id   = -1;
+  *iostat = 1;
+
+  /* Find parent group or dataset */
+  int i = strlen(name)-1;
+  while((i>0) && (name[i] != '/'))
+    i = i - 1;
+  if(i==0)
+      return;
+  dset_name = malloc(sizeof(char)*(i+1));
+  strncpy(dset_name, name, (size_t) i);
+  dset_name[i] = (char) 0;
+
+  /* Open group or dataset */
+  int is_group = 0;
+  parent_id = h5_open_group(file_id, dset_name); 
+  if(parent_id < 0)
+    parent_id = h5_open_dataset(file_id, dset_name); 
+  else
+    is_group = 1;
+  if (parent_id < 0)
+    goto cleanup;
+  
+  /* Open attribute */
+  if((attr_id = h5_open_attribute(parent_id, &(name[i+1]))) < 0)goto cleanup;
+
+  /* Get dataspace */
+  if((dspace_id = H5Dget_space(attr_id)) < 0)goto cleanup;
+
+  /* Get dimensions of dataspace */
+  *rank = H5Sget_simple_extent_ndims(dspace_id);
+  if(*rank >  MAX_DIMS)goto cleanup;
+  if(*rank > *max_dims)goto cleanup;
+  hsize_t h5dims[MAX_DIMS];
+  H5Sget_simple_extent_dims(dspace_id, h5dims, NULL); 
+  for(i=0;i<(*rank);i++)
+    dims[i] = h5dims[i];
+  
+  /* Success */
+  *iostat = 0;
+
+ cleanup:
+  if(parent_id >= 0) {
+    if(is_group)
+      H5Gclose(parent_id);
+    else
+      H5Dclose(parent_id);
+  }
+  if(attr_id >= 0)  H5Aclose(attr_id);
+  if(dspace_id >= 0)H5Sclose(dspace_id);
+  if(dset_name)free(dset_name);
+  return;
+}
+
+
+/*
   Close the file
 */
 #define CLOSEHDF5_F90 FC_FUNC (closehdf5, CLOSEHDF5)

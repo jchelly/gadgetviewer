@@ -40,6 +40,7 @@ module read_hdf5
   public :: hdf5_read_attribute
   public :: hdf5_dataset_size
   public :: hdf5_dataset_type
+  public :: hdf5_attribute_size
   public :: hdf5_version
   public :: hdf5_find_datasets
 
@@ -115,6 +116,37 @@ contains
 
     return
   end function hdf5_dataset_size
+
+
+  integer function hdf5_attribute_size(name, rank, dims)
+!
+! Return the size of a attribute
+!
+    implicit none
+    character(len=*)      :: name
+    integer               :: rank
+    integer(kind=int8byte), dimension(:) :: dims
+    integer(kind=C_INT) :: c_rank
+    integer(kind=C_LONG_LONG), dimension(size(dims)) :: c_dims
+    integer(kind=C_INT) :: ios
+    integer :: i
+
+    call attribsize(trim(name)//achar(0), c_rank, c_dims, &
+         int(size(dims), kind=C_INT), ios)
+
+    if(ios.ne.0)then
+       hdf5_attribute_size = ios
+       return
+    endif
+
+    rank = c_rank
+    do i = 1, rank, 1
+       dims(i) = c_dims(rank-i+1)
+    end do
+    hdf5_attribute_size = ios
+
+    return
+  end function hdf5_attribute_size
 
 
   integer function hdf5_dataset_type(name, type)
