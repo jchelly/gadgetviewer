@@ -3,11 +3,13 @@
 #include <string.h>
 #include <hdf5.h>
 
+/* Maximum number of dimensions we can handle */
+#define MAX_DIMS 7
+
 /* Check we can use this HDF5 version */
 #if (H5_VERS_MAJOR < 1) || ((H5_VERS_MAJOR == 1) && (H5_VERS_MINOR < 6))
 #error Need HDF5 1.6 or later!
 #endif
-
 
 /* Define macros for functions which differ between HDF5 versions */
 #if ((H5_VERS_MAJOR == 1) && (H5_VERS_MINOR < 8))
@@ -97,12 +99,13 @@ void OPENHDF5_F90(char *filename, int *iostat)
 #define HDF5VERSION_F90 FC_FUNC (hdf5version, HDF5VERSION)
 void HDF5VERSION_F90(char *str, int *maxlen)
 {
+#define MAX_VERSION_LENGTH 500
   int i, len;
-  char version[500];
+  char version[MAX_VERSION_LENGTH];
   unsigned majnum, minnum, relnum;
 
   H5get_libversion(&majnum, &minnum, &relnum);
-  sprintf(version, "%d.%d.%d", majnum, minnum, relnum);
+  snprintf(version, MAX_VERSION_LENGTH, "%d.%d.%d", majnum, minnum, relnum);
 
   for(i=0;i<*maxlen;i++)
     str[i] = ' ';
@@ -121,24 +124,35 @@ void READDATASET_F90(char *name, int *type, void *data,
 		     int *rank, long long *start, long long *count, int *iostat)
 {
   int i;
-  hsize_t dims[7], h5start[7], h5count[7];
+  hsize_t dims[MAX_DIMS], h5start[MAX_DIMS], h5count[MAX_DIMS];
+
+  /* Initialize identifiers */
+  hid_t filespace_id = -1;
+  hid_t memspace_id  = -1;
+  hid_t filetype_id  = -1;
+  hid_t dset_id      = -1;
+
+  /* Assume failure until we know otherwise */
+  *iostat = 1;
+
+  /* Check if input array has too many dimensions */
+  if(*rank > MAX_DIMS)goto cleanup;
 
   /* Open dataset */
-  hid_t dset_id = h5_open_dataset(file_id, name);
-  if(dset_id < 0)
-    {
-      *iostat = 1;
-      return;
-    }
+  if((dset_id = h5_open_dataset(file_id, name)) < 0)goto cleanup;
 
   /* Create memory dataspace */
   for(i=0;i<(*rank);i++)
     dims[i] = count[*rank - i - 1];
-  hid_t memspace_id = H5Screate_simple(*rank, dims, dims); 
+  if((memspace_id = H5Screate_simple(*rank, dims, dims)) < 0)goto cleanup;
   
   /* Get file dataspace and type */
-  hid_t filespace_id = H5Dget_space(dset_id); 
-  hid_t filetype_id  = H5Dget_type(dset_id);
+  if((filespace_id = H5Dget_space(dset_id)) < 0)goto cleanup;
+  if((filetype_id  = H5Dget_type(dset_id)) < 0)goto cleanup;
+
+  /* Check number of dimensions matches */
+  int file_rank = H5Sget_simple_extent_ndims(filespace_id);
+  if(file_rank != *rank)goto cleanup;
 
   /* Select part of file dataspace */
   for(i=0;i<(*rank);i++)
@@ -146,8 +160,8 @@ void READDATASET_F90(char *name, int *type, void *data,
       h5start[i] = start[*rank - i - 1];
       h5count[i] = count[*rank - i - 1];
     }
-  H5Sselect_hyperslab(filespace_id, 
-		      H5S_SELECT_SET, h5start, NULL, h5count, NULL);
+  if(H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, 
+                         h5start, NULL, h5count, NULL) < 0)goto cleanup;
 
   /* Determine memory data type to use */
   hid_t memtype_id = hdf5_type[*type];
@@ -156,28 +170,24 @@ void READDATASET_F90(char *name, int *type, void *data,
   H5T_sign_t  sign  = H5Tget_sign(filetype_id);
   H5T_class_t class = H5Tget_class(filetype_id);
   if((sign==H5T_SGN_NONE) && (class==H5T_INTEGER))
-      {
-          if(*type==0)memtype_id = hdf5_type[4];
-          if(*type==1)memtype_id = hdf5_type[5];
-      }
+    {
+      if(*type==0)memtype_id = hdf5_type[4];
+      if(*type==1)memtype_id = hdf5_type[5];
+    }
 
   /* Read dataset */
-  herr_t err = H5Dread(dset_id, memtype_id, memspace_id, filespace_id, 
-		       H5P_DEFAULT, data); 
-  H5Sclose(filespace_id);
-  H5Sclose(memspace_id);
-  H5Tclose(filetype_id);
-  if(err != 0)
-    {
-      *iostat = 1;
-      return;
-    }
+  if(H5Dread(dset_id, memtype_id, memspace_id, filespace_id, 
+             H5P_DEFAULT, data) != 0)goto cleanup;
   
-  /* Close dataset */
-  H5Dclose(dset_id);
-
-  /* Done */
+  /* Success */
   *iostat = 0;
+
+ cleanup:
+
+  if(filespace_id >= 0)H5Sclose(filespace_id);
+  if(memspace_id  >= 0)H5Sclose(memspace_id);
+  if(filetype_id  >= 0)H5Tclose(filetype_id);
+  if(dset_id      >= 0)H5Dclose(dset_id);
   return;
 }
 
@@ -188,7 +198,7 @@ void READDATASET_F90(char *name, int *type, void *data,
 void READATTRIB_F90(char *name, int *type, void *data, int *rank, 
                     long long *count, int *iostat)
 {
-  char dset_name[500];
+  char *dset_name = NULL;
 
   *iostat = 1;
   hid_t parent_id   = -1;
@@ -202,6 +212,7 @@ void READATTRIB_F90(char *name, int *type, void *data, int *rank,
     i = i - 1;
   if(i==0)
       return;
+  dset_name = malloc(sizeof(char)*(i+1));
   strncpy(dset_name, name, (size_t) i);
   dset_name[i] = (char) 0;
 
@@ -266,9 +277,10 @@ void READATTRIB_F90(char *name, int *type, void *data, int *rank,
     else
       H5Dclose(parent_id);
   }
-  if(attr_id >= 0)H5Aclose(attr_id);
+  if(attr_id >= 0)    H5Aclose(attr_id);
   if(filetype_id >= 0)H5Tclose(filetype_id);
-  if(dspace_id >= 0)H5Tclose(dspace_id);
+  if(dspace_id >= 0)  H5Sclose(dspace_id);
+  if(dset_name)free(dset_name);
 
   return;
 }
@@ -330,32 +342,37 @@ void DATASETTYPE_F90(char *name, int *type, int *iostat)
   Get size of a dataset
 */
 #define DATASETSIZE_F90 FC_FUNC (datasetsize, DATASETSIZE)
-void DATASETSIZE_F90(char *name, int *rank, long long *dims, int *iostat)
+void DATASETSIZE_F90(char *name, int *rank, long long *dims, int *max_dims, int *iostat)
 {
   *iostat = 1;
+  hid_t dset_id   = -1;
+  hid_t dspace_id = -1;
 
   /* Open dataset */
-  hid_t dset_id = h5_open_dataset(file_id, name);
-  if(dset_id < 0)
-    return;
+  if((dset_id = h5_open_dataset(file_id, name)) < 0)goto cleanup;
   
   /* Get dataspace */
-  hid_t dspace_id = H5Dget_space(dset_id);
+  if((dspace_id = H5Dget_space(dset_id)) < 0)goto cleanup;
 
   /* Get dimensions of dataspace */
   *rank = H5Sget_simple_extent_ndims(dspace_id);
-  hsize_t h5dims[20];
+  if(*rank >  MAX_DIMS)goto cleanup;
+  if(*rank > *max_dims)goto cleanup;
+  hsize_t h5dims[MAX_DIMS];
   H5Sget_simple_extent_dims(dspace_id, h5dims, NULL); 
   int i;
   for(i=0;i<(*rank);i++)
     dims[i] = h5dims[i];
   
-  H5Sclose(dspace_id);
-  H5Dclose(dset_id);
-
+  /* Success */
   *iostat = 0;
+
+ cleanup:
+  if(dset_id   >= 0)H5Dclose(dset_id);
+  if(dspace_id >= 0)H5Sclose(dspace_id);
   return;
 }
+
 
 /*
   Close the file

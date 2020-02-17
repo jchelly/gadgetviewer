@@ -99,7 +99,8 @@ contains
     integer(kind=C_INT) :: ios
     integer :: i
 
-    call datasetsize(trim(name)//achar(0), c_rank, c_dims, ios)
+    call datasetsize(trim(name)//achar(0), c_rank, c_dims, &
+         int(size(dims), kind=C_INT), ios)
 
     if(ios.ne.0)then
        hdf5_dataset_size = ios
