@@ -642,7 +642,7 @@ contains
           pdata%species(ispecies)%hsml = -1
        endif
        if(any(pdata%species(ispecies)%hsml.lt.0.0))then
-          call particle_store_calculate_hsml(pdata, ispecies)
+          call particle_store_calculate_hsml_octree(pdata, ispecies)
        endif
        get_hsml => pdata%species(ispecies)%hsml
     endif
@@ -1074,7 +1074,51 @@ contains
   end function particle_store_sample
 
 
-  subroutine particle_store_calculate_hsml(pdata, ispecies)
+  subroutine particle_store_calculate_hsml_octree(pdata, ispecies)
+!
+! Calculate smoothing lengths for a set of particles
+!
+    implicit none
+    integer :: ispecies
+    integer(kind=index_kind) :: i
+    type (octree_type) :: tree
+    integer, parameter :: nb = 32
+    real :: rdist
+    type (pdata_type) :: pdata
+    character(len=maxlen), dimension(maxspecies) :: name
+    integer :: myid
+! Stuff for OpenMP function calls
+#ifdef _OPENMP
+    integer, external :: OMP_GET_THREAD_NUM, OMP_GET_MAX_THREADS
+#endif
+
+    if(pdata%species(ispecies)%np.gt.0)then
+       ! Build the tree structure
+       call build_octree(tree,pdata%species(ispecies)%np, &
+            pdata%species(ispecies)%pos,nb)
+       ! Loop over particles finding neighbours
+       call alloc_tree_workspace(tree, multithreaded=.true.)
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(i,rdist,myid)
+#ifdef _OPENMP
+       myid = OMP_GET_THREAD_NUM()
+#else
+       myid = 0
+#endif
+!$OMP DO SCHEDULE(DYNAMIC, 10000)
+       do i = 1, pdata%species(ispecies)%np, 1
+          pdata%species(ispecies)%hsml(i) = leaf_node_size(tree, pdata%species(ispecies)%pos(1:3,i))
+       end do
+!$OMP END DO
+!$OMP END PARALLEL
+       call free_tree_workspace(tree)
+       call deallocate_octree(tree)
+    endif
+
+    return
+  end subroutine particle_store_calculate_hsml_octree
+
+
+  subroutine particle_store_calculate_hsml_neighbours(pdata, ispecies)
 !
 ! Calculate smoothing lengths for a set of particles
 !
@@ -1128,6 +1172,7 @@ contains
           ! Get distance to nngb'th nearest neighbour
           rdist = sqrt(sum((pdata%species(ispecies)%pos(1:3,i)- &
                pdata%species(ispecies)%pos(1:3,ngb_idx(nfind)))**2))
+          rdist = leaf_node_size(tree, pdata%species(ispecies)%pos(1:3,i))
           pdata%species(ispecies)%hsml(i) = 2.0*rdist
           if(i.gt.nextupdate.and.myid.eq.0)then
              call progress_bar_update(real(i)/real(pdata%species(ispecies)%np))
@@ -1143,7 +1188,7 @@ contains
     call progress_bar_close()
 
     return
-  end subroutine particle_store_calculate_hsml
+  end subroutine particle_store_calculate_hsml_neighbours
 
 
   subroutine particle_store_build_trees(pdata)

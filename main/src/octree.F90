@@ -27,6 +27,7 @@ module octreemod
   public :: periodic_radius_search
   public :: open_leaf_node
   public :: neighbour_search
+  public :: leaf_node_size
   ! Subroutine to destroy the tree
   public :: deallocate_octree
   public :: alloc_tree_workspace
@@ -1119,6 +1120,94 @@ contains
     rmin = tree%lbox / (2**ilevmax)
 
   end subroutine open_leaf_node
+
+
+  real(kind=pos_kind) function leaf_node_size(tree,centre) result(rmin)
+!
+!   Find the leaf node that contains position 'centre' and return its size.
+!
+    implicit none
+    ! Parameters - range to search
+    real(pos_kind), dimension(3)   :: centre
+    ! Loop indices
+    integer :: ilev,i,j,k
+    type (nodetype), pointer :: node, child_node
+    integer, dimension(3) :: ipos,jpos,ich
+    type (octree_type) :: tree
+    integer :: ilevmax
+
+    if(.not.associated(tree%first_node)) &
+         call terminate('open_leaf_node(): Tree has not been built yet!')
+    
+    node => tree%first_node
+    ich=0
+    ipos(1:3)=0
+    ilev=0
+    ilevmax = 0
+    ! Exit if nout>0 as there can only be one leaf node containing the point
+    ! 'centre' 
+    do while(associated(node))
+       ! See if there's a child node to visit
+       nullify(child_node)
+       if(node%nchild.gt.0)then
+          do while(ich(1).ne.-1.and.(.not.associated(child_node)))
+             child_node => node%child(ich(1),ich(2),ich(3))%ptr
+             if(.not.associated(child_node))then
+                call nextchild(ich)
+             else
+                ! Does this child node contain the point of interest?
+                jpos=ipos*2+ich
+                do j=1,3,1
+                   if((tree%lbox/real(2**(ilev+1)))*jpos(j).gt. &
+                        centre(j)-tree%posmin(j)) nullify(child_node)
+                   if((tree%lbox/real(2**(ilev+1)))*(jpos(j)+1).lt. &
+                        centre(j)-tree%posmin(j)) nullify(child_node)
+                end do
+                if(.not.associated(child_node))call nextchild(ich)
+             end if
+          end do
+       end if
+       
+       ! Record maximum level reached
+       ilevmax = max(ilev, ilevmax)
+
+       if(.not.associated(child_node))then
+          ! Check if this is a leaf node
+          if(node%nchild.eq.0)exit
+          ! Node has no children or we've visited all the child nodes
+          ! so go back up a level
+          ilev=ilev-1
+          ipos=int(ipos/2)
+          if(associated(node%parent))then
+             ! Figure out which child this is of the parent node
+             do i=0,1,1
+                do j=0,1,1
+                   do k=0,1,1
+                      if(associated(node%parent%child(i,j,k)%ptr,node))then
+                         ich(1)=i
+                         ich(2)=j
+                         ich(3)=k
+                         call nextchild(ich)
+                      end if
+                   end do
+                end do
+             end do
+          end if
+          node => node%parent
+       else
+          ! Go to child node
+          node => child_node
+          ilev=ilev+1
+          ipos=ipos*2+ich
+          ich=0 
+       end if
+    end do
+
+    ! Return size of smallest node visited
+    rmin = tree%lbox / (2**ilevmax)
+
+  end function leaf_node_size
+
 
 !
 ! --------------------------------------------------------------------
