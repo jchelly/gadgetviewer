@@ -103,7 +103,8 @@ contains
     integer :: nprops
     character(len=maxlen), dimension(maxprops) :: prop_names
     integer :: iprop
-    real(kind=real8byte) :: res(3)
+    real(kind=real8byte)   :: res_real(3)
+    integer(kind=int8byte) :: res_int(3)
 
     if(.not.window_open)return
 
@@ -141,7 +142,8 @@ contains
     do iprop = 1, nprops, 1
        call particle_store_property(pdata, ispecies, iprop, get_type=ptype)
        call particle_store_evaluate_property(psample, ispecies, iprop, &
-            real(view_transform%centre, pos_kind), nngb, res)
+            real(view_transform%centre, pos_kind), nngb, res_real, res_int)
+
        !if(ptype.eq."INTEGER")then
        !   write(str,'(a, a8, 1i14, a8, 1i14, a8, 1i14)') &
        !        trim(adjustl(prop_names(iprop))), &
@@ -155,14 +157,16 @@ contains
        !        ", max: ", res(2), &
        !        ", mean: ",res(3) 
        !endif
+
        if(ptype.eq."INTEGER")then
-          write(str,'(a, a, 1i14)') &
+          write(str, '(1i20)')res_int(3)
+          write(str,'(a, a, a)') &
                trim(adjustl(prop_names(iprop))), &
-               ": ", int(res(3),kind=int8byte)
+               ": ", trim(str)
        else
-          write(str,'(a, a, 1e12.4)') &
+          write(str,'(a, a, 1es16.8)') &
                trim(adjustl(prop_names(iprop))), &
-               ": ",res(3) 
+               ": ",res_real(3) 
        endif
        str = trim_spaces(str)
        call gui_textview_add_line(textview, trim(adjustl(str)))
@@ -170,7 +174,7 @@ contains
 
     ! Coordinates
     call gui_textview_add_line(textview, "")
-    write(str,'("Coordinates: ",1e13.5,",",1e13.5,",",1e13.5)')view_transform%centre
+    write(str,'("Coordinates: ",1es14.6,",",1es14.6,",",1es14.6)')view_transform%centre
     call gui_textview_add_line(textview, trim(str))
 
     return
