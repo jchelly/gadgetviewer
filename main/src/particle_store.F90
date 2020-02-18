@@ -1338,7 +1338,7 @@ contains
 
 
   subroutine particle_store_evaluate_property(pdata, ispecies, iprop, pos, &
-       nngb, res)
+       nngb, res_real, res_int)
 !
 ! Evaluate the specified property at the specified position by averaging
 ! over nearest neighbours 
@@ -1349,7 +1349,8 @@ contains
     integer,                           intent(in)  :: ispecies, iprop
     real(kind=pos_kind), dimension(3), intent(in)  :: pos
     integer,                           intent(in)  :: nngb
-    real(kind=real8byte),              intent(out) :: res(3)
+    real(kind=real8byte),              intent(out) :: res_real(3)
+    integer(kind=int8byte),            intent(out) :: res_int(3)
     ! Internal
     integer(kind=index_kind)                  :: n
     integer(kind=index_kind), dimension(nngb) :: idx
@@ -1376,43 +1377,37 @@ contains
        end do
     else
        ! If there are no particles can't do anything
-        res = -1
+        res_real = -1
+        res_int  = -1
        return
     endif
 
     ! Loop over particles
-    propmin = huge(propmin)
-    propmax = -huge(propmax)
-    total   = 0
+    res_real(1) =  huge(res_real(1))
+    res_real(2) = -huge(res_real(1))
+    res_real(3) =  0
+    res_int(1)  =  huge(res_int(1))
+    res_int(2)  = -huge(res_int(1))
+    res_int(3)  =  0
     select case(pdata%species(ispecies)%property(iprop)%type)
     case("INTEGER")
        do i = 1, n, 1
           ipart = idx(i)
-          propmin = min(propmin, &
-               real(pdata%species(ispecies)%property(iprop)%idata(ipart), &
-               kind=real8byte))
-          propmax = max(propmax, &
-               real(pdata%species(ispecies)%property(iprop)%idata(ipart), &
-               kind=real8byte))
-          total = total + &
-               pdata%species(ispecies)%property(iprop)%idata(ipart)
+          res_int(1) = min(res_int(1), int(pdata%species(ispecies)%property(iprop)%idata(ipart), kind=int8byte))
+          res_int(2) = max(res_int(2), int(pdata%species(ispecies)%property(iprop)%idata(ipart), kind=int8byte))
+          res_int(3) = res_int(3)    + int(pdata%species(ispecies)%property(iprop)%idata(ipart), kind=int8byte)
        end do
     case("REAL")
        do i = 1, n, 1
           ipart = idx(i)
-          propmin = min(propmin, &
-               real(pdata%species(ispecies)%property(iprop)%rdata(ipart), &
-               kind=real8byte))
-          propmax = max(propmax, &
-               real(pdata%species(ispecies)%property(iprop)%rdata(ipart), &
-               kind=real8byte))
-          total = total + &
-               pdata%species(ispecies)%property(iprop)%rdata(ipart)
+          res_real(1) = min(res_real(1), real(pdata%species(ispecies)%property(iprop)%rdata(ipart), kind=real8byte))
+          res_real(2) = max(res_real(2), real(pdata%species(ispecies)%property(iprop)%rdata(ipart), kind=real8byte))
+          res_real(3) = res_real(3)    + real(pdata%species(ispecies)%property(iprop)%rdata(ipart), kind=real8byte)
        end do
     end select
     
-    total = total / n
-    res = (/propmin, propmax, total/)
+    res_int(3)  = res_int(3)  / n
+    res_real(3) = res_real(3) / n
 
     return
   end subroutine particle_store_evaluate_property
