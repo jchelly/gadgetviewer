@@ -383,7 +383,12 @@ the 'Select particles' option in the Options menu to pick out particles in
 particular groups.
 
 On changing snapshots the halo finder output for the new snapshot will be read
-automatically. See below for the supported formats.
+automatically. This depends on the files being written with a similar naming
+convention to Gadget snapshots. Any instances of the snapshot number in the
+path must be padded to at least three digits with leading zeros and preceded
+by an underscore.
+
+See below for the supported halo finder formats.
 
 
 #### Subfind
