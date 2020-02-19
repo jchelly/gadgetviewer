@@ -656,7 +656,18 @@ contains
     end do
 
     ! Work out values for progress bar
-    prog_tot    = sum(nptot(1:6))*2
+    prog_tot = 0
+    do ispecies = 1, 6, 1
+       prog_tot = prog_tot + 3*nptot(ispecies) ! Positions
+#ifdef READ_VEL
+       prog_tot = prog_tot + 3*nptot(ispecies) ! Velocities
+#endif
+       do iextra = 1, nextra_all, 1
+          if(read_extra(ispecies, iextra))then
+             prog_tot = prog_tot + nptot(ispecies) ! Extra quantities
+          endif
+       end do
+    end do
     prog_so_far = 0
 
     ! Loop over files and read them
@@ -774,11 +785,11 @@ contains
                 hdferr = hdf5_close_file()
                 return
              endif
+             ! Update progress
+             prog_so_far = prog_so_far + 3*npfile(i)
+             call progress_bar_update(real(prog_so_far)/real(prog_tot))
           endif
        end do
-
-       prog_so_far = prog_so_far + sum(npfile)
-       call progress_bar_update(real(prog_so_far)/real(prog_tot))
 
        ! Read velocities
        do i = 1, 6, 1
@@ -824,12 +835,12 @@ contains
                 hdferr = hdf5_close_file()
                 return
              endif
+             prog_so_far = prog_so_far + 3*npfile(i)
+             call progress_bar_update(real(prog_so_far)/real(prog_tot))
 #endif
           endif
        end do
 
-       prog_so_far = prog_so_far + sum(npfile)
-       call progress_bar_update(real(prog_so_far)/real(prog_tot))
 
        ! Read any extra properties
        do ispecies = 1, 6, 1
@@ -938,6 +949,9 @@ contains
                          return
                       endif
                    end select
+                   ! Update progress
+                   prog_so_far = prog_so_far + npfile(ispecies)
+                   call progress_bar_update(real(prog_so_far)/real(prog_tot))                   
                 endif
              end do
           endif
