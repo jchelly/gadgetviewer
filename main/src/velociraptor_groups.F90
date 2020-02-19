@@ -310,21 +310,6 @@ contains
 
     call particle_store_contents(pdata, get_nspecies=nspecies, &
          get_species_names=species_name)
-
-    ! Add the group index as a new particle property
-    if(allocated(subgrnr))then
-       if(icat.gt.1)then
-          write(propname,'(1a,1i3.3)')"VR_index",icat
-       else
-          propname = "VR_index"
-       endif
-       res =  particle_store_new_property(pdata,species_name(ispecies), &
-            propname, "INTEGER")
-       if(.not.res%success)return
-       res = particle_store_add_data(pdata, species_name(ispecies), &
-            prop_name=propname, idata=subgrnr)
-       if(.not.res%success)return
-    endif
     
     call particle_store_species(pdata, ispecies, get_np=np)
     allocate(iprop(np))
@@ -341,9 +326,9 @@ contains
        if(subgrnr(ipart).gt.0)iprop(ipart) = ID(subgrnr(ipart))
     end do
     if(icat.gt.1)then
-       write(propname,'(1a,1i3.3)')"VR_ID",icat
+       write(propname,'(1a,1i3.3)')"VR_ID_bound",icat
     else
-       propname = "VR_ID"
+       propname = "VR_ID_bound"
     endif
     res =  particle_store_new_property(pdata,species_name(ispecies), &
          propname, "INTEGER")
@@ -360,9 +345,9 @@ contains
        if(subgrnr(ipart).gt.0)iprop(ipart) = hostHaloID(subgrnr(ipart))
     end do
     if(icat.gt.1)then
-       write(propname,'(1a,1i3.3)')"VR_hostHaloID",icat
+       write(propname,'(1a,1i3.3)')"VR_hostHaloID_bound",icat
     else
-       propname = "VR_hostHaloID"
+       propname = "VR_hostHaloID_bound"
     endif
     res =  particle_store_new_property(pdata,species_name(ispecies), &
          propname, "INTEGER")
