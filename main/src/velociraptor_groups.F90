@@ -187,6 +187,9 @@ contains
        suboffset(group_offset+1:group_offset+num_of_groups(1)) = &
             suboffset(group_offset+1:group_offset+num_of_groups(1)) + id_offset + 1
 
+       ! Close catalog_particles file
+       hdferr = hdf5_close_file()
+
        ! Next file
        group_offset = group_offset + num_of_groups(1)
        id_offset    = id_offset    + num_of_particles_in_groups(1)
