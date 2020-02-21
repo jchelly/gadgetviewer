@@ -6,6 +6,7 @@ module info_window
   use particle_store
   use view_parameters
   use data_types
+  use format_strings
 
   implicit none
   private
@@ -159,12 +160,12 @@ contains
        !endif
 
        if(ptype.eq."INTEGER")then
-          write(str, '(1i20)')res_int(3)
+          write(str, '('//trim(iprop_fmt)//')')res_int(3)
           write(str,'(a, a, a)') &
                trim(adjustl(prop_names(iprop))), &
                ": ", trim(str)
        else
-          write(str,'(a, a, 1es16.8)') &
+          write(str,'(a, a, '//trim(rprop_fmt)//')') &
                trim(adjustl(prop_names(iprop))), &
                ": ",res_real(3) 
        endif
@@ -174,7 +175,7 @@ contains
 
     ! Coordinates
     call gui_textview_add_line(textview, "")
-    write(str,'("Coordinates: ",1es14.6,",",1es14.6,",",1es14.6)')view_transform%centre
+    write(str,'("Coordinates: ",'//trim(pos_fmt)//',",",'//trim(pos_fmt)//',",",'//trim(pos_fmt)//')')view_transform%centre
     call gui_textview_add_line(textview, trim(str))
 
     return

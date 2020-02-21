@@ -19,6 +19,7 @@ module selection
   use return_status
   use string_module
   use data_array
+  use format_strings
 
   implicit none
   private
@@ -1631,7 +1632,7 @@ contains
          trim(selection_name(isel))//'"')
     call gui_textview_add_line(textview, &
          "(based on displayed sample, sample rate = "// &
-         trim(adjustl(string(fsample,fmt="(1e14.4)")))//")")
+         trim(adjustl(string(fsample,fmt="(1es14.4)")))//")")
     call gui_textview_add_line(textview, "")
 
     ! Write out info for each type
@@ -1673,21 +1674,21 @@ contains
             " selected particles ")
        if(nsel.gt.0)then
           call gui_textview_add_line(textview, &
-               "  Mass: "//trim(adjustl(string(mtot,fmt="(1e14.4)"))))
+               "  Mass: "//trim(adjustl(string(mtot,fmt="("//trim(rprop_fmt)//")"))))
           call gui_textview_add_line(textview, &
                "  Mass corrected for sampling rate: "// &
-               trim(adjustl(string(mtot/fsample,fmt="(1e14.4)"))))
+               trim(adjustl(string(mtot/fsample,fmt="("//trim(rprop_fmt)//")"))))
           call gui_textview_add_line(textview, &
                "  Centre of mass: "// &
-               trim(adjustl(string(cpos(1),fmt="(1e14.4)")))//", "// &
-               trim(adjustl(string(cpos(2),fmt="(1e14.4)")))//", "// &
-               trim(adjustl(string(cpos(3),fmt="(1e14.4)"))))
+               trim(adjustl(string(cpos(1),fmt="("//trim(rprop_fmt)//")")))//", "// &
+               trim(adjustl(string(cpos(2),fmt="("//trim(rprop_fmt)//")")))//", "// &
+               trim(adjustl(string(cpos(3),fmt="("//trim(rprop_fmt)//")"))))
 #ifdef READ_VEL
           call gui_textview_add_line(textview, &
                "  CofM Velocity : "// &
-               trim(adjustl(string(cvel(1),fmt="(1e14.4)")))//", "// &
-               trim(adjustl(string(cvel(2),fmt="(1e14.4)")))//", "// &
-               trim(adjustl(string(cvel(3),fmt="(1e14.4)"))))
+               trim(adjustl(string(cvel(1),fmt="("//trim(rprop_fmt)//")")))//", "// &
+               trim(adjustl(string(cvel(2),fmt="("//trim(rprop_fmt)//")")))//", "// &
+               trim(adjustl(string(cvel(3),fmt="("//trim(rprop_fmt)//")"))))
 #endif
           ! Write min/max/mean for each property
           call gui_textview_add_line(textview, "")
@@ -1711,11 +1712,11 @@ contains
                 end do
                 propmean = propmean / dble(nsel)
                 call gui_textview_add_line(textview, "    Min: "// &
-                     trim(adjustl(string(ipropmin,fmt="(1i12)"))))
+                     trim(adjustl(string(ipropmin, fmt="("//trim(iprop_fmt)//")"))))
                 call gui_textview_add_line(textview, "    Max: "// &
-                     trim(adjustl(string(ipropmax,fmt="(1i12)"))))
+                     trim(adjustl(string(ipropmax, fmt="("//trim(iprop_fmt)//")"))))
                 call gui_textview_add_line(textview, "    Mean: "// &
-                     trim(adjustl(string(propmean,fmt="(1e14.4)"))))
+                     trim(adjustl(string(propmean, fmt="("//trim(iprop_fmt)//")"))))
              case("REAL")
                 call particle_store_property(psample, ispecies, iprop, &
                      get_rdata=rdata)
@@ -1731,11 +1732,11 @@ contains
                 end do
                 propmean = propmean / dble(nsel)
                 call gui_textview_add_line(textview, "    Min: "// &
-                     trim(adjustl(string(propmin,fmt="(1e14.4)"))))
+                     trim(adjustl(string(propmin,fmt="("//trim(rprop_fmt)//")"))))
                 call gui_textview_add_line(textview, "    Max: "// &
-                     trim(adjustl(string(propmax,fmt="(1e14.4)"))))
+                     trim(adjustl(string(propmax,fmt="("//trim(rprop_fmt)//")"))))
                 call gui_textview_add_line(textview, "    Mean: "// &
-                     trim(adjustl(string(propmean,fmt="(1e14.4)"))))
+                     trim(adjustl(string(propmean,fmt="("//trim(rprop_fmt)//")"))))
              end select
              call gui_textview_add_line(textview, "")
           end do
