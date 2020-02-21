@@ -11,6 +11,7 @@ module overlay
   use catalogue_data
   use drawing
   use sampling
+  use format_strings
 
   implicit none
   private
@@ -110,9 +111,9 @@ contains
       ! Write the current coordinates at the top left
       if(overlay_show_coords)then
          str = "Centre: "//&
-              trim(string(trans%centre(1),fmt='(1f10.3)'))//", "// &
-              trim(string(trans%centre(2),fmt='(1f10.3)'))//", "// &
-              trim(string(trans%centre(3),fmt='(1f10.3)'))
+              trim(string(trans%centre(1),fmt='('//trim(pos_fmt)//')'))//", "// &
+              trim(string(trans%centre(2),fmt='('//trim(pos_fmt)//')'))//", "// &
+              trim(string(trans%centre(3),fmt='('//trim(pos_fmt)//')'))
          call draw_text(str, 0.02, 0.05, &
               colour=1)
       endif

@@ -1716,7 +1716,7 @@ contains
                 call gui_textview_add_line(textview, "    Max: "// &
                      trim(adjustl(string(ipropmax, fmt="("//trim(iprop_fmt)//")"))))
                 call gui_textview_add_line(textview, "    Mean: "// &
-                     trim(adjustl(string(propmean, fmt="("//trim(iprop_fmt)//")"))))
+                     trim(adjustl(string(propmean, fmt="("//trim(rprop_fmt)//")"))))
              case("REAL")
                 call particle_store_property(psample, ispecies, iprop, &
                      get_rdata=rdata)
