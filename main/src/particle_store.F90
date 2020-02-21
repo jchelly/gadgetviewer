@@ -71,7 +71,7 @@ module particle_store
   ! Maximum no. of species
   integer, parameter, public :: maxspecies = 6
   ! Maximum number of additional properties
-  integer, parameter, public :: maxprops = 20
+  integer, parameter, public :: maxprops = 100
 
   !
   ! -------------- End of public part of module -------------
@@ -305,10 +305,17 @@ contains
     if(ispecies.eq.-1)call terminate('Unable to find species index!')
     i = ispecies
     
+    ! Check for too many properties
+    if(pdata%species(i)%nprops.ge.maxprops)then
+       particle_store_new_property%success = .false.
+       particle_store_new_property%string  = &
+            "Too many particle properties. Increase maxprops in particle_store.F90"       
+       return
+    endif
+
     ! Get index of the new species
     pdata%species(i)%nprops = pdata%species(i)%nprops + 1
     j = pdata%species(i)%nprops
-    if(j.gt.maxprops)call terminate('Increase MAXPROPS!')
 
     ! Record if this is the particle ID or mass
     if(present(is_id))then
