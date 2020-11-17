@@ -16,6 +16,9 @@ void DRAWTEXT_F90(GtkWidget **drawingarea, GdkPixmap **pixmap,
   if(!font)font=gdk_font_load
     ("-*-*-*-r-*--12-*-*-*-p-*-iso8859-1");
 
+  if(!font)font=gdk_font_load
+    ("-*-*-*-*-*--12-*-*-*-*-*-iso8859-1");
+
   gdk_draw_string(*pixmap,
 		  font,
 		  (*drawingarea)->style->white_gc,
