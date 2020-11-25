@@ -187,6 +187,7 @@ contains
     real, dimension(:), allocatable :: rgb
     real :: valmin, valmax
     integer :: icol, jcol
+    real(kind=r_prop_kind) :: rcol
     integer :: is
     real :: mass_factor
     real :: val
@@ -390,8 +391,8 @@ contains
                    val = rdata(i)
                 endif
                 if(log_scale(ispecies,iprop(ispecies)))val = mylog10(val)
-                icol = (val-valmin) * dr
-                icol = max(0,min(255,icol))             
+                rcol = (val-valmin) * dr
+                icol = max(0.0_r_prop_kind,min(255.0_r_prop_kind,rcol))
                 rgb_part = real(coltab(itab(ispecies, iprop(ispecies)))%data(:,icol)) / 255.0
         
                 ! Fade out as the particle approaches clipping planes

@@ -549,23 +549,21 @@ contains
       implicit none
       integer :: ispecies
       real    :: rdata
-      integer :: icol
+      real(kind=r_prop_kind) :: rcol
 
       ! Figure out what colour index to use
       if(.not.log_scale(ispecies,iprop(ispecies)))then
-         icol = (rdata - &
+         rcol = (rdata - &
               propmin(ispecies,iprop(ispecies)))*dr
       else if(rdata.gt.0.0.and.propmin(ispecies, iprop(ispecies)).gt.0.0)then
-         icol = (mylog10(abs(rdata)) - &
+         rcol = (mylog10(abs(rdata)) - &
               mylog10(abs(propmin(ispecies, &
               iprop(ispecies)))))*dr
       else
-         icol = 0
+         rcol = 0
       endif
       ! Make sure colour index is in range
-      icol = max(0,min(255,icol))
-
-      colour_index = icol
+      colour_index = max(0.0_r_prop_kind,min(255.0_r_prop_kind,rcol))
 
       return
     end function colour_index
