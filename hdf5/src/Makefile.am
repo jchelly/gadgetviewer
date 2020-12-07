@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = foreign
 AM_CFLAGS        = @HDF5_CFLAGS@
-AM_FCFLAGS       = $(ax_cv_f90_modflag)../../f90_util/src/
+AM_FCFLAGS       = $(ax_cv_f90_modflag)../../f90_util/src/ $(OPENMP_FCFLAGS) $(extra_fcflags)
 
 @ax_mod_deps_hdf5@
 

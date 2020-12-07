@@ -1,6 +1,7 @@
 AUTOMAKE_OPTIONS = foreign
 
 AM_CFLAGS        = @HDF5_CFLAGS@
+AM_FCFLAGS       = $(OPENMP_FCFLAGS) $(extra_fcflags)
 
 @ax_mod_deps_read_eagle@
 

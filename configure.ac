@@ -139,6 +139,10 @@ if test "$with_checks" = "yes"; then
 fi
 AC_SUBST(extra_fcflags)
 
+# Newer gfortrans don't like calling C functions with different argument types.
+# Try to disable this check for now.
+AX_CHECK_COMPILE_FLAG([-fallow-argument-mismatch], [extra_fcflags="${extra_fcflags} -fallow-argument-mismatch"], [], [], [])
+
 #
 # Check we can read command line arguments from Fortran
 #

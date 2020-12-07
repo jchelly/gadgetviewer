@@ -1,5 +1,6 @@
 AUTOMAKE_OPTIONS = foreign
 AM_CFLAGS        = @LIBPNG_CFLAGS@ @GLIB_CFLAGS@
+AM_FCFLAGS       = $(OPENMP_FCFLAGS) $(extra_fcflags)
 
 noinst_LTLIBRARIES = libf90_util.la
 
