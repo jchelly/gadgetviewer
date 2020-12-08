@@ -18,12 +18,21 @@
 #define h5_open_group(file_id, name)        H5Gopen(file_id, name)
 #define h5_errors_off                       H5Eset_auto(NULL, NULL)
 #define h5_open_attribute(parent_id, name)  H5Aopen_name(parent_id, name)
-#else
-/* Use HDF5 1.8 API - only "2" versions of functions are guaranteed to exist */
+#define h5_get_info_by_idx(loc_id, group_name, idx_type, order, n, oinfo, lapl_id) H5Oget_info_by_idx(loc_id, group_name, idx_type, order, n, oinfo, lapl_id)
+#elif ((H5_VERS_MAJOR == 1) && (H5_VERS_MINOR < 12))
+/* Use HDF5 1.8-1.10 API */
 #define h5_open_dataset(file_id, name)      H5Dopen2(file_id, name, H5P_DEFAULT)
 #define h5_open_group(file_id, name)        H5Gopen2(file_id, name, H5P_DEFAULT)
 #define h5_errors_off                       H5Eset_auto2(H5E_DEFAULT, NULL, NULL)
 #define h5_open_attribute(parent_id, name)  H5Aopen_by_name(parent_id, ".", name, H5P_DEFAULT, H5P_DEFAULT)
+#define h5_get_info_by_idx(loc_id, group_name, idx_type, order, n, oinfo, lapl_id) H5Oget_info_by_idx(loc_id, group_name, idx_type, order, n, oinfo, lapl_id)
+#else
+/* Use HDF5 1.12 API */
+#define h5_open_dataset(file_id, name)      H5Dopen2(file_id, name, H5P_DEFAULT)
+#define h5_open_group(file_id, name)        H5Gopen2(file_id, name, H5P_DEFAULT)
+#define h5_errors_off                       H5Eset_auto2(H5E_DEFAULT, NULL, NULL)
+#define h5_open_attribute(parent_id, name)  H5Aopen_by_name(parent_id, ".", name, H5P_DEFAULT, H5P_DEFAULT)
+#define h5_get_info_by_idx(loc_id, group_name, idx_type, order, n, oinfo, lapl_id) H5Oget_info_by_idx3(loc_id, group_name, idx_type, order, n, oinfo, H5O_INFO_BASIC, lapl_id)
 #endif
 
 static hid_t file_id;
@@ -534,7 +543,7 @@ herr_t find_datasets(hid_t group_id, int nmax, int maxlen, int *nfound, char *da
     {
       /* Get type of the next object */
       H5O_info_t object_info;
-      H5Oget_info_by_idx(group_id, ".", H5_INDEX_NAME, H5_ITER_NATIVE, i, &object_info, H5P_DEFAULT); 
+      h5_get_info_by_idx(group_id, ".", H5_INDEX_NAME, H5_ITER_NATIVE, i, &object_info, H5P_DEFAULT); 
       /* Get name of the next object */
       char *name;
       ssize_t len;
