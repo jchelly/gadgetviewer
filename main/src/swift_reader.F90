@@ -342,6 +342,8 @@ contains
     real(kind=real8byte), dimension(3) :: boxsize
     ! Range of particles in cell
     integer(kind=int8byte) :: first_particle, num_particles
+    integer(kind=int8byte), parameter :: max_particles = 1000000
+    integer :: first_cell, last_cell
     ! Mask for random sampling
     logical, dimension(:), allocatable :: mask
     ! Result from function calls
@@ -604,16 +606,33 @@ contains
              write(str, "('/PartType',i1.1)")ispecies-1
              
              ! Loop over cells in order of offset
-             do i = 1, nr_cells_read, 1
-                cell_nr = cell_order(i)
+             first_cell = 1
+             do while(first_cell.le.nr_cells_read)
+                
+                ! Find range of cells to read in on this iteration
+                last_cell = first_cell
+                num_particles = 0
+                do while(.true.)
+                   num_particles = num_particles + cell_length(cell_order(last_cell))
+                   ! Check for end of cell array
+                   if(last_cell.eq.nr_cells_read)exit
+                   ! Check if we can merge the next cell with this one
+                   ! Don't merge if there would be too many particles
+                   if(num_particles+cell_length(cell_order(last_cell+1)).gt.max_particles)exit
+                   ! Don't merge if cells are not contiguous
+                   if(cell_offset(cell_order(last_cell))+cell_length(cell_order(last_cell)).eq.&
+                        cell_offset(cell_order(last_cell+1)))then
+                      last_cell = last_cell + 1
+                   else
+                      exit
+                   endif
+                end do
+                first_particle = cell_offset(cell_order(first_cell))
 
                 prog_so_far = sum(prog_weight(1:ispecies-1)) + &
-                     (real(i)/real(nr_cells_read))*prog_weight(ispecies)
+                     (real(first_cell)/real(nr_cells_read))*prog_weight(ispecies)
                 call progress_bar_update(prog_so_far/sum(prog_weight))
 
-                ! Find range of particles to read
-                first_particle = cell_offset(cell_nr)
-                num_particles = cell_length(cell_nr)
                 if(num_particles.gt.0)then
 
                    ! Generate mask for random sampling
@@ -714,6 +733,7 @@ contains
                 endif
 
                 ! Next cell to read
+                first_cell = last_cell + 1
              end do
              
              deallocate(cell_order)
