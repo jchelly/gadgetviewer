@@ -261,7 +261,7 @@ contains
     endif
 
     ! Try all readers in sequence
-    do i = 1, nformat, 1
+    do i = 1, 4 !nformat, 1
        call snapshot_set_format(format_names(i))
        res = snapshot_open(fname,isnap,ri)
        if(res%success)then
