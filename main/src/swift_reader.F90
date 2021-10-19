@@ -85,12 +85,13 @@ contains
        call get_key("SWIFT","Extra Properties", props)
     else
        ! Default settings
-       nextra = 5
-       extra_prop(1) = "Metallicity"
-       extra_prop(2) = "StarFormationRate"
-       extra_prop(3) = "Temperature"
-       extra_prop(4) = "Density"
-       extra_prop(5) = "InternalEnergy"
+       nextra = 6
+       extra_prop(1) = "MetalMassFractions"
+       extra_prop(2) = "StarFormationRates"
+       extra_prop(3) = "Temperatures"
+       extra_prop(4) = "Densities"
+       extra_prop(5) = "InternalEnergies"
+       extra_prop(6) = "FOFGroupIDs"
        call set_key("SWIFT","Extra Properties", extra_prop(1:nextra)) 
        call write_key_file(fname)
     endif
@@ -330,7 +331,7 @@ contains
     integer :: ispecies
     integer(kind=int8byte), dimension(:), allocatable :: npfile
     ! Loops etc
-    integer :: i, j, iextra
+    integer :: i, j, iextra, ios, iprop
     character(len=500) :: str
     ! Cell info
     integer :: nr_cells, cell_nr, nr_cells_read, nkeep
@@ -582,19 +583,19 @@ contains
              return
           endif
 
-          ! ! Allocate storage for any extra properties
-          ! do iextra = 1, nextra, 1
-          !    if(read_extra(ispecies,iextra))then
-          !       res = particle_store_new_property(pdata,species_name(ispecies),&
-          !            extra_prop(iextra), extra_type(ispecies,iextra))
-          !       if(.not.res%success)then
-          !          swift_read = res
-          !          call particle_store_empty(pdata)
-          !          call cleanup()
-          !          return
-          !       endif
-          !    endif
-          ! end do
+          ! Allocate storage for any extra properties
+          do iextra = 1, nextra, 1
+             if(read_extra(ispecies,iextra))then
+                res = particle_store_new_property(pdata,species_name(ispecies),&
+                     extra_prop(iextra), extra_type(ispecies,iextra))
+                if(.not.res%success)then
+                   swift_read = res
+                   call particle_store_empty(pdata)
+                   call cleanup()
+                   return
+                endif
+             endif
+          end do
 
           if(nr_cells_read.gt.0)then
 
@@ -727,7 +728,83 @@ contains
                       call cleanup()
                       return                      
                    endif
-
+                   
+                   ! Read other properties
+                   do iprop = 1, nextra, 1
+                      if(read_extra(ispecies, iprop))then
+                         ! Read the dataset
+                         select case(extra_type(ispecies, iprop))
+                         case("INTEGER")
+                            allocate(idata(num_particles), stat=ios)
+                            if(ios.eq.0)then
+                               ios = hdf5_read_dataset(trim(str)//"/"//trim(extra_prop(iprop)),&
+                                    idata, start=(/first_particle/), count=(/num_particles/))
+                               if(ios.eq.0)then
+                                  ! Sample particles
+                                  if(rinfo%do_sampling)then
+                                     nkeep = shrink_array(idata(:), mask(:))
+                                  else
+                                     nkeep = num_particles
+                                  endif
+                                  res = particle_store_add_data(pdata, &
+                                       species_name(ispecies), &
+                                       prop_name=extra_prop(iprop), &
+                                       idata=idata(1:nkeep))
+                                  if(.not.res%success)then
+                                     swift_read%success = .false.
+                                     swift_read%string = "Unable to allocate memory"
+                                     call cleanup()
+                                     call particle_store_empty(pdata)
+                                     return
+                                  endif
+                               endif
+                            endif
+                            deallocate(idata)
+                         case("REAL")
+                            allocate(rdata(num_particles), stat=ios)
+                            if(ios.eq.0)then
+                               ios = hdf5_read_dataset(trim(str)//"/"//trim(extra_prop(iprop)),&
+                                    rdata, start=(/first_particle/), count=(/num_particles/))
+                               if(ios.eq.0)then
+                                  ! Sample particles
+                                  if(rinfo%do_sampling)then
+                                     nkeep = shrink_array(rdata(:), mask(:))
+                                  else
+                                     nkeep = num_particles
+                                  endif
+                                  res = particle_store_add_data(pdata, &
+                                       species_name(ispecies), &
+                                       prop_name=extra_prop(iprop), &
+                                       rdata=rdata(1:nkeep))
+                                  if(.not.res%success)then
+                                     swift_read%success = .false.
+                                     swift_read%string = "Unable to allocate memory"
+                                     call cleanup()
+                                     call particle_store_empty(pdata)
+                                     return
+                                  endif
+                               endif
+                            endif
+                            deallocate(rdata)
+                         case default
+                            swift_read%success = .false.
+                            swift_read%string  = "Dataset has unknown type!"
+                            call cleanup()
+                            call particle_store_empty(pdata)
+                            return 
+                         end select
+                         if(ios.ne.0)then
+                            swift_read%success = .false.
+                            swift_read%string  = "Unable to read "//&
+                                 trim(extra_prop(iprop))//" dataset"
+                            call cleanup()
+                            call particle_store_empty(pdata)
+                            return
+                         endif
+                      endif
+                      ! Next extra property
+                   end do
+                   
                    if(allocated(mask))deallocate(mask)
 
                 endif

@@ -6,6 +6,7 @@ module configuration
   use gadget_hdf5_reader
   use gadget_eagle_reader
   use gadget_binary_type2_reader
+  use swift_reader
   use colour_table
   use mouse_handler
 
@@ -52,6 +53,7 @@ contains
     call gadget_hdf5_read_conf(dirname)
     call gadget_eagle_read_conf(dirname)
     call gadget_binary_type2_read_conf(dirname)
+    call swift_read_conf(dirname)
     call colour_table_read_conf(dirname)
     call mouse_handler_read_conf(dirname)
 
