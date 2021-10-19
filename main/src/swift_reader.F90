@@ -600,7 +600,6 @@ contains
 
              ! Get name of the group for this type
              write(str, "('/PartType',i1.1)")ispecies-1
-             write(*,*)trim(str)
              
              ! Loop over cells in order of offset
              do i = 1, nr_cells_read, 1
@@ -708,6 +707,8 @@ contains
                       call cleanup()
                       return                      
                    endif
+
+                   if(allocated(mask))deallocate(mask)
 
                 endif
 
