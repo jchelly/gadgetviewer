@@ -51,14 +51,14 @@ module swift_reader
 
   ! Particle type names
   ! TODO: read from snapshot file
-  character(len=12) :: species_name(7) = (/ &
-       "Gas         ", &
-       "DM          ", &
-       "DMBackground", &
-       "Sink        ", &
-       "Stars       ", &
-       "BH          ", &
-       "Neutrino    " &
+  character(len=21) :: species_name(7) = (/ &
+       "Type 0 - Gas         ", &
+       "Type 1 - DM          ", &
+       "Type 2 - DMBackground", &
+       "Type 3 - Sink        ", &
+       "Type 4 - Stars       ", &
+       "Type 5 - BH          ", &
+       "Type 6 - Neutrino    " &
        /)
 
 contains
@@ -557,6 +557,8 @@ contains
           ! Decide on name of the mass dataset
           if(ispecies.eq.6)then
              mass_name = "DynamicalMasses"
+          else if(ispecies.eq.7)then
+             mass_name = "FakeUnitMass"
           else
              mass_name = "Masses"
           endif
@@ -680,11 +682,6 @@ contains
 
                    ! Read masses
                    allocate(rdata(num_particles))
-                   if(ispecies.eq.6)then
-                      mass_name = "DynamicalMasses"
-                   else
-                      mass_name = "Masses"
-                   endif
                    if(ispecies.ne.7)then
                       if(hdf5_read_dataset(trim(str)//"/"//trim(mass_name), rdata, &
                            start=(/first_particle/), &
