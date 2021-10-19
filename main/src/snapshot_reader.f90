@@ -9,6 +9,7 @@ module snapshot_reader
   use particle_store
   use gadget_binary_reader
   use gadget_binary_type2_reader
+  use swift_reader
   use gadget_hdf5_reader
   use gadget_eagle_reader
   use dummy_reader
@@ -40,11 +41,12 @@ module snapshot_reader
   logical :: first_read = .true.
 
   ! Format names
-  integer, parameter :: nformat = 5
+  integer, parameter :: nformat = 6
   character(len=20), dimension(nformat) :: format_names = (/ &
        "GADGET_BINARY       ", &
        "GADGET_BINARY_TYPE2 ", &
        "GADGET_EAGLE        ", &
+       "SWIFT               ", &
        "GADGET_HDF5         ", &
        "DUMMY               "  & 
        /)
@@ -97,6 +99,8 @@ contains
        res = gadget_binary_type2_open(fname,isnap,ri_in)
     case("GADGET_EAGLE")
        res = gadget_eagle_open(fname,isnap,ri_in)
+    case("SWIFT")
+       res = swift_open(fname,isnap,ri_in)
     case("GADGET_HDF5")
        res = gadget_hdf5_open(fname,isnap,ri_in)
     case("DUMMY")
@@ -147,6 +151,10 @@ contains
     case("GADGET_EAGLE")
        call summary_add_line(s,"Simulation format: Eagle")
        res = gadget_eagle_read(isnap, rinfo)
+
+    case("SWIFT")
+       call summary_add_line(s,"Simulation format: SWIFT")
+       res = swift_read(isnap, rinfo)
     case("GADGET_HDF5")
        call summary_add_line(s,"Simulation format: Gadget HDF5")
        res = gadget_hdf5_read(isnap, rinfo)

@@ -302,21 +302,9 @@ contains
     ! Add menu options
     call gui_create_menu(file_menu, mainwin, "File")
     call gui_create_menu_item(file_open_snapshot, file_menu, &
-         "Read Gadget snapshot...")
+         "Read simulation snapshot...")
     call gui_create_menu_item(file_open_partial, file_menu, &
-         "Read part of Gadget snapshot...")
-    !call gui_create_menu_item(file_open_partial, file_menu, &
-    !     "Read Gadget snapshot...")
-
-#ifdef SPECIFIC_FORMAT
-    call gui_create_menu(file_formats, file_menu, "Read specific format")
-    call gui_create_menu_item(file_open_binary_gadget, file_formats, &
-         "Open binary (type 1) gadget file...")
-    call gui_create_menu_item(file_open_type2_gadget, file_formats, &
-         "Open binary (type 2) gadget file...")
-    call gui_create_menu_item(file_open_hdf5_gadget, file_formats, &
-         "Open HDF5 (type 3) gadget file...")
-#endif
+         "Read part of simulation snapshot...")
 
     ! Set up list of group formats we can read
     call gui_create_menu(file_read_groups, file_menu, &
@@ -364,13 +352,6 @@ contains
          "Restore saved settings...")
     call gui_create_menu_item(file_save_default, file_settings, &
          "Make current settings default", separator=.true.)
-
-    ! Without HDF5 we can't load HDF5 snapshots
-#ifndef HAVE_HDF5
-#ifdef SPECIFIC_FORMAT
-    call gui_set_sensitive(file_open_hdf5_gadget,.false.)
-#endif
-#endif
 
     ! Quit option
     call gui_create_menu_item(file_exit, file_menu, "Exit", separator=.true.)
@@ -1081,14 +1062,6 @@ contains
 
     ! File/Open menu options
     fmt_to_read = "none"
-#ifdef SPECIFIC_FORMATS
-    if(gui_menu_item_clicked(file_open_binary_gadget)) &
-         fmt_to_read="GADGET_BINARY"
-    if(gui_menu_item_clicked(file_open_type2_gadget)) &
-         fmt_to_read="GADGET_BINARY_TYPE2"
-    if(gui_menu_item_clicked(file_open_hdf5_gadget)) &
-         fmt_to_read="GADGET_HDF5"
-#endif
     if(gui_menu_item_clicked(file_open_snapshot)) &
          fmt_to_read="UNKNOWN"
     if(gui_menu_item_clicked(file_open_partial)) &
