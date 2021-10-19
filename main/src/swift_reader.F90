@@ -685,13 +685,17 @@ contains
                    else
                       mass_name = "Masses"
                    endif
-                   if(hdf5_read_dataset(trim(str)//"/"//trim(mass_name), rdata, &
-                        start=(/first_particle/), &
-                        count=(/num_particles/)).ne.0)then
-                      swift_read%string = "Unable to read Masses dataset"
-                      call particle_store_empty(pdata)
-                      call cleanup()
-                      return
+                   if(ispecies.ne.7)then
+                      if(hdf5_read_dataset(trim(str)//"/"//trim(mass_name), rdata, &
+                           start=(/first_particle/), &
+                           count=(/num_particles/)).ne.0)then
+                         swift_read%string = "Unable to read Masses dataset"
+                         call particle_store_empty(pdata)
+                         call cleanup()
+                         return
+                      endif
+                   else
+                      rdata = 1.0
                    endif
                    if(rinfo%do_sampling)then
                       nkeep = shrink_array(rdata(:), mask(:))

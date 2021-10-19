@@ -69,7 +69,7 @@ module particle_store
   ! Maximum length of a species/property name
   integer, parameter, public :: maxlen = 500
   ! Maximum no. of species
-  integer, parameter, public :: maxspecies = 6
+  integer, parameter, public :: maxspecies = 8
   ! Maximum number of additional properties
   integer, parameter, public :: maxprops = 100
 
