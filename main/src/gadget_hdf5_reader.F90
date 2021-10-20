@@ -138,12 +138,15 @@ contains
        ! Save the new list
        call set_key("Gadget HDF5","Extra Properties", extra_prop_config(1:nextra_config)) 
        call write_key_file(fname)
-    endif
-    if(file_has_group("Gadget HDF5"))then
+    else
        extra_prop_config(:) = ""
        call get_key("Gadget HDF5","Extra Properties", extra_prop_config)
        do i = 1, max_extra, 1
-          if(len_trim(extra_prop_config(i)).gt.0)nextra_config = nextra_config + 1
+          if(len_trim(extra_prop_config(i)).gt.0)then
+             nextra_config = i
+          else
+             exit
+          endif
        end do
     endif
     call close_key_file()

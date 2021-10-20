@@ -1,6 +1,6 @@
 module swift_reader
 !
-! Module to read EAGLE snapshot files
+! Module to read SWIFT snapshot files
 !
 #include "../../config.h"
 #ifdef HAVE_HDF5
@@ -31,10 +31,16 @@ module swift_reader
   ! Weighting for progress bar
   real, dimension(maxspecies) :: prog_weight
 
-  ! Extra properties to read
-  integer :: nextra = 0
+  ! Maximum number of extra quantities to read
   integer, parameter :: max_extra = 100
-  character(len=maxlen), dimension(max_extra) :: extra_prop
+
+  ! Extra properties defined in the config file
+  integer :: nextra_config = 0
+  character(len=maxlen), dimension(max_extra) :: extra_prop_config
+
+  ! Extra properties from config+command line
+  integer :: nextra_all
+  character(len=maxlen), dimension(max_extra) :: extra_prop_all
 
   ! Which properties exist in the current snapshot
   logical, dimension(maxspecies,max_extra)           :: read_extra
@@ -63,6 +69,41 @@ module swift_reader
 
 contains
 
+  subroutine sanitize_property_list(nextra, extra_prop)
+!
+! Ensure the extra properties list contains only unique elements
+!
+    implicit none
+    integer :: nextra
+    character(len=*), dimension(:) :: extra_prop
+    integer :: iprop, jprop
+    integer, dimension(:), allocatable :: sortidx
+
+    ! Remove any duplicate property names
+    allocate(sortidx(nextra))
+    call sort_index(extra_prop(1:nextra), sortidx)
+    do iprop = 2, nextra, 1
+       if(extra_prop(sortidx(iprop)).eq.extra_prop(sortidx(iprop-1)))then
+          extra_prop(sortidx(iprop)) = ""
+       endif
+    end do
+    deallocate(sortidx)
+
+    ! Only keep unique entries
+    jprop = 0
+    do iprop = 1, nextra, 1
+       ! Check if this is a duplicate
+       if(len_trim(extra_prop(iprop)).eq.0)cycle
+       ! Keep this one
+       jprop = jprop + 1
+       extra_prop(jprop) = extra_prop(iprop)   
+    end do
+    nextra = jprop
+
+    return
+  end subroutine sanitize_property_list
+
+  
   subroutine swift_read_conf(dir)
 !
 ! Read in the configuration file, or create a default one if it doesn't
@@ -74,52 +115,50 @@ contains
     integer            :: ios
     character(len=500) :: str
     integer            :: i
-    logical            :: is_duplicate
-    character(len=maxlen), dimension(max_extra) :: props
-    integer :: iextra
 
     fname = trim(dir)//"/"//"swift_extra_properties"
-    props = ""
     call read_key_file(fname)
-    if(file_has_group("SWIFT"))then
-       call get_key("SWIFT","Extra Properties", props)
-    else
-       ! Default settings
-       nextra = 6
-       extra_prop(1) = "MetalMassFractions"
-       extra_prop(2) = "StarFormationRates"
-       extra_prop(3) = "Temperatures"
-       extra_prop(4) = "Densities"
-       extra_prop(5) = "InternalEnergies"
-       extra_prop(6) = "FOFGroupIDs"
-       call set_key("SWIFT","Extra Properties", extra_prop(1:nextra)) 
-       call write_key_file(fname)
-    endif
-    call close_key_file()
+    nextra_config = 0
 
-    nextra = 0
-    do iextra = 1, max_extra, 1
-       str = trim(props(iextra))
-       if(len_trim(str).gt.0)then
-          ! Ignore names that conflict with things we always read
-          if(trim(adjustl(str)).eq."Coordinates")cycle
-          if(trim(adjustl(str)).eq."Velocities")cycle
-          if(trim(adjustl(str)).eq."Masses")cycle
-          if(trim(adjustl(str)).eq."ParticleIDs")cycle
-          ! Check for duplicates
-          is_duplicate = .false.
-          do i = 1, nextra, 1
-             if(trim(adjustl(str)).eq.trim(extra_prop(i))) &
-                  is_duplicate = .true.
-          end do
-          if(.not.is_duplicate)then
-             nextra = nextra + 1
-             extra_prop(nextra) = trim(adjustl(str))
+    ! Create the config file if it doesn't exist
+    if(.not.file_has_group("SWIFT"))then
+       ! Default settings
+       call add_extra("MetalMassFractions")
+       call add_extra("StarFormationRates")
+       call add_extra("Temperatures")
+       call add_extra("Densities")
+       call add_extra("InternalEnergies")
+       call add_extra("FOFGroupIDs")
+       call set_key("SWIFT","Extra Properties", extra_prop_config(1:nextra_config)) 
+       call write_key_file(fname)
+    else
+       extra_prop_config(:) = ""
+       call get_key("SWIFT","Extra Properties", extra_prop_config)
+       do i = 1, max_extra, 1
+          if(len_trim(extra_prop_config(i)).gt.0)then
+             nextra_config = i
+          else
+             exit
           endif
-       endif
-    end do
-    
+       end do
+    endif
+ 
+    call close_key_file()
+    call sanitize_property_list(nextra_config, extra_prop_config)
     return
+
+  contains
+
+    subroutine add_extra(name)
+        
+      character(len=*), intent(in) :: name
+      
+      if(nextra_config.lt.max_extra)then
+         nextra_config = nextra_config + 1
+         extra_prop_config(nextra_config) = trim(name)
+      endif
+      
+    end subroutine add_extra
 
   end subroutine swift_read_conf
 
@@ -138,7 +177,7 @@ contains
     ! Internal
     integer :: jsnap, ios, ifile
     logical :: fexist
-    integer :: n
+    integer :: n, i1, i2
     integer :: ispecies, iextra
     character(len=maxlen) :: str
     ! Checking for datasets
@@ -225,6 +264,31 @@ contains
        return
     endif
 
+    ! Make full list of properties to try to read
+    ! Add list from config file
+    nextra_all = 0
+    do i1 = 1, nextra_config, 1
+       call add_extra(extra_prop_config(i1))
+    end do
+    
+    ! Then add any specified on the command line
+    i1 = 1
+    do while(i1.le.len_trim(rinfo%extra_dataset_names))
+       i2 = index(rinfo%extra_dataset_names(i1:), ",")
+       if(i2.lt.1)then
+          i2 = len_trim(rinfo%extra_dataset_names) + 1
+       else
+          i2 = i2 + i1 - 1
+       endif
+       if(i2.gt.i1)then
+          call add_extra(trim(adjustl(rinfo%extra_dataset_names(i1:i2-1))))
+       endif
+       i1 = max(i1+1, i2+1)
+    end do
+
+    ! Remove any duplicate property names
+    call sanitize_property_list(nextra_all, extra_prop_all)
+
     ! Check which of the extra properties exist in this snapshot
     read_extra = .false.
     ifile = 0
@@ -262,9 +326,9 @@ contains
           endif
        endif
 
-       do iextra = 1, nextra, 1
+       do iextra = 1, nextra_all, 1
           str = "/PartType"//trim(string(ispecies-1,fmt='(i1.1)'))//"/"// &
-               trim(extra_prop(iextra))
+               trim(extra_prop_all(iextra))
           hdferr = hdf5_dataset_type(str, dtype)
           if(hdferr.eq.0)then
              select case(dtype)
@@ -309,6 +373,20 @@ contains
 #endif
 
     return
+    
+  contains
+
+    subroutine add_extra(name)
+      
+      character(len=*), intent(in) :: name
+        
+      if(nextra_all.lt.max_extra)then
+         nextra_all = nextra_all + 1
+         extra_prop_all(nextra_all) = trim(name)
+      endif
+      
+    end subroutine add_extra
+
   end function swift_open
 
 !
@@ -584,10 +662,10 @@ contains
           endif
 
           ! Allocate storage for any extra properties
-          do iextra = 1, nextra, 1
+          do iextra = 1, nextra_all, 1
              if(read_extra(ispecies,iextra))then
                 res = particle_store_new_property(pdata,species_name(ispecies),&
-                     extra_prop(iextra), extra_type(ispecies,iextra))
+                     extra_prop_all(iextra), extra_type(ispecies,iextra))
                 if(.not.res%success)then
                    swift_read = res
                    call particle_store_empty(pdata)
@@ -730,14 +808,14 @@ contains
                    endif
                    
                    ! Read other properties
-                   do iprop = 1, nextra, 1
+                   do iprop = 1, nextra_all, 1
                       if(read_extra(ispecies, iprop))then
                          ! Read the dataset
                          select case(extra_type(ispecies, iprop))
                          case("INTEGER")
                             allocate(idata(num_particles), stat=ios)
                             if(ios.eq.0)then
-                               ios = hdf5_read_dataset(trim(str)//"/"//trim(extra_prop(iprop)),&
+                               ios = hdf5_read_dataset(trim(str)//"/"//trim(extra_prop_all(iprop)),&
                                     idata, start=(/first_particle/), count=(/num_particles/))
                                if(ios.eq.0)then
                                   ! Sample particles
@@ -748,7 +826,7 @@ contains
                                   endif
                                   res = particle_store_add_data(pdata, &
                                        species_name(ispecies), &
-                                       prop_name=extra_prop(iprop), &
+                                       prop_name=extra_prop_all(iprop), &
                                        idata=idata(1:nkeep))
                                   if(.not.res%success)then
                                      swift_read%success = .false.
@@ -763,7 +841,7 @@ contains
                          case("REAL")
                             allocate(rdata(num_particles), stat=ios)
                             if(ios.eq.0)then
-                               ios = hdf5_read_dataset(trim(str)//"/"//trim(extra_prop(iprop)),&
+                               ios = hdf5_read_dataset(trim(str)//"/"//trim(extra_prop_all(iprop)),&
                                     rdata, start=(/first_particle/), count=(/num_particles/))
                                if(ios.eq.0)then
                                   ! Sample particles
@@ -774,7 +852,7 @@ contains
                                   endif
                                   res = particle_store_add_data(pdata, &
                                        species_name(ispecies), &
-                                       prop_name=extra_prop(iprop), &
+                                       prop_name=extra_prop_all(iprop), &
                                        rdata=rdata(1:nkeep))
                                   if(.not.res%success)then
                                      swift_read%success = .false.
@@ -796,7 +874,7 @@ contains
                          if(ios.ne.0)then
                             swift_read%success = .false.
                             swift_read%string  = "Unable to read "//&
-                                 trim(extra_prop(iprop))//" dataset"
+                                 trim(extra_prop_all(iprop))//" dataset"
                             call cleanup()
                             call particle_store_empty(pdata)
                             return
