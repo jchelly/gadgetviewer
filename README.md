@@ -194,6 +194,14 @@ snapshots will be unreadable.
 
 ## Using the Gadget file viewer
 
+### Command line flags
+
+To get a full list of command line options, run
+
+```
+gadgetviewer --help
+```
+
 ### Reading a snapshot
 
 The name of a snapshot file to read can be specified on the command
@@ -205,17 +213,43 @@ Positions, IDs and masses are always read for all particles. Other
 particle properties may also be loaded depending on the file format
 (see 2.8 below).
 
+### Reading part of a snapshot
 
-### Random sampling
+Sub-regions can be read from snapshots using the --region command line
+flag. E.g.
 
-By default the program shows up to 2,000,000 particles. If there are more
-than this a random sample is shown. If you zoom in on a particular
-region of the simulation you can make it draw the sample from just this
-region by clicking the resample button. Alternatively you can activate
-the automatic resampling option in the View menu. This resamples the
-particles whenever the zoom factor changes by some amount. Its best not
-to use this in conjunction with the smoothed density plot because the
-smoothing lengths are recalculated whenever the particles are
+```
+gadgetviewer --region=x,y,z,r snapshot_010.hdf5
+```
+
+Here x,y,z are the coordinates of the centre of the region and r is the
+radius. In case of EAGLE or SWIFT snapshots the code will use the spatial
+indexing in the snapshot to efficiently extract the requested region.
+Otherwise the program reads the entire snapshot and discards particles
+outside the region. This will be slow for large snapshots.
+
+It's possible to read a random sample of particles from a snapshot:
+
+```
+gadgetviewer --sample-rate=s snapshot_010.hdf5
+```
+
+where the sample rate s is in the range 0-1.
+
+These options are also available through the "Read part of snapshot" option
+in the File menu.
+
+### Random sampling for display
+
+Displaying all of the particles which have been read in may be too slow
+for interactive use, so by default the program shows up to 2,000,000
+particles. If there are more than this a random sample is shown. If you
+zoom in on a particular region of the simulation you can make it draw the
+sample from just this region by clicking the resample button. Alternatively
+you can activate the automatic resampling option in the View menu. This
+resamples the particles whenever the zoom factor changes by some amount.
+Its best not to use this in conjunction with the smoothed density plot
+because the smoothing lengths are recalculated whenever the particles are
 resampled.
 
 The maximum number of particles to show can be changed with the
@@ -289,7 +323,7 @@ Options menu.
 
 ### Reading extra particle properties from snapshots
 
-#### HDF5 snapshots
+#### Gadget or SWIFT HDF5 snapshots
 
 If you have a HDF5 snapshot with extra particle properties (ages,
 metallicities etc) there are two ways to make it read the extra datasets.
@@ -300,13 +334,15 @@ gadgetviewer --datasets=Temperature,Density,Metallicity ./snapshot_010.0.hdf5
 ```
 
 If you'd rather make the program always read certain datasets if they're
-present, then you can put the dataset names in the file
+present, then you can put the dataset names in one of the following files
+depending on whether you're working with Gadget or SWIFT output:
 
 .gadgetviewer_settings/gadget_hdf5_extra_properties
+.gadgetviewer_settings/swift_extra_properties
 
 in your home directory. Note that duplicate dataset names or names which
 conflict with quantities which are always read (e.g. Mass, ID) will be
-silently ignored. The default file contains
+silently ignored. The default file for Gadget contains
 
 ```
 [Gadget HDF5]
