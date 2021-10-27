@@ -337,8 +337,10 @@ If you'd rather make the program always read certain datasets if they're
 present, then you can put the dataset names in one of the following files
 depending on whether you're working with Gadget or SWIFT output:
 
+```
 .gadgetviewer_settings/gadget_hdf5_extra_properties
 .gadgetviewer_settings/swift_extra_properties
+```
 
 in your home directory. Note that duplicate dataset names or names which
 conflict with quantities which are always read (e.g. Mass, ID) will be
