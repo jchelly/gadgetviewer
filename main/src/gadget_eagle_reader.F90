@@ -151,13 +151,6 @@ contains
        return
     endif
 
-    ! Check we HAVE been asked to use spatial indexing
-    if(.not.rinfo%use_index)then
-       gadget_eagle_open%string  = &
-            "Must use spatial index with Eagle reader"
-       return
-    endif
-
     ! Check if the file exists
     inquire(file=fname,exist=fexist,iostat=ios)
     if(ios.eq.0)then
@@ -390,14 +383,6 @@ contains
        return
     endif
 
-    ! Check we HAVE been asked to use spatial indexing
-    if(.not.rinfo%use_index)then
-       gadget_eagle_read%success = .false.
-       gadget_eagle_read%string  = &
-            "Unable to read all files with Eagle reader"
-       return
-    endif
-
     ! Check if the file exists
     inquire(file=fname,exist=fexist,iostat=ios)
     if(ios.eq.0)then
@@ -466,7 +451,10 @@ contains
             rinfo%pos(2)-rinfo%radius, rinfo%pos(2)+rinfo%radius, &
             rinfo%pos(3)-rinfo%radius, rinfo%pos(3)+rinfo%radius)
     else
-       call select_region(snap, 0.0, 1.0e20, 0.0, 1.0e20, 0.0, 1.0e20)
+       call select_region(snap, &
+            0.0, real(snap%boxsize), &
+            0.0, real(snap%boxsize), &
+            0.0, real(snap%boxsize))
     endif
 
     ! Loop over particle types

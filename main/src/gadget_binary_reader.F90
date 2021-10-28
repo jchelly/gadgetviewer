@@ -56,13 +56,6 @@ contains
 
     gadget_binary_open%success = .false.
 
-    ! Check we haven't been asked to use spatial indexing
-    if(rinfo%use_index)then
-       gadget_binary_open%string  = &
-            "No spatial indexing in Gadget binary-1 snapshot"
-       return
-    endif
-
     ! Check if the file exists
     inquire(file=fname,exist=fexist,iostat=ios)
     if(ios.eq.0)then
@@ -209,14 +202,6 @@ contains
 
     gadget_binary_read%success = .false.
     have_density = .true.
-
-    ! Check we haven't been asked to use spatial indexing
-    if(rinfo%use_index)then
-       gadget_binary_read%success = .false.
-       gadget_binary_read%string  = &
-            "No spatial indexing in Gadget binary-1 snapshot"
-       return
-    endif
 
     call progress_bar_update(0.0)
 

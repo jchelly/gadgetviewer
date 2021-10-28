@@ -200,13 +200,6 @@ contains
 
     gadget_hdf5_open%success = .false.
 
-    ! Check we haven't been asked to use spatial indexing
-    if(rinfo%use_index)then
-       gadget_hdf5_open%string  = &
-            "No spatial indexing in Gadget HDF5 snapshot"
-       return
-    endif
-
     ! Check if the file exists
     inquire(file=fname,exist=fexist,iostat=ios)
     if(ios.eq.0)then
@@ -484,14 +477,6 @@ contains
     logical :: is_id, is_mass, found_id, found_mass
 
     gadget_hdf5_read%success = .false.
-
-    ! Check we haven't been asked to use spatial indexing
-    if(rinfo%use_index)then
-       gadget_hdf5_read%success = .false.
-       gadget_hdf5_read%string  = &
-            "No spatial indexing in Gadget HDF5 snapshot"
-       return
-    endif
 
     call progress_bar_update(0.0)
 

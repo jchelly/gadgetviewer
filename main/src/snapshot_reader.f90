@@ -43,11 +43,11 @@ module snapshot_reader
   ! Format names
   integer, parameter :: nformat = 6
   character(len=20), dimension(nformat) :: format_names = (/ &
+       "SWIFT               ", &
+       "GADGET_EAGLE        ", &
+       "GADGET_HDF5         ", &
        "GADGET_BINARY       ", &
        "GADGET_BINARY_TYPE2 ", &
-       "GADGET_EAGLE        ", &
-       "SWIFT               ", &
-       "GADGET_HDF5         ", &
        "DUMMY               "  & 
        /)
 
@@ -89,7 +89,6 @@ contains
        ri_in%just_this_file = .false.
        ri_in%do_sampling    = .false.
        ri_in%do_sphere      = .false.
-       ri_in%use_index      = .false.
     endif
 
     select case(snapformat)

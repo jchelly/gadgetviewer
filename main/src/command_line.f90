@@ -37,7 +37,6 @@ contains
     partial     = .false.
 
     ! Partial read info
-    rinfo%use_index      = .false.
     rinfo%do_sampling    = .false.
     rinfo%do_sphere      = .false.
     rinfo%just_this_file = .false.
@@ -90,9 +89,6 @@ contains
           else
              rinfo%sample_rate = params(1)
           endif
-       else if(index(arg, "--use-index").eq.1)then
-          ! Use spatial index
-          rinfo%use_index = .true.
        else if(index(arg, "--ignore-missing-mass").eq.1)then
           ! Set missing masses to 1
           rinfo%ignore_missing_mass = .true.
@@ -155,8 +151,6 @@ contains
        write(0,*)"       --region=x,y,z,r     : only load particles in a cube"
        write(0,*)"                              centred on x,y,z with side 2*r"
        write(0,*)"                              (reads all files by default)"
-       write(0,*)"       --use-index          : use spatial indexing to read the"
-       write(0,*)"                              region specified with --region"
        write(0,*)"       --datasets=...       : comma separated list of extra HDF5"
        write(0,*)"                              datasets to read"
        write(0,*)"       --ignore-missing-mass: assume mass=1 if no mass dataset"

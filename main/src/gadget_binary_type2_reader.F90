@@ -182,13 +182,6 @@ contains
        return
     endif
 
-    ! Check we haven't been asked to use spatial indexing
-    if(rinfo%use_index)then
-       gadget_binary_type2_open%string  = &
-            "No spatial indexing in Gadget binary-2 snapshot"
-       return
-    endif
-
     ! Check if the file exists
     inquire(file=fname,exist=fexist,iostat=ios)
     if(ios.eq.0)then
@@ -357,14 +350,6 @@ contains
     if(rinfo%do_sampling.or.rinfo%just_this_file.or.rinfo%do_sphere)then
        gadget_binary_type2_read%string=&
             "Partial read not yet implemented for this format"
-       return
-    endif
-
-    ! Check we haven't been asked to use spatial indexing
-    if(rinfo%use_index)then
-       gadget_binary_type2_read%success = .false.
-       gadget_binary_type2_read%string  = &
-            "No spatial indexing in Gadget binary-2 snapshot"
        return
     endif
 

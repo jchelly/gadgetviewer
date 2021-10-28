@@ -36,13 +36,6 @@ contains
 
     dummy_open%success = .false.
 
-    ! Check we haven't been asked to use spatial indexing
-    if(rinfo%use_index)then
-       dummy_open%string  = &
-            "No spatial indexing in dummy snapshot"
-       return
-    endif
-
     ! Only make dummy snapshot if right filename is specified
     if(fname.ne."DUMMY_SNAPSHOT")then
        dummy_open%string  = "Wrong filename!"
@@ -97,14 +90,6 @@ contains
     real :: time, redshift
 
     dummy_read%success = .false.
-
-    ! Check we haven't been asked to use spatial indexing
-    if(rinfo%use_index)then
-       dummy_read%success = .false.
-       dummy_read%string  = &
-            "No spatial indexing in Gadget binary-1 snapshot"
-       return
-    endif
 
     ! Check we're not doing a partial read
     if(rinfo%do_sphere.or.rinfo%do_sampling.or.rinfo%just_this_file)then

@@ -37,7 +37,6 @@ module read_partial
   type (gui_entrybox) :: r_box
   type (gui_radio_button) :: thisfile_button
   type (gui_radio_button) :: allfiles_button
-  type (gui_radio_button) :: index_button
   type (gui_checkbox) :: spatial_box
   type (gui_checkbox) :: ignore_missing_masses_box
   type (gui_entrybox) :: extra_datasets_box
@@ -48,7 +47,6 @@ module read_partial
   character(len=500) :: file_name          = ""
   logical            :: read_one_file      = .false.
   logical            :: read_all_files     = .true.
-  logical            :: use_index          = .false.
   logical            :: read_all_particles = .true.
   logical            :: read_sphere        = .false.
   character(len=50)  :: xtext, ytext, ztext, rtext, srtext
@@ -96,8 +94,6 @@ contains
     call gui_create_radio_button(allfiles_button, hbox, "Read all files")
     call gui_create_radio_button(thisfile_button, hbox, "Only read this file",&
          previous=allfiles_button)
-    call gui_create_radio_button(index_button,    hbox, "Use spatial index",&
-         previous=thisfile_button)
 
     call gui_create_box(notebook_vbox, outer_vbox, gui_vertical)
 
@@ -209,7 +205,6 @@ contains
        endif
        ! Get whether to read all files
        call gui_radio_button_get_state(thisfile_button, ri%just_this_file)
-       call gui_radio_button_get_state(index_button, ri%use_index)
        ! Get sampling parameters
        call gui_radio_button_get_state(rate_button,     ri%do_sampling)
        if(ri%do_sampling)then
@@ -300,7 +295,6 @@ contains
          gui_checkbox_changed(spatial_box).or. &
          gui_radio_button_changed(thisfile_button).or. &
          gui_radio_button_changed(allfiles_button).or. &
-         gui_radio_button_changed(index_button).or. &
          gui_entrybox_changed(x_box).or. &
          gui_entrybox_changed(y_box).or. &
          gui_entrybox_changed(z_box).or. &
@@ -358,7 +352,6 @@ contains
     call gui_entrybox_get_text(fname_entry, file_name)
     call gui_radio_button_get_state(thisfile_button, read_one_file)
     call gui_radio_button_get_state(allfiles_button, read_all_files)
-    call gui_radio_button_get_state(index_button, use_index)
     call gui_radio_button_get_state(all_button, read_all_particles)
     call gui_checkbox_get_state(spatial_box, read_sphere)
     call gui_entrybox_get_text(x_box, xtext)
@@ -380,7 +373,6 @@ contains
     call gui_entrybox_set_text(fname_entry, file_name)
     call gui_radio_button_set_state(thisfile_button, read_one_file)
     call gui_radio_button_set_state(allfiles_button, read_all_files)
-    call gui_radio_button_set_state(index_button, use_index)
     if(read_all_particles)then
        call gui_radio_button_set_state(all_button, .true.)
     else
@@ -410,7 +402,6 @@ contains
     if(present(rinfo))then
        read_one_file  = rinfo%just_this_file
        read_all_files = .not.rinfo%just_this_file
-       use_index      = rinfo%use_index
        read_all_particles = .not.rinfo%do_sampling
        read_sphere = rinfo%do_sphere
        if(rinfo%do_sphere)then
