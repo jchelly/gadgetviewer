@@ -1017,14 +1017,15 @@ contains
     subroutine cleanup()
 
       implicit none
+      integer :: jaux
 
       ! Deallocate read buffers
-      do iaux = i, j, 1
-         select case(aux_file(iaux)%type)
+      do jaux = i, j, 1
+         select case(aux_file(jaux)%type)
          case("INTEGER")
-            deallocate(iprop(iaux)%ptr)
+            deallocate(iprop(jaux)%ptr)
          case("REAL")
-            deallocate(rprop(iaux)%ptr)
+            deallocate(rprop(jaux)%ptr)
          end select
       end do
       deallocate(iprop,rprop)
