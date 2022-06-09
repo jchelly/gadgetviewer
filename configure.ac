@@ -62,10 +62,13 @@ GV_FIND_LIBRARY([hdf5],  [HDF5],  [hdf5],   [hdf5],   [H5open])
 
 # Check if GLib has the config file parser
 have_keyfile="no"
+TMP_LDFLAGS=$LDFLAGS
+LDFLAGS="${LDFLAGS} "-L${GV_GLIB_PATH}/lib/
 AC_CHECK_LIB(glib-2.0, g_key_file_new, [have_keyfile="yes"], [], [])
 if test "${have_keyfile}" == "yes" ; then
   AC_DEFINE([HAVE_KEYFILE],[],[Defined if we have GLib config file parser])
 fi
+LDFLAGS=$TMP_LDFLAGS
 
 # Only build hdf5 wrapper library if we have HDF5
 AM_CONDITIONAL([COND_HDF5], [test "$USE_HDF5" = yes])
