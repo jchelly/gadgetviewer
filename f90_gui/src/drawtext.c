@@ -1,5 +1,10 @@
 #include "../../config.h"
 #define DRAWTEXT_F90 FC_FUNC (drawtext, DRAWTEXT)
+
+#undef GDK_DISABLE_DEPRECATED
+#undef GTK_DISABLE_DEPRECATED
+
+#include "gdk/gdk.h"
 #include "gtk/gtk.h"
 
 static GdkFont *font = NULL;

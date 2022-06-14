@@ -4,9 +4,15 @@
 #define CREATEDRAWINGAREA_F90 FC_FUNC (createdrawingarea, CREATEDRAWINGAREA)
 #include "../../config.h"
 #define REDRAWDRAWINGAREA_F90 FC_FUNC (redrawdrawingarea, REDRAWDRAWINGAREA)
+
+#undef GDK_DISABLE_DEPRECATED
+#undef GTK_DISABLE_DEPRECATED
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <gtk/gtk.h>
+#include <gdk/gdk.h>
+#include <cairo/cairo.h>
 #include "pack_box.h"
 #include "set_event_handler.h"
 
@@ -32,15 +38,7 @@ void da_destroy(GtkObject *object, struct configure_info *c_info)
    expose event. I think. */
 void REDRAWDRAWINGAREA_F90(GtkWidget **drawingarea, int *width, int *height)
 {
-  GdkRectangle update_rect;
-  update_rect.x = 0;
-  update_rect.y = 0;
-  update_rect.width = *width;
-  update_rect.height = *height;
-
-  gtk_widget_draw(*drawingarea, &update_rect);
-    /* gtk_widget_queue_draw(*drawingarea); */
-
+  gtk_widget_queue_draw_area(*drawingarea, 0, 0, *width, *height);
 }
 
 
@@ -49,12 +47,20 @@ void REDRAWDRAWINGAREA_F90(GtkWidget **drawingarea, int *width, int *height)
 static gint da_expose_event( GtkWidget      *widget, GdkEventExpose *event,
 			     GdkPixmap **pixmap)
 {
-  gdk_draw_pixmap(widget->window,
-		  widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
-		  *pixmap,
-		  event->area.x, event->area.y,
-		  event->area.x, event->area.y,
-		  event->area.width, event->area.height);
+  /*
+  cairo_t *cr = gdk_cairo_create(widget->window);
+  gdk_cairo_set_source_pixmap(cr, *pixmap, event->area.x, event->area.y);  
+  cairo_paint (cr);
+  cairo_destroy (cr);
+  */
+
+  gdk_draw_drawable(widget->window,
+                    widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
+                    *pixmap,
+                    event->area.x, event->area.y,
+                    event->area.x, event->area.y,
+                    event->area.width, event->area.height);
+
   return TRUE;
 }
 
@@ -66,7 +72,7 @@ static gint da_configure_event(GtkWidget *widget, GdkEventConfigure *event,
 
   /* Deallocate the old pixmap first, if there was one */
   if (*(c_info->pixmap))
-    gdk_pixmap_unref(*(c_info->pixmap));
+    g_object_unref(*(c_info->pixmap));
   
   *(c_info->pixmap) = (gpointer) gdk_pixmap_new(widget->window,
 						widget->allocation.width,
@@ -239,25 +245,25 @@ void CREATEDRAWINGAREA_F90(GtkWidget **drawingarea, GtkWidget **box,
   c_info->height  = height;
   c_info->resized = resized;
 
-  gtk_signal_connect (GTK_OBJECT (*drawingarea), "expose_event",
-		      (GtkSignalFunc) da_expose_event, (gpointer) pixmap);
-  gtk_signal_connect (GTK_OBJECT(*drawingarea),"configure_event",
-		      (GtkSignalFunc) da_configure_event, (gpointer) c_info);
-  gtk_signal_connect (GTK_OBJECT (*drawingarea), "motion_notify_event",
-                      (GtkSignalFunc) da_motion_notify_event,
-		      (gpointer) mouse_state);
-  gtk_signal_connect (GTK_OBJECT (*drawingarea), "button_press_event",
-		      (GtkSignalFunc) da_button_press_event,
-		      (gpointer) mouse_state);
-  gtk_signal_connect (GTK_OBJECT (*drawingarea), "button_release_event",
-		      (GtkSignalFunc) da_button_release_event,
-		      (gpointer) mouse_state);
-  gtk_signal_connect (GTK_OBJECT (*drawingarea), "scroll_event",
-		      (GtkSignalFunc) da_scroll_event,
-		      (gpointer) mouse_state);
-  gtk_signal_connect (GTK_OBJECT (*drawingarea), "destroy",
-		      (GtkSignalFunc) da_destroy,
-		      (gpointer) c_info);
+  g_signal_connect (GTK_OBJECT (*drawingarea), "expose_event",
+                    G_CALLBACK(da_expose_event), (gpointer) pixmap);
+  g_signal_connect (GTK_OBJECT(*drawingarea),"configure_event",
+                    G_CALLBACK(da_configure_event), (gpointer) c_info);
+  g_signal_connect (GTK_OBJECT (*drawingarea), "motion_notify_event",
+                    G_CALLBACK(da_motion_notify_event),
+                    (gpointer) mouse_state);
+  g_signal_connect (GTK_OBJECT (*drawingarea), "button_press_event",
+                    G_CALLBACK(da_button_press_event),
+                    (gpointer) mouse_state);
+  g_signal_connect (GTK_OBJECT (*drawingarea), "button_release_event",
+                    G_CALLBACK(da_button_release_event),
+                    (gpointer) mouse_state);
+  g_signal_connect (GTK_OBJECT (*drawingarea), "scroll_event",
+                    G_CALLBACK(da_scroll_event),
+                    (gpointer) mouse_state);
+  g_signal_connect (GTK_OBJECT (*drawingarea), "destroy",
+                    G_CALLBACK(da_destroy),
+                    (gpointer) c_info);
 
   if(*db == 0)
     gtk_widget_set_double_buffered(GTK_WIDGET(*drawingarea), FALSE);

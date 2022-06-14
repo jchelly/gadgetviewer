@@ -6,7 +6,7 @@ void SETVISIBLE_F90(GtkWidget **widget, int *flag)
 {
   if(*flag == 0)
     {
-      gtk_widget_hide_all(*widget);     
+      gtk_widget_hide(*widget);     
     }
   else
     {

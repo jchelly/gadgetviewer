@@ -71,8 +71,8 @@ void CREATEWINDOW_F90(void **win, int *close, GtkWidget **box,
     to close the window
   */
 
-  gtk_signal_connect (GTK_OBJECT (*win), "delete_event",
-		      GTK_SIGNAL_FUNC (delete_event), (gpointer) close);
+  g_signal_connect (GTK_OBJECT (*win), "delete_event",
+                    G_CALLBACK(delete_event), (gpointer) close);
 
   /* Put a vbox in the window to contain the menu bar and status bar */
   outer_box = gtk_vbox_new(FALSE,0);

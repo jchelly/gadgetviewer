@@ -27,18 +27,18 @@ void combobox_event( GtkWidget *widget, gpointer data)
 
 void CREATECOMBOBOX_F90(GtkWidget **combobox, GtkWidget **box, int *clicked)
 {
-  *combobox = gtk_combo_box_new_text();
+  *combobox = gtk_combo_box_text_new();
   pack_box(*box, *combobox);
 
-  gtk_signal_connect (GTK_OBJECT (*combobox), "changed",
-		      GTK_SIGNAL_FUNC (combobox_event), (gpointer) clicked);
+  g_signal_connect (GTK_OBJECT (*combobox), "changed",
+                    G_CALLBACK(combobox_event), (gpointer) clicked);
 
 }
 
 void COMBOBOXADDTEXT_F90(GtkWidget **combobox, char *str)
 {
   ignore_events = 1;
-  gtk_combo_box_append_text(GTK_COMBO_BOX(*combobox), (gchar *) str);
+  gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(*combobox), (gchar *) str);
   gtk_combo_box_set_active(GTK_COMBO_BOX(*combobox), 0);
   ignore_events = 0;
 }
@@ -58,7 +58,7 @@ void COMBOBOXSETINDEX_F90(GtkWidget **combobox, int *i)
 void REMOVELINE_F90(GtkWidget **combobox, int *i)
 {
   ignore_events = 1;
-  gtk_combo_box_remove_text( GTK_COMBO_BOX(*combobox), (gint) (*i));
+  gtk_combo_box_text_remove( GTK_COMBO_BOX_TEXT(*combobox), (gint) (*i));
   ignore_events = 0;
 }
 

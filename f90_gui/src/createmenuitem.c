@@ -36,7 +36,7 @@ void CREATEMENUITEM_F90(GtkWidget **menuitem, int *clicked,
     {
       GtkWidget *sep;
       sep = gtk_separator_menu_item_new();
-      gtk_menu_append (GTK_MENU (*menu), sep);	
+      gtk_menu_shell_append (GTK_MENU_SHELL(*menu), sep);	
     }
 
   if(*type == 0)
@@ -52,16 +52,16 @@ void CREATEMENUITEM_F90(GtkWidget **menuitem, int *clicked,
     *menuitem = gtk_radio_menu_item_new_with_label_from_widget
       (GTK_RADIO_MENU_ITEM(*previous), (gchar *) name);
 
-  gtk_menu_append (GTK_MENU (*menu), *menuitem);
+  gtk_menu_shell_append(GTK_MENU_SHELL(*menu), *menuitem);
 
-  gtk_signal_connect_object (GTK_OBJECT (*menuitem), "activate",
-			     GTK_SIGNAL_FUNC (menuitem_event),
-			     (gpointer) clicked);
+  g_signal_connect_swapped(GTK_OBJECT (*menuitem), "activate",
+                           G_CALLBACK(menuitem_event),
+                           (gpointer) clicked);
   
   /* Checkbox and radiobutton items can emit the 'toggled' signal */
   if(*type > 0)
-    gtk_signal_connect (GTK_OBJECT (*menuitem), "toggled",
-			GTK_SIGNAL_FUNC (menuitem_toggled),
-			(gpointer) changed);
+    g_signal_connect (GTK_OBJECT (*menuitem), "toggled",
+                      G_CALLBACK(menuitem_toggled),
+                      (gpointer) changed);
 
 }
