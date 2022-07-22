@@ -18,9 +18,12 @@
 #   preprocessor macro HAVE_$VARNAME and sets USE_$VARNAME = "yes", otherwise
 #   sets USE_$VARNAME = "no". 
 #
+#   Also sets ${VARNAME}_LIBS and ${VARNAME}_CFLAGS on success.
+#
 # LAST MODIFICATION
 #
-#   07/03/09
+#   07/03/09 Version used in Gadgetviewer
+#   02/02/21 Use export when temporarily setting PKG_CONFIG_PATH
 #
 
 AC_DEFUN([GV_FIND_LIBRARY],[
@@ -52,7 +55,7 @@ if test $USE_$2 != "no" ; then
   # Add path to PKG_CONFIG_PATH if we have one
   TMP_PKG_CONFIG_PATH=$PKG_CONFIG_PATH
   if test $GV_HAVE_$2_PATH = "yes" ; then
-    PKG_CONFIG_PATH=$GV_$2_PATH/pkgconfig/:$GV_$2_PATH/lib/pkgconfig/:$PKG_CONFIG_PATH
+    export PKG_CONFIG_PATH=$GV_$2_PATH/pkgconfig/:$GV_$2_PATH/lib/pkgconfig/:$PKG_CONFIG_PATH
   fi
 
   # Try to set it up with pkg-config
@@ -61,7 +64,7 @@ if test $USE_$2 != "no" ; then
   			  [echo Unable to find $1 with pkg-config, will try to link to it anyway... ; GV_PKG="no"])
 
   # Restore original PKG_CONFIG_PATH
-  PKG_CONFIG_PATH=$TMP_PKG_CONFIG_PATH
+  export PKG_CONFIG_PATH=$TMP_PKG_CONFIG_PATH
 
   # If that didn't work and flags haven't been supplied by hand but we have a path, try sensible defaults
   if test ${GV_PKG} = "no" ; then
