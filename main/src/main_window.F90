@@ -257,8 +257,8 @@ contains
     call gui_create_button(xz_button, button_box, "x/_z")
     call gui_create_button(centre_button, button_box, "_Ctr")
     call gui_create_button(resample_button,button_box,"_Resample")
-    call gui_create_button(show_all_button,button_box,"Show _all")
-    call gui_create_button(show_info_button, button_box,"Show info")
+    call gui_create_button(show_all_button,button_box,"Show full volume")
+    call gui_create_button(show_info_button, button_box,"Selected point info")
 
     ! Add a hbox at the bottom
     call gui_packing_mode(expand=.false., fill=.false., spacing=3, &
