@@ -5,9 +5,6 @@
 #include "../../config.h"
 #define REDRAWDRAWINGAREA_F90 FC_FUNC (redrawdrawingarea, REDRAWDRAWINGAREA)
 
-#undef GDK_DISABLE_DEPRECATED
-#undef GTK_DISABLE_DEPRECATED
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <gtk/gtk.h>
@@ -38,7 +35,14 @@ void da_destroy(GtkObject *object, struct configure_info *c_info)
    expose event. I think. */
 void REDRAWDRAWINGAREA_F90(GtkWidget **drawingarea, int *width, int *height)
 {
-  gtk_widget_queue_draw_area(*drawingarea, 0, 0, *width, *height);
+
+  GdkRectangle update_rect;
+  update_rect.x = 0;
+  update_rect.y = 0;
+  update_rect.width = *width;
+  update_rect.height = *height;
+  gtk_widget_draw(*drawingarea, &update_rect);
+
 }
 
 
@@ -47,19 +51,11 @@ void REDRAWDRAWINGAREA_F90(GtkWidget **drawingarea, int *width, int *height)
 static gint da_expose_event( GtkWidget      *widget, GdkEventExpose *event,
 			     GdkPixmap **pixmap)
 {
-  /*
+  
   cairo_t *cr = gdk_cairo_create(widget->window);
   gdk_cairo_set_source_pixmap(cr, *pixmap, event->area.x, event->area.y);  
   cairo_paint (cr);
   cairo_destroy (cr);
-  */
-
-  gdk_draw_drawable(widget->window,
-                    widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
-                    *pixmap,
-                    event->area.x, event->area.y,
-                    event->area.x, event->area.y,
-                    event->area.width, event->area.height);
 
   return TRUE;
 }
