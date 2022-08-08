@@ -1,9 +1,6 @@
 #include "../../config.h"
 #define DRAWIMAGE_F90 FC_FUNC (drawimage, DRAWIMAGE)
 
-#undef GDK_DISABLE_DEPRECATED
-#undef GTK_DISABLE_DEPRECATED
-
 #include "gtk/gtk.h"
 #include "gdk/gdk.h"
 

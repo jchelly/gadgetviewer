@@ -13,6 +13,7 @@
 #include "pack_box.h"
 #include "set_event_handler.h"
 
+
 static int dragging = 0;
 
 /* Structure to store info needed by the configure event handler.
@@ -26,7 +27,7 @@ struct configure_info
 };
 
 /* This deallocates the structure if the drawing area is destroyed */
-void da_destroy(GtkObject *object, struct configure_info *c_info)
+void da_destroy(GtkWidget *object, struct configure_info *c_info)
 {
   free(c_info);
 }
@@ -52,7 +53,7 @@ static gint da_expose_event( GtkWidget      *widget, GdkEventExpose *event,
 			     GdkPixmap **pixmap)
 {
   
-  cairo_t *cr = gdk_cairo_create(widget->window);
+  cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(widget));
   gdk_cairo_set_source_pixmap(cr, *pixmap, event->area.x, event->area.y);  
   cairo_paint (cr);
   cairo_destroy (cr);
@@ -70,13 +71,14 @@ static gint da_configure_event(GtkWidget *widget, GdkEventConfigure *event,
   if (*(c_info->pixmap))
     g_object_unref(*(c_info->pixmap));
   
-  *(c_info->pixmap) = (gpointer) gdk_pixmap_new(widget->window,
-						widget->allocation.width,
-						widget->allocation.height,
-						-1);
+  int width  = gtk_widget_get_allocated_width(widget);
+  int height = gtk_widget_get_allocated_height(widget);
+  
+  *(c_info->pixmap) = (gpointer) gdk_pixmap_new(gtk_widget_get_window(widget), width, height, -1);
+
   /* Record dimensions of draw area */
-  *(c_info->width)   = widget->allocation.width;
-  *(c_info->height)  = widget->allocation.height;
+  *(c_info->width)   = width;
+  *(c_info->height)  = height;
   *(c_info->resized) = 1;
 
   if(event_handler != NULL) (*event_handler)();
@@ -241,23 +243,23 @@ void CREATEDRAWINGAREA_F90(GtkWidget **drawingarea, GtkWidget **box,
   c_info->height  = height;
   c_info->resized = resized;
 
-  g_signal_connect (GTK_OBJECT (*drawingarea), "expose_event",
+  g_signal_connect (G_OBJECT (*drawingarea), "expose_event",
                     G_CALLBACK(da_expose_event), (gpointer) pixmap);
-  g_signal_connect (GTK_OBJECT(*drawingarea),"configure_event",
+  g_signal_connect (G_OBJECT(*drawingarea),"configure_event",
                     G_CALLBACK(da_configure_event), (gpointer) c_info);
-  g_signal_connect (GTK_OBJECT (*drawingarea), "motion_notify_event",
+  g_signal_connect (G_OBJECT (*drawingarea), "motion_notify_event",
                     G_CALLBACK(da_motion_notify_event),
                     (gpointer) mouse_state);
-  g_signal_connect (GTK_OBJECT (*drawingarea), "button_press_event",
+  g_signal_connect (G_OBJECT (*drawingarea), "button_press_event",
                     G_CALLBACK(da_button_press_event),
                     (gpointer) mouse_state);
-  g_signal_connect (GTK_OBJECT (*drawingarea), "button_release_event",
+  g_signal_connect (G_OBJECT (*drawingarea), "button_release_event",
                     G_CALLBACK(da_button_release_event),
                     (gpointer) mouse_state);
-  g_signal_connect (GTK_OBJECT (*drawingarea), "scroll_event",
+  g_signal_connect (G_OBJECT (*drawingarea), "scroll_event",
                     G_CALLBACK(da_scroll_event),
                     (gpointer) mouse_state);
-  g_signal_connect (GTK_OBJECT (*drawingarea), "destroy",
+  g_signal_connect (G_OBJECT (*drawingarea), "destroy",
                     G_CALLBACK(da_destroy),
                     (gpointer) c_info);
 
@@ -265,12 +267,14 @@ void CREATEDRAWINGAREA_F90(GtkWidget **drawingarea, GtkWidget **box,
     gtk_widget_set_double_buffered(GTK_WIDGET(*drawingarea), FALSE);
   else
     gtk_widget_set_double_buffered(GTK_WIDGET(*drawingarea), TRUE);
- 
+
 }
 
 /* Return the size of the drawing area */
 void DRAWINGAREASIZE_F90(GtkWidget **drawingarea, int *x, int *y)
 {
-  *x = (*drawingarea)->allocation.width;
-  *y = (*drawingarea)->allocation.height;
+  
+  *x = gtk_widget_get_allocated_width(*drawingarea);
+  *y = gtk_widget_get_allocated_height(*drawingarea);
+  
 }
