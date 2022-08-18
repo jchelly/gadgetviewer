@@ -1297,7 +1297,7 @@ contains
              bt=gui_display_dialog(mainwin,"error", res%string)
           else
              bt=gui_display_dialog(mainwin,"info", &
-                  "Finished reading group catalogue")
+                  "Finished reading group catalogue. New particle properties have been added.")
              res = sample_region(keep_coords=.true.)
              if(.not.res%success)then
                 bt=gui_display_dialog(mainwin,"error",res%string)
