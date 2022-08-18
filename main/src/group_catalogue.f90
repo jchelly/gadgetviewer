@@ -6,6 +6,7 @@ module group_catalogue
   use return_status
   use gadget_groups
   use velociraptor_groups
+  use gadget4_groups
   use sort
   use progress_bar
 
@@ -19,6 +20,7 @@ module group_catalogue
   ! Format types
   integer, parameter, public :: FORMAT_TYPE_SUBFIND      = 0
   integer, parameter, public :: FORMAT_TYPE_VELOCIRAPTOR = 1
+  integer, parameter, public :: FORMAT_TYPE_GADGET4      = 2
 
   ! List of currently loaded catalogues
   integer, parameter :: ngroupcatmax = 10
@@ -148,6 +150,15 @@ contains
        res = velociraptor_groups_read(isnap, groupcat(icat)%path_data, &
             nfof, nsub, nids, foflen, foffset, sublen, suboffset, groupids, &
             ID, hostHaloID)
+    case(FORMAT_TYPE_GADGET4)
+       res = gadget4_groups_read(isnap, groupcat(icat)%path_data, icat)
+       ! There's no need for matching particle IDs if we have a group sorted snapshot
+       if(res%success)then
+          group_catalogue_read%success = .true.
+          call particle_store_verify(pdata)
+          call progress_bar_close()
+          return
+       endif
     case default
        call terminate("Unrecognised subhalo format index!")
     end select
