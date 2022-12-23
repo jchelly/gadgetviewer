@@ -937,8 +937,9 @@ contains
     end do
 
     ! Calculate sampling rate
-    fsample = min(1.0_pos_kind, real(npmax, kind=pos_kind) / &
-         real(sum(np_area(1:nspecies)), kind=pos_kind))
+    fsample = real(min(1.0_real8byte, real(npmax, kind=real8byte) / &
+         real(sum(np_area(1:nspecies)), kind=real8byte)),&
+         kind=pos_kind)
 
     ! Get indices of particles in the sample
     do i = 1, pdata%nspecies, 1
