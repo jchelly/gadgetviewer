@@ -25,10 +25,11 @@ module mouse_handler
   integer                     :: old_mx, old_my
 
   ! Rotation speed in radians per pixel
-  real, parameter :: rot_fac = 1.0*3.14159/180.0
+  real(kind=pos_kind), parameter :: rot_fac = &
+  real(1.0*3.141592659_real8byte/180.0, kind=pos_kind)
 
   ! Zoom speed
-  real, parameter :: zm_fac  = 1.05
+  real(kind=pos_kind), parameter :: zm_fac  = 1.05_pos_kind
 
   ! Translation speed
   real, parameter :: trans_fac = 1.0e-2
@@ -82,7 +83,7 @@ contains
     type (gui_window)       :: mainwin
     logical, dimension(:)   :: show_species
     integer, intent(in)     :: width, height
-    real                    :: zf
+    real(kind=pos_kind)     :: zf
     logical                 :: moved
     integer                 :: ibutton
     type (transform_type)   :: inv_trans
@@ -127,7 +128,8 @@ contains
           ! Button rotates the view
           if(dragged(ibutton))then
              call transform_modify(view_transform, &
-                  rotation=(/dy*rot_fac, dx*rot_fac, 0.0 /))
+                  rotation=real((/dy*rot_fac, dx*rot_fac, 0.0_pos_kind /),&
+                  kind=pos_kind))
              moved = .true.
           endif
        case(SCALE)
@@ -142,7 +144,8 @@ contains
           if(dragged(ibutton))then
              zf = zm_fac**dy
              call transform_modify(view_transform, scale=zf, &
-                  rotation=(/0.0, dx*rot_fac, 0.0 /))
+                  rotation=real((/0.0_pos_kind, dx*rot_fac, 0.0_pos_kind /),&
+                  kind=pos_kind))
              moved = .true.
           endif
        case(TRANSLATE_XY)
@@ -221,7 +224,7 @@ contains
     character(len=10) :: bt
     real(kind=pos_kind), dimension(:,:), pointer :: pos
     integer, dimension(:), allocatable :: idx
-    real, dimension(3) :: new_centre
+    real(kind=pos_kind), dimension(3) :: new_centre
 
     call particle_store_contents(psample,get_nspecies=nspecies,get_np=np)
 

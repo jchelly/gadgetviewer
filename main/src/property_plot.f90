@@ -110,9 +110,9 @@ contains
 !
     implicit none
     logical :: new_snapshot
-    real, dimension(:,:), pointer :: pos
-    real, dimension(3) :: rmin, rmax
-    real :: lbox
+    real(kind=pos_kind), dimension(:,:), pointer :: pos
+    real(kind=pos_kind), dimension(3) :: rmin, rmax
+    real(kind=pos_kind) :: lbox
     integer :: nspecies
     logical, save :: first_init = .true.
 
@@ -156,7 +156,7 @@ contains
           rmax = max(rmax, maxval(pos(1:3,:),2))
        end do
        lbox = maxval(rmax-rmin)
-       psize = lbox / 1000.0
+       psize = lbox / 1000.0_pos_kind
     endif
 
     ! Choose a random set of colours
@@ -212,12 +212,12 @@ contains
     integer(kind=index_kind), dimension(maxspecies) :: np
     real(kind=pos_kind), dimension(:,:), pointer :: pos
     ! Transformed z coord
-    real :: z_trans
+    real(kind=pos_kind) :: z_trans
     real(kind=pos_kind), dimension(3) :: pos_trans
     ! Projected coordinates
     integer, dimension(2) :: ip
     ! z buffer
-    real, dimension(0:width*height-1) :: zbuf
+    real(kind=r_prop_kind), dimension(0:width*height-1) :: zbuf
     character(len=maxlen) :: proptype
     ! Pointer to the data
     real(kind=r_prop_kind),    dimension(:), pointer :: rdata
@@ -452,7 +452,7 @@ contains
                    is = ((psize*trans%scale)/(1.0+z_trans))/fov_x*width
                    is = min(is, max_pixels)
                    ! Figure out what colour index to use
-                   icol = colour_index(ispecies,real(idata(i)))
+                   icol = colour_index(ispecies, real(idata(i), kind=pos_kind))
                    ! Make sure colour index is in range
                    icol = max(0,min(255,icol))
 
@@ -474,22 +474,22 @@ contains
                       if(.not.rand_colours(ispecies,iprop(ispecies)))then
                          call add_particle(ip, &
                               coltab(itab(ispecies,iprop(ispecies)))% &
-                              cdata(1:3,icol),-real(idata(i)))
+                              cdata(1:3,icol),-real(idata(i), kind=pos_kind))
                       else
                          call add_particle(ip, &
                               rcol(1:3,mod(idata(i),&
-                              int(nrand,i_prop_kind))+1), -real(idata(i)))
+                              int(nrand,i_prop_kind))+1), -real(idata(i), kind=pos_kind))
                       endif
                    case(SHOW_LOWEST)
                       ! And add the particle to the image array
                       if(.not.rand_colours(ispecies,iprop(ispecies)))then
                          call add_particle(ip, &
                               coltab(itab(ispecies,iprop(ispecies)))% &
-                              cdata(1:3,icol), real(idata(i)))
+                              cdata(1:3,icol), real(idata(i), kind=pos_kind))
                       else
                          call add_particle(ip, &
                               rcol(1:3,mod(idata(i),&
-                              int(nrand,i_prop_kind))+1),real(idata(i)))
+                              int(nrand,i_prop_kind))+1), real(idata(i), kind=pos_kind))
                       endif
                    end select
                 endif
@@ -548,7 +548,7 @@ contains
       !
       implicit none
       integer :: ispecies
-      real    :: rdata
+      real(kind=r_prop_kind)    :: rdata
       real(kind=r_prop_kind) :: rcol
 
       ! Figure out what colour index to use
@@ -577,7 +577,7 @@ contains
       integer,   dimension(2) :: ip
       character, dimension(3) :: col
       integer :: k, l
-      real :: zval
+      real(kind=r_prop_kind) :: zval
       
       do l = max(0,ip(2)-is), min(height-1,ip(2)+is), 1
          do k = max(0,ip(1)-is), min(width-1,ip(1)+is), 1
