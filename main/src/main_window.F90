@@ -985,8 +985,8 @@ contains
        call transform_modify(view_transform,&
             rotation=&
             real((/0.0_pos_kind,&
-            real(3.141592659_real8byte/2, kind=pos_kind),&
-            real(3.141592659_real8byte/2, kind=pos_kind)/), &
+            real(3.14159265358979_real8byte/2, kind=pos_kind),&
+            real(3.14159265358979_real8byte/2, kind=pos_kind)/), &
             kind=pos_kind))
        view_transform%axis_aligned = 2
        call main_window_redraw()
@@ -996,7 +996,7 @@ contains
     if(gui_button_clicked(xz_button))then
        call transform_modify(view_transform,reset_rotation=.true.)
        call transform_modify(view_transform,rotation=&
-       real((/real(3.141592659_real8byte/2, kind=pos_kind),&
+       real((/real(3.14159265358979_real8byte/2, kind=pos_kind),&
        0.0_pos_kind,0.0_pos_kind/), &
        kind=pos_kind))
        view_transform%axis_aligned = 3
