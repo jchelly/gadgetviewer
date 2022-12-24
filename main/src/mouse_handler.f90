@@ -26,7 +26,8 @@ module mouse_handler
 
   ! Rotation speed in radians per pixel
   real(kind=pos_kind), parameter :: rot_fac = &
-  real(1.0*3.141592659_real8byte/180.0, kind=pos_kind)
+  real(1.0*3.14159265358979_real8byte/180.0, &
+  kind=pos_kind)
 
   ! Zoom speed
   real(kind=pos_kind), parameter :: zm_fac  = 1.05_pos_kind
