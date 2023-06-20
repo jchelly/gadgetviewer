@@ -607,7 +607,10 @@ contains
        endif
 
        ! Apply rotation for the next frame
-       call transform_modify(trans, (/ 0.0, real(dtheta), 0.0 /))
+       call transform_modify(trans, real((/ 0.0_pos_kind,&
+       real(dtheta, kind=pos_kind),&
+       0.0_pos_kind /),&
+       kind=pos_kind))
 
        ! Update the progress bar
        if(nframes.gt.1) &

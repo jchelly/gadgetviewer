@@ -983,7 +983,11 @@ contains
     if(gui_button_clicked(yz_button))then
        call transform_modify(view_transform,reset_rotation=.true.)
        call transform_modify(view_transform,&
-            rotation=(/0.0,3.14159/2,3.14159/2/))
+            rotation=&
+            real((/0.0_pos_kind,&
+            real(3.14159265358979_real8byte/2, kind=pos_kind),&
+            real(3.14159265358979_real8byte/2, kind=pos_kind)/), &
+            kind=pos_kind))
        view_transform%axis_aligned = 2
        call main_window_redraw()
     endif
@@ -991,7 +995,10 @@ contains
     ! Reset the view if button clicked
     if(gui_button_clicked(xz_button))then
        call transform_modify(view_transform,reset_rotation=.true.)
-       call transform_modify(view_transform,rotation=(/3.14159/2,0.0,0.0/))
+       call transform_modify(view_transform,rotation=&
+       real((/real(3.14159265358979_real8byte/2, kind=pos_kind),&
+       0.0_pos_kind,0.0_pos_kind/), &
+       kind=pos_kind))
        view_transform%axis_aligned = 3
       call main_window_redraw()
     endif
