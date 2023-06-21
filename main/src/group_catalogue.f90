@@ -6,6 +6,7 @@ module group_catalogue
   use return_status
   use gadget_groups
   use velociraptor_groups
+  use gadget4_groups
   use sort
   use progress_bar
 
@@ -19,6 +20,7 @@ module group_catalogue
   ! Format types
   integer, parameter, public :: FORMAT_TYPE_SUBFIND      = 0
   integer, parameter, public :: FORMAT_TYPE_VELOCIRAPTOR = 1
+  integer, parameter, public :: FORMAT_TYPE_GADGET4      = 2
 
   ! List of currently loaded catalogues
   integer, parameter :: ngroupcatmax = 10
@@ -46,13 +48,15 @@ contains
 
 
   type (result_type) function group_catalogue_add(isnap, format_type, &
-       format_subtype, input_filename)
+       format_subtype, input_filename, rinfo)
 !
 ! Add a new group catalogue
 !
+    use partial_read_info
     implicit none
     integer               :: format_type, format_subtype
     character(len=*)      :: input_filename
+    type (read_info)      :: rinfo
     integer               :: isnap, jsnap
     type(result_type)     :: res
     integer               :: icat
@@ -78,7 +82,7 @@ contains
     groupcat(icat)%format_subtype = format_subtype
 
     ! Try to read the files
-    res = group_catalogue_read(icat, isnap)
+    res = group_catalogue_read(icat, isnap, rinfo)
     if(.not.res%success)then
        group_catalogue_add = res
        return
@@ -94,28 +98,32 @@ contains
   end function group_catalogue_add
 
 
-  subroutine group_catalogue_read_all(isnap)
+  subroutine group_catalogue_read_all(isnap, rinfo)
 !
 ! Try to read all of the group catalogues
 !
+    use partial_read_info
     implicit none
     integer :: icat, isnap
     type (result_type) :: res
+    type (read_info) :: rinfo
 
     do icat = 1, ngroupcat, 1
-       res = group_catalogue_read(icat, isnap)
+       res = group_catalogue_read(icat, isnap, rinfo)
     end do
 
     return
   end subroutine group_catalogue_read_all
 
 
-  type (result_type) function group_catalogue_read(icat, isnap)
+  type (result_type) function group_catalogue_read(icat, isnap, rinfo)
 !
 ! Read the specified group catalogue
 !
+    use partial_read_info
     implicit none
     integer :: icat, isnap
+    type (read_info) :: rinfo
     integer :: nfof, nsub, nids, id_size
     integer, dimension(:), allocatable :: foflen, foffset, sublen, suboffset
     integer(kind=i_prop_kind), dimension(:), allocatable :: groupids
@@ -148,6 +156,15 @@ contains
        res = velociraptor_groups_read(isnap, groupcat(icat)%path_data, &
             nfof, nsub, nids, foflen, foffset, sublen, suboffset, groupids, &
             ID, hostHaloID)
+    case(FORMAT_TYPE_GADGET4)
+       res = gadget4_groups_read(isnap, groupcat(icat)%path_data, icat, rinfo)
+       ! There's no need for matching particle IDs if we have a group sorted snapshot
+       if(res%success)then
+          group_catalogue_read%success = .true.
+          call particle_store_verify(pdata)
+          call progress_bar_close()
+          return
+       endif
     case default
        call terminate("Unrecognised subhalo format index!")
     end select

@@ -88,6 +88,7 @@ module main_window
   type (gui_menu)         :: file_subfind
   type (gui_menu_item), dimension(:), allocatable :: groupformat_item
   type (gui_menu_item)   :: file_read_velociraptor
+  type (gui_menu_item)   :: file_read_gadget4
 
   ! View menu
   type (gui_menu)        :: view_menu
@@ -309,7 +310,17 @@ contains
     ! Set up list of group formats we can read
     call gui_create_menu(file_read_groups, file_menu, &
          "Read groups...")
-    call gui_create_menu(file_subfind, file_read_groups, "Subfind")
+    call gui_create_menu_item(file_read_gadget4, file_read_groups, &
+         "Gadget-4 fof_subhalo_tab (assuming group sorted snapshot)")
+#ifndef HAVE_HDF5
+    call gui_set_sensitive(file_read_gadget4, .false.)
+#endif
+    call gui_create_menu_item(file_read_velociraptor, file_read_groups, &
+         "VELOCIraptor HDF5")
+#ifndef HAVE_HDF5
+    call gui_set_sensitive(file_read_velociraptor,.false.)
+#endif
+    call gui_create_menu(file_subfind, file_read_groups, "Gadget-2/3 Subfind")
     call gadget_groups_format_list(ngroupformat)
     allocate(groupformat(ngroupformat), groupformat_item(ngroupformat), stat=istat)
     if(istat.ne.0)then
@@ -320,11 +331,6 @@ contains
        call gui_create_menu_item(groupformat_item(i), file_subfind, &
             groupformat(i))
     end do
-    call gui_create_menu_item(file_read_velociraptor, file_read_groups, &
-         "VELOCIraptor HDF5")
-#ifndef HAVE_HDF5
-    call gui_set_sensitive(file_read_velociraptor,.false.)
-#endif
 
     call gui_create_menu(file_aux, file_menu, "Auxilliary data")
     call gui_create_menu_item(file_read_additional, file_aux, &
@@ -1285,17 +1291,20 @@ contains
     if(gui_menu_item_clicked(file_read_velociraptor))then
        group_type=FORMAT_TYPE_VELOCIRAPTOR
     endif
+    if(gui_menu_item_clicked(file_read_gadget4))then
+       group_type=FORMAT_TYPE_GADGET4
+    endif
     if(group_type.ge.0)then
        call gui_select_file(mainwin, "Select a group file", &
             gui_file_open, ok, fname)
        if(ok)then
           call gui_spin_button_get_value(snapshot_spinbox,isnap)
-          res = group_catalogue_add(isnap, group_type, group_subtype, fname)
+          res = group_catalogue_add(isnap, group_type, group_subtype, fname, snapshot_get_partial_read_info())
           if(.not.res%success)then
              bt=gui_display_dialog(mainwin,"error", res%string)
           else
              bt=gui_display_dialog(mainwin,"info", &
-                  "Finished reading group catalogue")
+                  "Finished reading group catalogue. New particle properties have been added.")
              res = sample_region(keep_coords=.true.)
              if(.not.res%success)then
                 bt=gui_display_dialog(mainwin,"error",res%string)

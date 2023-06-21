@@ -428,7 +428,7 @@ void ATTRIBSIZE_F90(char *name, int *rank, long long *dims, int *max_dims, int *
   if((attr_id = h5_open_attribute(parent_id, &(name[i+1]))) < 0)goto cleanup;
 
   /* Get dataspace */
-  if((dspace_id = H5Dget_space(attr_id)) < 0)goto cleanup;
+  if((dspace_id = H5Aget_space(attr_id)) < 0)goto cleanup;
 
   /* Get dimensions of dataspace */
   *rank = H5Sget_simple_extent_ndims(dspace_id);
