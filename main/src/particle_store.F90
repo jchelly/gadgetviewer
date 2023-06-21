@@ -134,7 +134,7 @@ module particle_store
      real    :: time, redshift, expansion
      character(len=maxlen) :: time_unit
      integer :: idsize
-     real    :: boxsize
+     real(pos_kind)    :: boxsize
   end type pdata_type
 
   ! These need to be public for pdata_type to be public.
@@ -877,7 +877,7 @@ contains
     integer(kind=index_kind), dimension(maxspecies) :: np_area, np_sample
     integer :: nspecies
     integer(kind=index_kind) :: i, j, k, ip
-    real    :: fsample
+    real(kind=pos_kind)    :: fsample
     ! Function call result
     type (result_type) :: fresult
     ! Array of particle indexes
@@ -937,8 +937,9 @@ contains
     end do
 
     ! Calculate sampling rate
-    fsample = min(1.0, real(npmax, kind=real8byte) / &
-         real(sum(np_area(1:nspecies)), kind=real8byte))
+    fsample = real(min(1.0_real8byte, real(npmax, kind=real8byte) / &
+         real(sum(np_area(1:nspecies)), kind=real8byte)),&
+         kind=pos_kind)
 
     ! Get indices of particles in the sample
     do i = 1, pdata%nspecies, 1

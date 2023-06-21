@@ -73,11 +73,11 @@ contains
 !
     implicit none
     type (transform_type) :: trans
-    real, dimension(3), optional :: rotation, centre, translation
-    real, optional :: scale
+    real(kind=pos_kind), dimension(3), optional :: rotation, centre, translation
+    real(kind=pos_kind), optional :: scale
     real(kind=int8byte) :: sina, cosa
     real(kind=int8byte), dimension(3,3) :: rot
-    real, optional :: set_scale
+    real(kind=pos_kind), optional :: set_scale
     logical, optional :: reset_rotation
     integer :: i
 
