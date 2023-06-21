@@ -15,15 +15,17 @@ module gadget4_groups
 
 contains
   
-  type(result_type) function gadget4_groups_read(isnap, path_data, icat) result(res)
+  type(result_type) function gadget4_groups_read(isnap, path_data, icat, rinfo) result(res)
     !
     ! Read Gadget-4 fof_subhalo_tab and label particles with fof/subhalo index
     !
+    use partial_read_info
     implicit none
     ! Input parameters
     integer,               intent(in) :: isnap
     type (path_data_type), intent(in) :: path_data
     integer,               intent(in) :: icat
+    type (read_info) :: rinfo
     ! Group catalogue info
     character(len=fname_maxlen) :: tab_file
     integer :: ifile, nfiles
@@ -41,6 +43,14 @@ contains
     integer(kind=i_prop_kind), dimension(:), allocatable :: grnr, subnr
     character(len=maxlen), dimension(maxspecies) :: species_name
     character(len=maxlen) :: propname
+
+    ! Check we read the full snapshot
+    if(.not.have_full_snapshot(rinfo))then
+       res%success = .false.
+       res%string  = "Can only read Gadget-4 halo finder output if the full snapshot was read in"
+       call cleanup()
+       return
+    endif
 
     ! Read the file headers to determine total groups and number of files
     ifile = 0
