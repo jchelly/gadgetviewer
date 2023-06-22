@@ -20,7 +20,7 @@ static int dragging = 0;
    One of these is allocated for each drawing area created. */
 struct configure_info
 {
-  GdkPixmap **pixmap;
+  cairo_surface_t **surface;
   int *resized;
   int *width;
   int *height;
@@ -49,12 +49,12 @@ void REDRAWDRAWINGAREA_F90(GtkWidget **drawingarea, int *width, int *height)
 
 /* This redraws the screen from the backing pixmap when an expose event
    occurs */
-static gint da_expose_event( GtkWidget      *widget, GdkEventExpose *event,
-			     GdkPixmap **pixmap)
+static gint da_expose_event( GtkWidget *widget, GdkEventExpose *event,
+			     cairo_surface_t **surface)
 {
   
   cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(widget));
-  gdk_cairo_set_source_pixmap(cr, *pixmap, event->area.x, event->area.y);  
+  cairo_set_source_surface(cr, *surface, event->area.x, event->area.y);  
   cairo_paint (cr);
   cairo_destroy (cr);
 
@@ -62,19 +62,18 @@ static gint da_expose_event( GtkWidget      *widget, GdkEventExpose *event,
 }
 
 /* This is called when the window is created or resized.
-   Creates a new backing pixmap of the appropriate size */
+   Creates a new backing surface of the appropriate size */
 static gint da_configure_event(GtkWidget *widget, GdkEventConfigure *event,
 			struct configure_info *c_info)
 {
 
-  /* Deallocate the old pixmap first, if there was one */
-  if (*(c_info->pixmap))
-    g_object_unref(*(c_info->pixmap));
+  /* Deallocate the old surface first, if there was one */
+  if (*(c_info->surface))
+    cairo_surface_destroy(*(c_info->surface));
   
   int width  = gtk_widget_get_allocated_width(widget);
   int height = gtk_widget_get_allocated_height(widget);
-  
-  *(c_info->pixmap) = (gpointer) gdk_pixmap_new(gtk_widget_get_window(widget), width, height, -1);
+  *(c_info->surface) = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
 
   /* Record dimensions of draw area */
   *(c_info->width)   = width;
@@ -209,13 +208,13 @@ static gint da_scroll_event (GtkWidget *widget, GdkEventScroll *event,
 
 /* Create the drawing area widget */
 void CREATEDRAWINGAREA_F90(GtkWidget **drawingarea, GtkWidget **box,
-			   GdkPixmap **pixmap, int *mouse_state,
+			   cairo_surface_t **surface, int *mouse_state,
 			   int *width, int *height, int *resized, int *db,
 			   int *request_width, int *request_height)
 {
   struct configure_info *c_info;
-  *pixmap = NULL; /* so we don't try to deallocate the pixmap on the first
-		     configure event */
+  *surface = NULL; /* so we don't try to deallocate the surface on the first
+                      configure event */
 
   *drawingarea = gtk_drawing_area_new();
   pack_box(*box,*drawingarea);
@@ -238,13 +237,13 @@ void CREATEDRAWINGAREA_F90(GtkWidget **drawingarea, GtkWidget **box,
 			 | GDK_KEY_PRESS_MASK);
 
   c_info = malloc(sizeof(struct configure_info));
-  c_info->pixmap  = pixmap;
+  c_info->surface = surface;
   c_info->width   = width;
   c_info->height  = height;
   c_info->resized = resized;
 
   g_signal_connect (G_OBJECT (*drawingarea), "expose_event",
-                    G_CALLBACK(da_expose_event), (gpointer) pixmap);
+                    G_CALLBACK(da_expose_event), (gpointer) surface);
   g_signal_connect (G_OBJECT(*drawingarea),"configure_event",
                     G_CALLBACK(da_configure_event), (gpointer) c_info);
   g_signal_connect (G_OBJECT (*drawingarea), "motion_notify_event",
