@@ -15,7 +15,7 @@ void DRAWIMAGE_F90(GtkWidget **drawingarea, cairo_surface_t **surface,
   */
 
   cairo_surface_t *source = cairo_image_surface_create_for_data(image, CAIRO_FORMAT_ARGB32,
-                                                                width, height, 4*width);
+                                                                *width, *height, 4*(*width));
 
   cairo_surface_destroy(source);
 

@@ -2176,8 +2176,8 @@ contains
     c_x = x
     c_y = y
 
-    call drawtext(drawingarea%ptr, drawingarea%pixmap, &
-         c_x, c_y, trim(text)//char(0))
+    ! call drawtext(drawingarea%ptr, drawingarea%pixmap, &
+    !      c_x, c_y, trim(text)//char(0))
 
     return
   end subroutine gui_draw_text
