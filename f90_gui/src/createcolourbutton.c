@@ -22,7 +22,7 @@ void CREATECOLOURBUTTON_F90(GtkWidget **button, GtkWidget **box, int *clicked)
   *button = gtk_color_button_new();
   pack_box(*box, *button);
 
-  g_signal_connect (GTK_OBJECT (*button), "color-set",
+  g_signal_connect (GTK_WIDGET (*button), "color-set",
                     G_CALLBACK(colourbutton_event),(gpointer) clicked);
 }
 

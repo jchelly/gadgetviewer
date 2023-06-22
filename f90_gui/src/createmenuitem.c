@@ -54,13 +54,13 @@ void CREATEMENUITEM_F90(GtkWidget **menuitem, int *clicked,
 
   gtk_menu_shell_append(GTK_MENU_SHELL(*menu), *menuitem);
 
-  g_signal_connect_swapped(GTK_OBJECT (*menuitem), "activate",
+  g_signal_connect_swapped(GTK_WIDGET (*menuitem), "activate",
                            G_CALLBACK(menuitem_event),
                            (gpointer) clicked);
   
   /* Checkbox and radiobutton items can emit the 'toggled' signal */
   if(*type > 0)
-    g_signal_connect (GTK_OBJECT (*menuitem), "toggled",
+    g_signal_connect (GTK_WIDGET (*menuitem), "toggled",
                       G_CALLBACK(menuitem_toggled),
                       (gpointer) changed);
 

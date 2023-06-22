@@ -29,7 +29,7 @@ void CREATEVSLIDER_F90(GtkWidget **slider, GtkWidget **box, int *changed,
 
   pack_box(*box, *slider);
 
-  g_signal_connect (GTK_OBJECT (*slider), "value_changed",
+  g_signal_connect (GTK_WIDGET (*slider), "value_changed",
                     G_CALLBACK(slider_event), (gpointer) changed);
 
   if(*c_draw > 0)
@@ -50,7 +50,7 @@ void CREATEHSLIDER_F90(GtkWidget **slider, GtkWidget **box, int *changed,
 
   pack_box(*box, *slider);
 
-  g_signal_connect (GTK_OBJECT (*slider), "value_changed",
+  g_signal_connect (GTK_WIDGET (*slider), "value_changed",
                     G_CALLBACK(slider_event), (gpointer) changed);
 
   if(*c_draw > 0)

@@ -34,6 +34,6 @@ void CREATESPINBUTTON_F90(GtkWidget **spinbutton, GtkWidget **box,
   adjustment =
     gtk_spin_button_get_adjustment(GTK_SPIN_BUTTON(*spinbutton));
   
-  g_signal_connect (GTK_OBJECT (adjustment), "value_changed",
+  g_signal_connect (G_OBJECT (adjustment), "value_changed",
                     G_CALLBACK(spinbutton_event), (gpointer) changed);
 }

@@ -30,7 +30,7 @@ void CREATECOMBOBOX_F90(GtkWidget **combobox, GtkWidget **box, int *clicked)
   *combobox = gtk_combo_box_text_new();
   pack_box(*box, *combobox);
 
-  g_signal_connect (GTK_OBJECT (*combobox), "changed",
+  g_signal_connect (GTK_WIDGET (*combobox), "changed",
                     G_CALLBACK(combobox_event), (gpointer) clicked);
 
 }

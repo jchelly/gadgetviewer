@@ -242,7 +242,7 @@ void CREATEDRAWINGAREA_F90(GtkWidget **drawingarea, GtkWidget **box,
   c_info->height  = height;
   c_info->resized = resized;
 
-  g_signal_connect (G_OBJECT (*drawingarea), "expose_event",
+  g_signal_connect (G_OBJECT (*drawingarea), "draw",
                     G_CALLBACK(da_expose_event), (gpointer) surface);
   g_signal_connect (G_OBJECT(*drawingarea),"configure_event",
                     G_CALLBACK(da_configure_event), (gpointer) c_info);

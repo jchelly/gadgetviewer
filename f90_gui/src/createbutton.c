@@ -19,7 +19,7 @@ void CREATEBUTTON_F90(GtkWidget **button,int *clicked, GtkWidget **box, char *lb
 {
   *button = gtk_button_new_with_mnemonic (lbl);
   pack_box(*box, *button);
-  g_signal_connect (GTK_OBJECT (*button), "clicked",
+  g_signal_connect (GTK_WIDGET (*button), "clicked",
                     G_CALLBACK(button_event), (gpointer) clicked);
 }
 
@@ -31,6 +31,6 @@ void CREATEIMAGEBUTTON_F90(GtkWidget **button,int *clicked, GtkWidget **box,
   gtk_container_add(GTK_CONTAINER(*button), image);
 
   pack_box(*box, *button);
-  g_signal_connect (GTK_OBJECT (*button), "clicked",
+  g_signal_connect (GTK_WIDGET (*button), "clicked",
                     G_CALLBACK(button_event), (gpointer) clicked);
 }
