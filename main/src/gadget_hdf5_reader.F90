@@ -1,6 +1,6 @@
 module gadget_hdf5_reader
 !
-! Module to read Gadget_hdf5 files. Should also read GIMIC outputs.
+! Module to read Gadget HDF5 snapshots
 !
 #include "../../config.h"
 #ifdef HAVE_HDF5
@@ -58,6 +58,9 @@ module gadget_hdf5_reader
        "Mass           ",&
        "Masses         ",&
        "DynamicalMasses"/)
+
+  ! Number of particle types in the snapshot
+  integer :: ntypes
 
 contains
 
@@ -188,9 +191,9 @@ contains
     integer :: ispecies, iextra
     character(len=maxlen) :: str
     ! Checking for datasets
-    integer(kind=int8byte), dimension(7) :: npfile
-    integer(kind=int8byte), dimension(7) :: nptot, nptot_hw
-    logical,                dimension(7) :: find_type
+    integer(kind=int8byte), dimension(maxspecies) :: npfile
+    integer(kind=int8byte), dimension(maxspecies) :: nptot, nptot_hw
+    logical,                dimension(maxspecies) :: find_type
     ! HDF5 stuff
     integer           :: hdferr, err_array(10)
     type(result_type) :: res
@@ -218,6 +221,7 @@ contains
     hdferr = hdf5_open_file(fname)
     if(hdferr.ne.0)then
        gadget_hdf5_open%string="Unable to open HDF5 file: "//trim(fname)
+       hdferr = hdf5_close_file()
        return
     endif
 
@@ -226,9 +230,29 @@ contains
     if(hdferr.ne.0)then
        gadget_hdf5_open%string= &
             "Unable to read NumFilesPerSnapshot from file: "//trim(fname)
+       hdferr = hdf5_close_file()
        return
     endif
     
+    ! Determine number of particle types from size of NumPart_ThisFile
+    hdferr = hdf5_attribute_size("/Header/NumPart_ThisFile", rank, dims)
+    if(hdferr.ne.0)then
+       gadget_hdf5_open%string= &
+            "Unable to get size of Header/NumPart_ThisFile from file: "//trim(fname)
+       hdferr = hdf5_close_file()
+       return
+    endif
+    ntypes = dims(1)
+
+    ! Check we can handle this many particle types
+    if(ntypes.gt.maxspecies)then
+       gadget_hdf5_open%string= &
+            "Snapshot contains too many particle types. "//&
+            "Please increase maxspecies in particle_store.F90 and recompile."
+       hdferr = hdf5_close_file()
+       return
+    endif
+
     ! Close the file
     hdferr = hdf5_close_file()
 
@@ -282,7 +306,8 @@ contains
     ! snapshot.
     !
     read_extra = .false.
-    find_type  = .true.
+    find_type  = .false.
+    find_type(1:ntypes) = .true.
     read_type  = .false.
     do ifile = 0, n-1, 1
        call gadget_path_generate(jsnap, ifile, fname, path_data)
@@ -295,7 +320,7 @@ contains
 
        ! Read number of particles in this file
        npfile = 0
-       hdferr = hdf5_read_attribute("/Header/NumPart_ThisFile", npfile)
+       hdferr = hdf5_read_attribute("/Header/NumPart_ThisFile", npfile(1:ntypes))
        if(hdferr.ne.0)then
           gadget_hdf5_open%string="Unable to read NumPart_ThisFile from file"
           hdferr = hdf5_close_file()
@@ -305,14 +330,14 @@ contains
        ! If this is a multi file snapshot, read total number of particles
        if(n.gt.1)then
           nptot = 0
-          hdferr = hdf5_read_attribute("/Header/NumPart_Total", nptot)
+          hdferr = hdf5_read_attribute("/Header/NumPart_Total", nptot(1:ntypes))
           if(hdferr.ne.0)then
              gadget_hdf5_open%string="Unable to read NumPart_Total from file"
              hdferr = hdf5_close_file()
              return
           endif
           nptot_hw = 0
-          hdferr = hdf5_read_attribute("/Header/NumPart_Total_HighWord", nptot_hw)
+          hdferr = hdf5_read_attribute("/Header/NumPart_Total_HighWord", nptot_hw(1:ntypes))
           if(hdferr.ne.0)then
              ! Not all Gadget files have this dataset
              nptot_hw = 0
@@ -323,7 +348,7 @@ contains
           nptot = npfile
        endif
 
-       do ispecies = 1, 6, 1
+       do ispecies = 1, ntypes, 1
           
           if(npfile(ispecies).gt.0.and.find_type(ispecies))then
 
@@ -437,11 +462,11 @@ contains
     ! Internal
     integer(kind=index_kind) :: ipart
     integer :: ifile, i, j
-    integer(kind=int8byte), dimension(7) :: nptot, nptot_hw
-    integer(kind=int8byte), dimension(7) :: npfile
+    integer(kind=int8byte), dimension(maxspecies) :: nptot, nptot_hw
+    integer(kind=int8byte), dimension(maxspecies) :: npfile
     character(len=fname_maxlen) :: fname
-    character(len=50), dimension(6) :: species_name
-    real, dimension(7) :: massarr
+    character(len=50), dimension(maxspecies) :: species_name
+    real, dimension(maxspecies) :: massarr
     integer :: istat
     real(kind=real8byte) :: boxsize, boxsize_array(3)
     integer :: num_dimensions
@@ -468,7 +493,7 @@ contains
     integer(kind=index_kind) :: offset, nkeep
     real :: rnd
     ! Whether each type has a mass dataset
-    logical, dimension(6) :: have_mass
+    logical, dimension(maxspecies) :: have_mass
     ! Temp. storage
     real(kind=r_prop_kind),    dimension(:), allocatable :: rdata
     integer(kind=i_prop_kind), dimension(:), allocatable :: idata
@@ -491,13 +516,13 @@ contains
     
     ! Read total particle number
     nptot = 0
-    hdferr = hdf5_read_attribute("/Header/NumPart_Total", nptot)
+    hdferr = hdf5_read_attribute("/Header/NumPart_Total", nptot(1:ntypes))
     if(hdferr.ne.0)then
        gadget_hdf5_read%string="Unable to read NumPart_Total from file"
        return
     endif
     nptot_hw = 0
-    hdferr = hdf5_read_attribute("/Header/NumPart_Total_HighWord", nptot_hw)
+    hdferr = hdf5_read_attribute("/Header/NumPart_Total_HighWord", nptot_hw(1:ntypes))
     if(hdferr.ne.0)then
        nptot_hw = 0
     endif
@@ -554,7 +579,7 @@ contains
     hdferr = hdf5_close_file()
 
     ! Set number of particles to zero for types we're not reading
-    do ispecies = 1, 6, 1
+    do ispecies = 1, ntypes, 1
        if(.not.read_type(ispecies))then
           npfile(ispecies) = 0
           nptot(ispecies) = 0
@@ -567,7 +592,7 @@ contains
     call particle_store_empty(psample)
 
     ! Now we know how many particles, allocate storage
-    do i = 1, 6, 1
+    do i = 1, ntypes, 1
        select case(i)
        case(1)
           species_name(i)="Type 0 - Gas"
@@ -580,7 +605,10 @@ contains
        case(5)
           species_name(i)="Type 4 - Boundary/stars"
        case(6)
-          species_name(i)="Type 5 - Other"
+          species_name(i)="Type 5 - BH/Other"
+       case default
+          write(species_name(i), *)i
+          species_name(i) = "Type "//trim(adjustl(species_name(i)))
        end select
        ! May not know in advance how many particles we'll have if sampling
        if(rinfo%do_sampling.or.rinfo%do_sphere.or.rinfo%just_this_file)then
@@ -601,7 +629,7 @@ contains
     have_mass = .false.
 
     ! Allocate storage for any extra properties
-    do ispecies = 1, 6, 1
+    do ispecies = 1, ntypes, 1
        found_id   = .false.
        found_mass = .false.
        do iextra = 1, nextra_all, 1
@@ -645,7 +673,7 @@ contains
 
     ! Work out values for progress bar
     prog_tot = 0
-    do ispecies = 1, 6, 1
+    do ispecies = 1, ntypes, 1
        prog_tot = prog_tot + 3*nptot(ispecies) ! Positions
 #ifdef READ_VEL
        prog_tot = prog_tot + 3*nptot(ispecies) ! Velocities
@@ -683,20 +711,21 @@ contains
        
        ! Read header
        npfile = 0
-       hdferr = hdf5_read_attribute("/Header/NumPart_ThisFile", npfile)
+       hdferr = hdf5_read_attribute("/Header/NumPart_ThisFile", npfile(1:ntypes))
        if(hdferr.ne.0)then
           gadget_hdf5_read%string="Unable to read NumPart_Total from file"
           hdferr = hdf5_close_file()
           return
        endif
-       hdferr = hdf5_read_attribute("/Header/MassTable", massarr)
+       massarr = 0.0
+       hdferr = hdf5_read_attribute("/Header/MassTable", massarr(1:ntypes))
        if(hdferr.ne.0)then
           massarr = 0.0
        endif
 
        ! Create mass datasets for particles with no individual masses
        if(ifile.eq.firstfile)then
-          do ispecies = 1, 6, 1
+          do ispecies = 1, ntypes, 1
              if(.not.have_mass(ispecies))then
                 res = particle_store_new_property(pdata,species_name(ispecies),&
                      mass_datasets(1), "REAL", is_mass=.true.)
@@ -705,7 +734,7 @@ contains
        endif
 
        ! Set number of particles to zero for types we're not reading
-       do ispecies = 1, 6, 1
+       do ispecies = 1, ntypes, 1
           if(.not.read_type(ispecies))then
              npfile(ispecies) = 0
           endif
@@ -724,7 +753,7 @@ contains
        endif
 
        ! Read positions
-       do i = 1, 6, 1
+       do i = 1, ntypes, 1
           if(npfile(i).gt.0)then
              ! Allocate temporary buffer
              allocate(pos(3,npfile(i)),stat=istat)
@@ -780,7 +809,7 @@ contains
        end do
 
        ! Read velocities
-       do i = 1, 6, 1
+       do i = 1, ntypes, 1
           if(npfile(i).gt.0)then
              
              ! Allocate temporary buffer
@@ -831,7 +860,7 @@ contains
 
 
        ! Read any extra properties
-       do ispecies = 1, 6, 1
+       do ispecies = 1, ntypes, 1
           if(npfile(ispecies).gt.0)then
              !
              ! Assign masses, if not stored individually

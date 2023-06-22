@@ -88,6 +88,7 @@ module main_window
   type (gui_menu)         :: file_subfind
   type (gui_menu_item), dimension(:), allocatable :: groupformat_item
   type (gui_menu_item)   :: file_read_velociraptor
+  type (gui_menu_item)   :: file_read_gadget4
 
   ! View menu
   type (gui_menu)        :: view_menu
@@ -257,8 +258,8 @@ contains
     call gui_create_button(xz_button, button_box, "x/_z")
     call gui_create_button(centre_button, button_box, "_Ctr")
     call gui_create_button(resample_button,button_box,"_Resample")
-    call gui_create_button(show_all_button,button_box,"Show _all")
-    call gui_create_button(show_info_button, button_box,"Show info")
+    call gui_create_button(show_all_button,button_box,"Show full volume")
+    call gui_create_button(show_info_button, button_box,"Selected point info")
 
     ! Add a hbox at the bottom
     call gui_packing_mode(expand=.false., fill=.false., spacing=3, &
@@ -309,7 +310,17 @@ contains
     ! Set up list of group formats we can read
     call gui_create_menu(file_read_groups, file_menu, &
          "Read groups...")
-    call gui_create_menu(file_subfind, file_read_groups, "Subfind")
+    call gui_create_menu_item(file_read_gadget4, file_read_groups, &
+         "Gadget-4 fof_subhalo_tab (assuming group sorted snapshot)")
+#ifndef HAVE_HDF5
+    call gui_set_sensitive(file_read_gadget4, .false.)
+#endif
+    call gui_create_menu_item(file_read_velociraptor, file_read_groups, &
+         "VELOCIraptor HDF5")
+#ifndef HAVE_HDF5
+    call gui_set_sensitive(file_read_velociraptor,.false.)
+#endif
+    call gui_create_menu(file_subfind, file_read_groups, "Gadget-2/3 Subfind")
     call gadget_groups_format_list(ngroupformat)
     allocate(groupformat(ngroupformat), groupformat_item(ngroupformat), stat=istat)
     if(istat.ne.0)then
@@ -320,11 +331,6 @@ contains
        call gui_create_menu_item(groupformat_item(i), file_subfind, &
             groupformat(i))
     end do
-    call gui_create_menu_item(file_read_velociraptor, file_read_groups, &
-         "VELOCIraptor HDF5")
-#ifndef HAVE_HDF5
-    call gui_set_sensitive(file_read_velociraptor,.false.)
-#endif
 
     call gui_create_menu(file_aux, file_menu, "Auxilliary data")
     call gui_create_menu_item(file_read_additional, file_aux, &
@@ -983,7 +989,11 @@ contains
     if(gui_button_clicked(yz_button))then
        call transform_modify(view_transform,reset_rotation=.true.)
        call transform_modify(view_transform,&
-            rotation=(/0.0,3.14159/2,3.14159/2/))
+            rotation=&
+            real((/0.0_pos_kind,&
+            real(3.14159265358979_real8byte/2, kind=pos_kind),&
+            real(3.14159265358979_real8byte/2, kind=pos_kind)/), &
+            kind=pos_kind))
        view_transform%axis_aligned = 2
        call main_window_redraw()
     endif
@@ -991,7 +1001,10 @@ contains
     ! Reset the view if button clicked
     if(gui_button_clicked(xz_button))then
        call transform_modify(view_transform,reset_rotation=.true.)
-       call transform_modify(view_transform,rotation=(/3.14159/2,0.0,0.0/))
+       call transform_modify(view_transform,rotation=&
+       real((/real(3.14159265358979_real8byte/2, kind=pos_kind),&
+       0.0_pos_kind,0.0_pos_kind/), &
+       kind=pos_kind))
        view_transform%axis_aligned = 3
       call main_window_redraw()
     endif
@@ -1278,17 +1291,20 @@ contains
     if(gui_menu_item_clicked(file_read_velociraptor))then
        group_type=FORMAT_TYPE_VELOCIRAPTOR
     endif
+    if(gui_menu_item_clicked(file_read_gadget4))then
+       group_type=FORMAT_TYPE_GADGET4
+    endif
     if(group_type.ge.0)then
        call gui_select_file(mainwin, "Select a group file", &
             gui_file_open, ok, fname)
        if(ok)then
           call gui_spin_button_get_value(snapshot_spinbox,isnap)
-          res = group_catalogue_add(isnap, group_type, group_subtype, fname)
+          res = group_catalogue_add(isnap, group_type, group_subtype, fname, snapshot_get_partial_read_info())
           if(.not.res%success)then
              bt=gui_display_dialog(mainwin,"error", res%string)
           else
              bt=gui_display_dialog(mainwin,"info", &
-                  "Finished reading group catalogue")
+                  "Finished reading group catalogue. New particle properties have been added.")
              res = sample_region(keep_coords=.true.)
              if(.not.res%success)then
                 bt=gui_display_dialog(mainwin,"error",res%string)

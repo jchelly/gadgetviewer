@@ -24,9 +24,9 @@ module view_parameters
   real, parameter :: pi = 4.0*atan(1.0)
 
   ! Extent of the particle distribution
-  real, dimension(3)         :: posmin, posmax
-  real, dimension(3), public :: simcentre
-  real, public               :: scalefac
+  real(kind=pos_kind), dimension(3)         :: posmin, posmax
+  real(kind=pos_kind), dimension(3), public :: simcentre
+  real(kind=pos_kind), public               :: scalefac
 
   ! Transform to convert from simulation coordinates to view coordinates
   type (transform_type), public :: view_transform
@@ -109,7 +109,7 @@ contains
     simcentre(1:3) = (posmax+posmin)*0.5
 
     ! Choose scale such that particles lie in range -0.5 to +0.5
-    scalefac = 0.25 / maxval(posmax(1:3)-simcentre(1:3))
+    scalefac = 0.25_pos_kind / maxval(posmax(1:3)-simcentre(1:3))
 
     ! Set initial view transform
     call transform_initialise(view_transform)

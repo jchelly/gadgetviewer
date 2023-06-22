@@ -1,5 +1,6 @@
 module select_point
 
+  use data_types
   use f90_gui
   use view_parameters
   use particle_store
@@ -92,7 +93,8 @@ contains
                   "Unable to interpret text as a coordinate")
           else
              ! Apply the new coordinates
-             call transform_modify(view_transform, centre=(/x,y,z/))
+             call transform_modify(view_transform, centre=real((/x,y,z/),&
+             kind=pos_kind))
              select_point_process_events = .true.
           endif
        endif

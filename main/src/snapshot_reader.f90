@@ -34,6 +34,7 @@ module snapshot_reader
   public :: snapshot_open
   public :: snapshot_read
   public :: snapshot_open_unknown
+  public :: snapshot_get_partial_read_info
 
   character(len=100) :: snapformat
 
@@ -56,6 +57,12 @@ module snapshot_reader
   type (read_info) :: rinfo
 
 contains
+
+  type(read_info) function snapshot_get_partial_read_info() result(res)
+    implicit none
+    res = rinfo
+    return
+  end function snapshot_get_partial_read_info
 
 !
 ! Set the format to use
@@ -181,7 +188,7 @@ contains
        additional_res = additional_data_read()
 
        ! Attempt to read any group catalogues
-       call group_catalogue_read_all(isnap)
+       call group_catalogue_read_all(isnap, rinfo)
 
        ! Attempt to read all point catalogues
        call catalogue_data_read_all(isnap)

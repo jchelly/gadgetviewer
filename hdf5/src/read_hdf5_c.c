@@ -296,6 +296,9 @@ void READATTRIB_F90(char *name, int *type, void *data, int *rank,
 
 /*
   Get type of a dataset
+
+  Integer types with 1-4 bytes are read as 4 byte integers.
+  Integer types with 5-8 bytes are read as 8 byte integers.
 */
 #define DATASETTYPE_F90 FC_FUNC (datasettype, DATASETTYPE)
 void DATASETTYPE_F90(char *name, int *type, int *iostat)
@@ -319,9 +322,15 @@ void DATASETTYPE_F90(char *name, int *type, int *iostat)
     case H5T_INTEGER:
       switch(size)
 	{
+	case 1:
+	case 2:
+	case 3:
 	case 4:
 	  *type = 0;
 	  break;
+	case 5:
+	case 6:
+	case 7:
 	case 8:
 	  *type = 1;
 	  break;
@@ -419,7 +428,7 @@ void ATTRIBSIZE_F90(char *name, int *rank, long long *dims, int *max_dims, int *
   if((attr_id = h5_open_attribute(parent_id, &(name[i+1]))) < 0)goto cleanup;
 
   /* Get dataspace */
-  if((dspace_id = H5Dget_space(attr_id)) < 0)goto cleanup;
+  if((dspace_id = H5Aget_space(attr_id)) < 0)goto cleanup;
 
   /* Get dimensions of dataspace */
   *rank = H5Sget_simple_extent_ndims(dspace_id);

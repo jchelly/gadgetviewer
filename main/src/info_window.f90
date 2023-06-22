@@ -24,8 +24,8 @@ module info_window
   type (gui_entrybox)  :: nngb_box
 
   ! Currently selected particle type
-  integer :: ispecies = 1
-  integer :: nngb = 10
+  integer :: ispecies = 2
+  integer :: nngb = 1
   integer, parameter :: nngbmax = 1000
 
 contains
@@ -46,13 +46,13 @@ contains
     end if
 
     ! Create the window
-    call gui_create_window(window,"Selected point information",parent=mainwin,&
+    call gui_create_window(window,"Evaluate properties at selected point",parent=mainwin,&
          resize=.true.)
     call gui_packing_mode(expand=.false., fill=.false., spacing=3, &
          position=gui_start)
     call gui_create_box(vbox, window, gui_vertical)
     call gui_create_box(hbox, vbox, gui_horizontal)
-    call gui_create_label(label, hbox, "Show info for ")
+    call gui_create_label(label, hbox, "Evaluate properties for particle type ")
     call gui_create_combo_box(species_box, hbox, (/"<particle type>"/))
 
     call gui_create_box(hbox, vbox, gui_horizontal)
@@ -106,12 +106,13 @@ contains
     integer :: iprop
     real(kind=real8byte)   :: res_real(3)
     integer(kind=int8byte) :: res_int(3)
+    real :: fsample
 
     if(.not.window_open)return
 
     ! Get particle type names and update combo box
     call particle_store_contents(psample, get_nspecies=nspecies, &
-         get_species_names=species_names, get_np=np)
+         get_species_names=species_names, get_np=np, get_fsample=fsample)
     if(ispecies.lt.1.or.ispecies.gt.nspecies)then
        ispecies = max(1,min(ispecies, nspecies))
     endif
@@ -121,12 +122,11 @@ contains
     ! Update text box
     call gui_textview_clear(textview)
     
-    ! Number of particles
-    !write(str,*)"There are ", np(ispecies), &
-    !     " particles of this type in the sample"
-    !str = trim(adjustl(str))
-    !call gui_textview_add_line(textview, str)
-    !call gui_textview_add_line(textview, "")
+    ! Display the sampling rate
+    write(str, *)"Current sampling rate: ", fsample
+    str = trim(adjustl(str))
+    call gui_textview_add_line(textview, str)
+    call gui_textview_add_line(textview, "")
 
     call gui_textview_add_line(textview, "Particle properties at this point:")
     call gui_textview_add_line(textview, "")
@@ -145,30 +145,28 @@ contains
        call particle_store_evaluate_property(psample, ispecies, iprop, &
             real(view_transform%centre, pos_kind), nngb, res_real, res_int)
 
-       !if(ptype.eq."INTEGER")then
-       !   write(str,'(a, a8, 1i14, a8, 1i14, a8, 1i14)') &
-       !        trim(adjustl(prop_names(iprop))), &
-       !        " - min: ", int(res(1),kind=int8byte), &
-       !        ", max: ", int(res(2),kind=int8byte), &
-       !        ", mean: ",int(res(3),kind=int8byte) 
-       !else
-       !   write(str,'(a, a8, 1e12.4, a8, 1e12.4, a8, 1e12.4)') &
-       !        trim(adjustl(prop_names(iprop))), &
-       !       " - min: ", res(1), &
-       !        ", max: ", res(2), &
-       !        ", mean: ",res(3) 
-       !endif
-
-       if(ptype.eq."INTEGER")then
-          write(str, '('//trim(iprop_fmt)//')')res_int(3)
-          write(str,'(a, a, a)') &
-               trim(adjustl(prop_names(iprop))), &
-               ": ", trim(str)
+       if (nngb.eq.1)then
+          ! One neighbour. Just display nearest value.
+          if(ptype.eq."INTEGER")then
+             write(str,'(a, ": nearest=", '//trim(iprop_fmt)//')') &
+                  trim(adjustl(prop_names(iprop))), &
+                  res_int(3)
+          else
+             write(str,'(a, ": nearest=", '//trim(rprop_fmt)//')') &
+                  trim(adjustl(prop_names(iprop))), &
+                  res_real(3)
+          endif
        else
-          write(str,'(a, a, '//trim(rprop_fmt)//')') &
-               trim(adjustl(prop_names(iprop))), &
-               ": ",res_real(3) 
+          ! Multiple neighbours. Display min, max and mean.
+          if(ptype.eq."INTEGER")then
+             write(str,'(a, ": mean=", '//trim(iprop_fmt)//', " min=", '//trim(iprop_fmt)//', " max="'//trim(iprop_fmt)//')') &
+                  trim(adjustl(prop_names(iprop))), res_int(3), res_int(1), res_int(2)
+          else
+             write(str,'(a, ": mean=", '//trim(rprop_fmt)//', " min=", '//trim(rprop_fmt)//', " max="'//trim(rprop_fmt)//')') &
+                  trim(adjustl(prop_names(iprop))), res_real(3), res_real(1), res_real(2)
+          endif
        endif
+
        str = trim_spaces(str)
        call gui_textview_add_line(textview, trim(adjustl(str)))
     end do
