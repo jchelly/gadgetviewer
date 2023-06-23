@@ -221,7 +221,7 @@ contains
 
     ! Make a new window
     call gui_create_window(mainwin, dimensions=(/600,550/), &
-         title="Gadget File Viewer", statusbar=.true., menubar=.true.)
+         title="GadgetViewer", statusbar=.true., menubar=.true.)
     
     ! Set widgets to fill all available space
     call gui_packing_mode(expand=.true., fill=.true., spacing=3, &
@@ -1469,18 +1469,23 @@ contains
     type (result_type) :: res
     character(len=10)  :: bt
     logical            :: did_sample
+    real               :: x_offset, y_offset
 
     if(.not.particle_store_loaded(pdata))then
        if(allocated(image))then
           image = char(0)
-          call gui_draw_image(drawing_area,image,width,height,0,0)
-          call gui_draw_text(drawing_area,10,20, &
-               "Gadget File Viewer v"//trim(version))
+          x_offset = 10.0/width
+          y_offset = 25.0/height
+          call draw_init_mem(image, width, height)
+          call draw_text("Gadgetviewer v"//trim(version), x_offset, 1.0-y_offset)
+
           do i = 1, nextra, 1
              iy = (25*i)+40
-             call gui_draw_text(drawing_area,20,iy,trim(extra(i)))
+             call draw_text(trim(extra(i)), x_offset, 1.0-((i+2)*y_offset))
           end do
-          call gui_draw_text(drawing_area,10,height-20,"No data loaded")
+          call draw_text("No data loaded", x_offset, 2.0*y_offset)
+          call draw_end()
+          call gui_draw_image(drawing_area,image,width,height,0,0)
           call gui_drawing_area_redraw(drawing_area)
        endif
     else

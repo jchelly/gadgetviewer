@@ -2163,26 +2163,6 @@ contains
   end subroutine gui_create_image
 
 !
-! Write some text on a drawing area widget
-!
-  subroutine gui_draw_text(drawingarea,x,y,text)
-
-    implicit none
-    type (gui_drawing_area) :: drawingarea
-    integer :: x, y
-    character(len=*) :: text
-    integer(kind=C_INT) :: c_x, c_y
-    
-    c_x = x
-    c_y = y
-
-    ! call drawtext(drawingarea%ptr, drawingarea%pixmap, &
-    !      c_x, c_y, trim(text)//char(0))
-
-    return
-  end subroutine gui_draw_text
-
-!
 ! Grey or un-grey out a widget
 !
   subroutine set_sensitive_window(widget, state)
