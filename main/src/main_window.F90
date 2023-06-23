@@ -50,7 +50,7 @@ module main_window
   public :: main_window_update_controls
   public :: main_window_redraw
   public :: main_window_finalise
-
+  public :: main_window_update
 
   ! Version string (added to config.h by autoconf)
   character(len=20) :: version = VERSION
@@ -221,7 +221,7 @@ contains
 
     ! Make a new window
     call gui_create_window(mainwin, dimensions=(/600,550/), &
-         title="GadgetViewer", statusbar=.true., menubar=.true.)
+         title="Gadgetviewer", statusbar=.true., menubar=.true.)
     
     ! Set widgets to fill all available space
     call gui_packing_mode(expand=.true., fill=.true., spacing=3, &
