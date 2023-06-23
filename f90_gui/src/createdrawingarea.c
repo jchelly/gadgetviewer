@@ -71,7 +71,7 @@ static gint da_configure_event(GtkWidget *widget, GdkEventConfigure *event,
   /* Clear the surface initially */
   cairo_t *cr;
   cr = cairo_create(*(c_info->surface));
-  cairo_set_source_rgb(cr, 255, 255, 255);
+  cairo_set_source_rgb(cr, 0, 255, 0);
   cairo_paint (cr);
   cairo_destroy (cr);
 
