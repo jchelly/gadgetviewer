@@ -36,14 +36,7 @@ void da_destroy(GtkWidget *object, struct configure_info *c_info)
    expose event. I think. */
 void REDRAWDRAWINGAREA_F90(GtkWidget **drawingarea, int *width, int *height)
 {
-
-  GdkRectangle update_rect;
-  update_rect.x = 0;
-  update_rect.y = 0;
-  update_rect.width = *width;
-  update_rect.height = *height;
-  gtk_widget_draw(*drawingarea, &update_rect);
-
+  gtk_widget_queue_draw_area(*drawingarea, 0, 0, *width, *height);
 }
 
 
@@ -54,7 +47,7 @@ static gint da_expose_event( GtkWidget *widget, GdkEventExpose *event,
 {
   
   cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(widget));
-  cairo_set_source_surface(cr, *surface, event->area.x, event->area.y);  
+  cairo_set_source_surface(cr, *surface, 0, 0);
   cairo_paint (cr);
   cairo_destroy (cr);
 
@@ -74,6 +67,13 @@ static gint da_configure_event(GtkWidget *widget, GdkEventConfigure *event,
   int width  = gtk_widget_get_allocated_width(widget);
   int height = gtk_widget_get_allocated_height(widget);
   *(c_info->surface) = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+
+  /* Clear the surface initially */
+  cairo_t *cr;
+  cr = cairo_create(*(c_info->surface));
+  cairo_set_source_rgb(cr, 255, 255, 255);
+  cairo_paint (cr);
+  cairo_destroy (cr);
 
   /* Record dimensions of draw area */
   *(c_info->width)   = width;

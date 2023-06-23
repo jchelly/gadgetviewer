@@ -14,12 +14,13 @@ void DRAWIMAGE_F90(GtkWidget **drawingarea, cairo_surface_t **surface,
     (gint) (3*(*width)));
   */
 
+  /* Possibly wrong due to cairo alignment requirements? 24/32 bits per pixel? */
   cairo_surface_t *source = cairo_image_surface_create_for_data(image, CAIRO_FORMAT_ARGB32,
                                                                 *width, *height, 4*(*width));
-
+  cairo_t *cr = cairo_create(*surface);
+  cairo_set_source_surface(cr, source, 0, 0);
+  cairo_paint(cr);
+  cairo_destroy (cr);
   cairo_surface_destroy(source);
-
-
-
 }
   
