@@ -1,6 +1,7 @@
 #include "../../config.h"
 #define DRAWIMAGE_F90 FC_FUNC (drawimage, DRAWIMAGE)
 
+#include <stdint.h>
 #include "gtk/gtk.h"
 #include "gdk/gdk.h"
 
@@ -30,21 +31,28 @@ void DRAWIMAGE_F90(GtkWidget **drawingarea, cairo_surface_t **surface,
       /* Compute location in Cairo data */
       int s_x = (*x) + i; /* x coordinate in Cairo surface */
       int s_y = (*y) + j; /* y coordinate in Cairo surface */
-      unsigned int offset = (s_stride*s_y) + 4*s_x;
+      int offset = (s_stride*s_y) + 4*s_x;
 
-      /* Update the Cairo surface (note: probably wrong for big endian systems?)*/
-      if(s_x >= 0 && s_x < s_width && s_y >=0 && s_y < s_height) {
-        s_data[offset+0] = input_b;
-        s_data[offset+1] = input_g;
-        s_data[offset+2] = input_r;
-        s_data[offset+3] = 255;
-      }
+      /* Compute pixel value: Cairo ARGB32 format uses 4 bytes per pixel with
+         alpha in the 8 most significant bits and then r,g,b in descending order of
+         significance. So the ordering in memory depends on endian-ness. */
+      union {
+        uint32_t uint;
+        unsigned char usc[4]; 
+      } pixel;
+      pixel.uint =
+        (((unsigned int) 255) << 24)
+        + (((unsigned int) input_r) << 16)
+        + (((unsigned int) input_g) << 8)
+        + ((unsigned int) input_b);
 
+      /* Update the Cairo surface */
+      if(s_x >= 0 && s_x < s_width && s_y >=0 && s_y < s_height)
+        memcpy(s_data+offset, pixel.usc, 4);
     }
   }
 
   /* Mark surface as dirty */
   cairo_surface_mark_dirty(*surface);
-
 }
   
