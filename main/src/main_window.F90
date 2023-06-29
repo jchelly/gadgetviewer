@@ -589,7 +589,6 @@ contains
 
     ! Display the window
     call gui_show_window(mainwin)
-    call progress_bar_init(mainwin)
 
     ! Clear the drawing area
     call gui_drawing_area_get_size(drawing_area,width,height)
@@ -600,6 +599,9 @@ contains
     call gui_set_visible(stereo_box,.false.)
 
     is_fullscreen = .false.
+
+    call gui_clear_events()
+    call progress_bar_init(mainwin)
 
     return
   end subroutine main_window_create
