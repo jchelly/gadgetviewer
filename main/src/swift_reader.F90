@@ -944,10 +944,12 @@ contains
       if(allocated(idata))       deallocate(idata)
       if(allocated(rdata))       deallocate(rdata)
 
+#ifdef HAVE_HDF5
       if(file_open)then
          hdferr = hdf5_close_file()
          file_open = .false.
       endif
+#endif
 
       return
     end subroutine cleanup

@@ -5,8 +5,9 @@ module gadget4_groups
   use return_status
   use gadget_path
   use particle_store
+#ifdef HAVE_HDF5
   use read_hdf5
-  
+#endif
   implicit none
   private
   save
@@ -26,6 +27,7 @@ contains
     type (path_data_type), intent(in) :: path_data
     integer,               intent(in) :: icat
     type (read_info) :: rinfo
+#ifdef HAVE_HDF5
     ! Group catalogue info
     character(len=fname_maxlen) :: tab_file
     integer :: ifile, nfiles
@@ -227,10 +229,15 @@ contains
     deallocate(grouplen_type)
     deallocate(subhalolen_type)
     deallocate(groupnsubs)
-    
+#else
+    res%string = "Code was compiled without HDF5 support"
+    res%success = .false.
+#endif
     return
     
   contains
+
+#ifdef HAVE_HDF5
 
     subroutine cleanup()
       
@@ -245,6 +252,8 @@ contains
 
       return
     end subroutine cleanup
+
+#endif
 
   end function gadget4_groups_read
 
