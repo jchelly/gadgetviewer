@@ -362,11 +362,6 @@ contains
     deallocate(npfile)
 
 #else
-    ! Should never get here because menu option is greyed out if HDF5 not
-    ! available
-    call terminate('swift_reader - Code was compiled without HDF5 support')
-
-    ! Stop compiler complaining about return value not being set
     swift_open%success = .false.
     swift_open%string  = "Compiled without HDF5 support"
     isnap = 0
