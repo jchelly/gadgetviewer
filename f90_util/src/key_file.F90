@@ -103,9 +103,9 @@ contains
 !
     character(len=*), intent(in) :: group, name
     integer,          intent(in) :: value
-    integer(kind=C_INT)          :: c_value
+    integer(kind=C_INT)          :: c_value(1)
     
-    c_value = value
+    c_value(1) = value
 
     call addintkey( &
          trim(group)//char(0), &
@@ -141,9 +141,9 @@ contains
 !
     character(len=*), intent(in) :: group, name
     real,             intent(in) :: value
-    real(kind=C_DOUBLE)          :: c_value
+    real(kind=C_DOUBLE)          :: c_value(1)
     
-    c_value = value
+    c_value(1) = value
 
     call adddoublekey( &
          trim(group)//char(0), &
@@ -222,12 +222,12 @@ contains
     implicit none
     character(len=*), intent(in)    :: group, name
     logical, intent(in)             :: value
-    integer(kind=C_INT)             :: c_value
+    integer(kind=C_INT)             :: c_value(1)
 
     if(value)then
-       c_value = 1
+       c_value(1) = 1
     else
-       c_value = 0
+       c_value(1) = 0
     endif
     call addintkey( &
          trim(group)//char(0), &
@@ -270,7 +270,7 @@ contains
 !
     character(len=*), intent(in)    :: group, name
     integer,          intent(inout) :: value
-    integer(kind=C_INT)             :: c_value
+    integer(kind=C_INT)             :: c_value(1)
     integer(kind=C_INT)             :: n
 
     call getintkey( &
@@ -279,7 +279,7 @@ contains
          c_value, n, &
          int(1, kind=C_INT))
  
-    if(n.gt.0)value = c_value
+    if(n.gt.0)value = c_value(1)
 
     return
   end subroutine get_integer_key_single
@@ -313,7 +313,7 @@ contains
 !
     character(len=*), intent(in)    :: group, name
     real,             intent(inout) :: value
-    real(kind=C_DOUBLE)             :: c_value
+    real(kind=C_DOUBLE)             :: c_value(1)
     integer(kind=C_INT)             :: n
 
     call getdoublekey( &
@@ -321,7 +321,7 @@ contains
          trim(name)//char(0), &
          c_value, n, &
          int(1, kind=C_INT))
-    if(n.gt.0)value = c_value
+    if(n.gt.0)value = c_value(1)
 
     return
   end subroutine get_real_key_single
@@ -392,7 +392,7 @@ contains
     implicit none
     character(len=*), intent(in)    :: group, name
     logical, intent(inout)             :: value
-    integer(kind=C_INT)             :: c_value
+    integer(kind=C_INT)             :: c_value(1)
     integer(kind=C_INT)             :: n
 
     call getintkey( &
@@ -400,7 +400,7 @@ contains
          trim(name)//char(0), &
          c_value, n, int(1, kind=C_INT))
     
-    if(n.eq.1)value = c_value.ne.0
+    if(n.eq.1)value = c_value(1).ne.0
 
     return
   end subroutine get_logical_key_single
