@@ -46,10 +46,14 @@ static gint da_expose_event( GtkWidget *widget, GdkEventExpose *event,
 			     cairo_surface_t **surface)
 {
   
-  cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(widget));
+  GdkWindow* window = gtk_widget_get_window(widget);
+  cairo_region_t *region = cairo_region_create();
+  GdkDrawingContext *drawing_context = gdk_window_begin_draw_frame(window, region);
+  cairo_t *cr = gdk_drawing_context_get_cairo_context(drawing_context);
   cairo_set_source_surface(cr, *surface, 0, 0);
-  cairo_paint (cr);
-  cairo_destroy (cr);
+  cairo_paint(cr);
+  gdk_window_end_draw_frame(window, drawing_context);
+  cairo_region_destroy(region);
 
   return TRUE;
 }
@@ -89,14 +93,17 @@ static gint da_configure_event(GtkWidget *widget, GdkEventConfigure *event,
 static gint da_motion_notify_event (GtkWidget *widget, GdkEventMotion *event,
 				    int *mouse_state)
 {
-  int x, y;
+  gint x, y;
   GdkModifierType mask;
   guint state;
   int b1, b2, b3, b4, b5;
 
   if (event->is_hint)
     {
-      gdk_window_get_pointer (event->window, &x, &y, &mask);
+      GdkDisplay* display = gdk_display_get_default();
+      GdkSeat* seat = gdk_display_get_default_seat(display);
+      GdkDevice* device = gdk_seat_get_pointer(seat);
+      gdk_window_get_device_position(event->window, device, &x, &y, &mask);
       state = (guint) mask;
     }
   else
@@ -262,11 +269,13 @@ void CREATEDRAWINGAREA_F90(GtkWidget **drawingarea, GtkWidget **box,
                     G_CALLBACK(da_destroy),
                     (gpointer) c_info);
 
+  /*
+    Deprecated and recommended not to use in GTK docs
   if(*db == 0)
     gtk_widget_set_double_buffered(GTK_WIDGET(*drawingarea), FALSE);
   else
     gtk_widget_set_double_buffered(GTK_WIDGET(*drawingarea), TRUE);
-
+  */
 }
 
 /* Return the size of the drawing area */

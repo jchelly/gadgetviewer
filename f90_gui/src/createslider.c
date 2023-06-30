@@ -22,8 +22,9 @@ void CREATEVSLIDER_F90(GtkWidget **slider, GtkWidget **box, int *changed,
 		    double *min, double *max, double *step, int *c_draw,
 		    int *c_size)
 {
-  *slider = gtk_vscale_new_with_range((gdouble) (*min), (gdouble) (*max),
-				      (gdouble) (*step));
+  *slider = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL,
+                                     (gdouble) (*min), (gdouble) (*max),
+                                     (gdouble) (*step));
 
   if(*c_size > 0)gtk_widget_set_size_request(*slider, 0, (gint) (*c_size));
 
@@ -43,8 +44,9 @@ void CREATEHSLIDER_F90(GtkWidget **slider, GtkWidget **box, int *changed,
 		    double *min, double *max, double *step, int *c_draw,
 		    int *c_size)
 {
-  *slider = gtk_hscale_new_with_range((gdouble) (*min), (gdouble) (*max),
-				      (gdouble) (*step));
+  *slider = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,
+                                     (gdouble) (*min), (gdouble) (*max),
+                                     (gdouble) (*step));
 
   if(*c_size > 0)gtk_widget_set_size_request(*slider, (gint) (*c_size), 0);
 

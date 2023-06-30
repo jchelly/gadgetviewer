@@ -28,21 +28,19 @@ void CREATECOLOURBUTTON_F90(GtkWidget **button, GtkWidget **box, int *clicked)
 
 void COLOURBUTTONGET_F90(GtkWidget **button, int *r, int *g, int *b)
 {
-  GdkColor color;
-  gtk_color_button_get_color(GTK_COLOR_BUTTON(*button),&color);
-
-  (*r) = color.red   / 256;
-  (*g) = color.green / 256;
-  (*b) = color.blue  / 256;
+  GdkRGBA color;
+  gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(*button), &color);
+  (*r) = color.red   * 255;
+  (*g) = color.green * 255;
+  (*b) = color.blue  * 255;
 }
 
 void COLOURBUTTONSET_F90(GtkWidget **button, int *r, int *g, int *b)
 {
-  GdkColor color;
-
-  color.red   = (*r) * 256;  
-  color.green = (*g) * 256;  
-  color.blue  = (*b) * 256;  
-  gtk_color_button_set_color(GTK_COLOR_BUTTON(*button),&color);   
-
+  GdkRGBA color;
+  color.red   = ((double) (*r)) / 255;
+  color.green = ((double) (*g)) / 255;
+  color.blue  = ((double) (*b)) / 255;
+  color.alpha = 1.0;
+  gtk_color_chooser_set_rgba(GTK_COLOR_CHOOSER(*button), &color);
 }

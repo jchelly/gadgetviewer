@@ -15,9 +15,11 @@ void CREATEMENU_F90(GtkWidget **menu, GtkWidget **menubar, char *name, int *righ
   menu_item = gtk_menu_item_new_with_label ((gchar *) name);
   gtk_menu_item_set_submenu(GTK_MENU_ITEM(menu_item), *menu );
 
-  /* Right justify if necessary */
-  if(*right > 0)
+  /* Right justify if necessary (deprecated and not recommended by GTK docs) */
+  /*
+    if(*right > 0)
     gtk_menu_item_set_right_justified(GTK_MENU_ITEM(menu_item),TRUE);
+  */
 
   /* Add the menu item to the menu bar */
   gtk_menu_shell_append (GTK_MENU_SHELL(*menubar), menu_item);
