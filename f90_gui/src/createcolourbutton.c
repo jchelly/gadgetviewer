@@ -20,6 +20,7 @@ void colourbutton_event( GtkWidget *widget, gpointer data)
 void CREATECOLOURBUTTON_F90(GtkWidget **button, GtkWidget **box, int *clicked)
 {
   *button = gtk_color_button_new();
+  g_object_set(G_OBJECT(*button), "show-editor", TRUE, NULL);
   pack_box(*box, *button);
 
   g_signal_connect (GTK_WIDGET (*button), "color-set",
