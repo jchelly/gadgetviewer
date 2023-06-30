@@ -108,11 +108,11 @@ void cleanup(EagleSnapshot *snap)
   int ifile;
 
   if(snap->hashmap)free(snap->hashmap);
-  if(snap->first_key_in_file)free(snap->first_key_in_file);
-  if(snap->last_key_in_file)free(snap->last_key_in_file);
-  if(snap->num_keys_in_file)free(snap->num_keys_in_file);
   for(itype=0;itype<6;itype++)
     {
+      if(snap->first_key_in_file[itype])free(snap->first_key_in_file[itype]);
+      if(snap->last_key_in_file[itype])free(snap->last_key_in_file[itype]);
+      if(snap->num_keys_in_file[itype])free(snap->num_keys_in_file[itype]);
       if(snap->part_per_cell[itype])
 	{
 	  for(ifile=0;ifile<snap->numfiles;ifile++)
