@@ -1,5 +1,6 @@
 module gadget4_groups
 
+#include "../../config.h"
   use f90_util
   use data_types
   use return_status
