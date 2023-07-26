@@ -120,6 +120,7 @@ program gadgetviewer
      ! Set the routine to be called when an event occurs
      call gui_set_event_handler(main_window_process_events)
      ! Redraw in case we just loaded a snapshot
+     call main_window_update()
      call main_window_redraw()
      ! Open partial snapshot read GUI if option was used
      if(partial)call read_partial_open(mainwin)

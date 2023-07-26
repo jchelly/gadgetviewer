@@ -18,7 +18,7 @@ void CREATENOTEBOOK_F90(GtkWidget **notebook, GtkWidget **inbox)
 void CREATENOTEBOOKPAGE_F90(GtkWidget **notebook, GtkWidget **box, char *label)
 {
   GtkWidget *tab_label = gtk_label_new((gchar *) label);
-  *box = gtk_vbox_new(FALSE,0);
+  *box = gtk_box_new(GTK_ORIENTATION_VERTICAL,0);
   gtk_notebook_append_page(GTK_NOTEBOOK(*notebook), *box, tab_label);
 }
 

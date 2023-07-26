@@ -71,11 +71,11 @@ void CREATEWINDOW_F90(void **win, int *close, GtkWidget **box,
     to close the window
   */
 
-  gtk_signal_connect (GTK_OBJECT (*win), "delete_event",
-		      GTK_SIGNAL_FUNC (delete_event), (gpointer) close);
+  g_signal_connect (GTK_WIDGET (*win), "delete_event",
+                    G_CALLBACK(delete_event), (gpointer) close);
 
   /* Put a vbox in the window to contain the menu bar and status bar */
-  outer_box = gtk_vbox_new(FALSE,0);
+  outer_box = gtk_box_new(GTK_ORIENTATION_VERTICAL,0);
   gtk_container_add (GTK_CONTAINER (*win), outer_box);
 
   /* Add the menubar at the top of the outer vbox */
@@ -87,7 +87,7 @@ void CREATEWINDOW_F90(void **win, int *close, GtkWidget **box,
 
   /* Put another vbox in the outer vbox to contain any widgets
      added by the calling program */
-  *box = gtk_vbox_new(FALSE,0);
+  *box = gtk_box_new(GTK_ORIENTATION_VERTICAL,0);
 
   /*
     Note we deliberately ignore the settings from gui_packing_mode here
@@ -120,8 +120,10 @@ void REDRAWWINDOW_F90(GtkWidget **win)
 
 void MOVEWINDOW_F90(GtkWidget **win, double *x, double *y)
 {
-  int ix = (*x)*gdk_screen_width();
-  int iy = (*y)*gdk_screen_height();
-  /* gtk_window_set_gravity(GTK_WINDOW(*win), GDK_GRAVITY_CENTER); */
+
+  GdkRectangle workarea = {0};
+  gdk_monitor_get_workarea(gdk_display_get_primary_monitor(gdk_display_get_default()), &workarea);
+  int ix = (*x)*workarea.width;
+  int iy = (*y)*workarea.height;
   gtk_window_move(GTK_WINDOW(*win), (gint) ix, (gint) iy);
 }
