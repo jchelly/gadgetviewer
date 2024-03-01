@@ -312,11 +312,6 @@ contains
     gadget_eagle_open%success = .true.
 
 #else
-    ! Should never get here because menu option is greyed out if HDF5 not
-    ! available
-    call terminate('gadget_eagle_reader - Code was compiled without HDF5 support')
-
-    ! Stop compiler complaining about return value not being set
     gadget_eagle_open%success = .false.
     gadget_eagle_open%string  = "Compiled without HDF5 support"
     isnap = 0
