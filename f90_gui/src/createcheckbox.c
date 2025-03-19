@@ -20,6 +20,6 @@ void CREATECHECKBOX_F90(GtkWidget **checkbox, GtkWidget **box, int *changed,
   *checkbox = gtk_check_button_new_with_label((const gchar *) label);
   pack_box(*box, *checkbox);
 
-  gtk_signal_connect (GTK_OBJECT (*checkbox), "toggled",
-		      GTK_SIGNAL_FUNC (checkbox_event), (gpointer) changed);
+  g_signal_connect (GTK_WIDGET (*checkbox), "toggled",
+                    G_CALLBACK(checkbox_event), (gpointer) changed);
 }

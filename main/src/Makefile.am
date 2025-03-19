@@ -9,7 +9,7 @@ endif
 
 AM_FCFLAGS = $(ax_cv_f90_modflag)../../f90_gui/src/ $(ax_cv_f90_modflag)../../drawing/src/ $(ax_cv_f90_modflag)../../f90_util/src $(MAYBE_HDF5_MODULE) $(MAYBE_EAGLE_MODULE) $(OPENMP_FCFLAGS) $(extra_fcflags)
 
-LDADD = ../../drawing/src/libdrawing.la ../../f90_gui/src/libf90_gui.la ../../f90_util/src/libf90_util.la $(MAYBE_HDF5_LIB) $(MAYBE_EAGLE_LIB) @GTK_LIBS@ @HDF5_LIBS@ @PLPLOT_LIBS@ @CAIRO_LIBS@ @LIBPNG_LIBS@
+LDADD = ../../drawing/src/libdrawing.la ../../f90_gui/src/libf90_gui.la ../../f90_util/src/libf90_util.la $(MAYBE_HDF5_LIB) $(MAYBE_EAGLE_LIB) @GTK3_LIBS@ @HDF5_LIBS@ @PLPLOT_LIBS@ @CAIRO_LIBS@ @LIBPNG_LIBS@
 
 bin_PROGRAMS = gadgetviewer
 

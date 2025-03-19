@@ -22,7 +22,7 @@ void CREATEHBOX_F90(GtkWidget **box, GtkWidget **inbox, int *has_frame,
     {
       GtkWidget *expander = gtk_expander_new((gchar *) label);
       pack_box(*inbox, expander);
-      parent = gtk_vbox_new(FALSE,0);
+      parent = gtk_box_new(GTK_ORIENTATION_VERTICAL,0);
       gtk_container_add(GTK_CONTAINER(expander), parent);  
       gtk_expander_set_expanded(GTK_EXPANDER(expander),FALSE);
     }
@@ -35,7 +35,7 @@ void CREATEHBOX_F90(GtkWidget **box, GtkWidget **inbox, int *has_frame,
     {
       if(*has_frame==0)
 	{
-	  *box = gtk_hbox_new(FALSE,0);
+	  *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL,0);
 	  pack_box(parent, *box);
 	}
       else
@@ -50,7 +50,7 @@ void CREATEHBOX_F90(GtkWidget **box, GtkWidget **inbox, int *has_frame,
 	      frame = gtk_frame_new((gchar *) label);
 	    }
 	  pack_box(parent, frame);
-	  *box = gtk_hbox_new(FALSE,0);
+	  *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL,0);
 	  gtk_container_add(GTK_CONTAINER(frame), *box);
 	}
     }
@@ -66,9 +66,8 @@ void CREATEHBOX_F90(GtkWidget **box, GtkWidget **inbox, int *has_frame,
 				       GTK_POLICY_AUTOMATIC);
 
       /* Create the new box and put it in the scroll window */
-      *box = gtk_hbox_new(FALSE,0);
-      gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrollwin),
-					    *box);
+      *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL,0);
+      gtk_container_add(GTK_CONTAINER(scrollwin), GTK_WIDGET(*box));
     }
 }
 
@@ -82,7 +81,7 @@ void CREATEVBOX_F90(GtkWidget **box, GtkWidget **inbox, int *has_frame,
     {
       GtkWidget *expander = gtk_expander_new((gchar *) label);
       pack_box(*inbox, expander);
-      parent = gtk_vbox_new(FALSE,0);
+      parent = gtk_box_new(GTK_ORIENTATION_VERTICAL,0);
       gtk_container_add(GTK_CONTAINER(expander), parent); 
       gtk_expander_set_expanded(GTK_EXPANDER(expander),FALSE);
     }
@@ -95,7 +94,7 @@ void CREATEVBOX_F90(GtkWidget **box, GtkWidget **inbox, int *has_frame,
     {
       if(*has_frame==0)
 	{
-	  *box = gtk_vbox_new(FALSE,0);
+	  *box = gtk_box_new(GTK_ORIENTATION_VERTICAL,0);
 	  pack_box(parent, *box);
 	}
       else
@@ -110,7 +109,7 @@ void CREATEVBOX_F90(GtkWidget **box, GtkWidget **inbox, int *has_frame,
 	      frame = gtk_frame_new((gchar *) label);
 	    }
 	  pack_box(parent, frame);
-	  *box = gtk_vbox_new(FALSE,0);
+	  *box = gtk_box_new(GTK_ORIENTATION_VERTICAL,0);
 	  gtk_container_add(GTK_CONTAINER(frame), *box);
 	}
     }
@@ -126,9 +125,9 @@ void CREATEVBOX_F90(GtkWidget **box, GtkWidget **inbox, int *has_frame,
 				       GTK_POLICY_AUTOMATIC);
 
       /* Create the new box and put it in the scroll window */
-      *box = gtk_vbox_new(FALSE,0);
-      gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrollwin),
-					    *box);
+      *box = gtk_box_new(GTK_ORIENTATION_VERTICAL,0);
+      gtk_container_add(GTK_CONTAINER(scrollwin), GTK_WIDGET(*box));
+
     }
 }
 

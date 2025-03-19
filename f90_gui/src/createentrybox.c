@@ -35,6 +35,6 @@ void CREATEENTRYBOX_F90(GtkWidget **entrybox, GtkWidget **box, int *length,
   
   pack_box(*box, *entrybox);
 
-  gtk_signal_connect (GTK_OBJECT (*entrybox), "activate",
-		      GTK_SIGNAL_FUNC (entrybox_event), (gpointer) changed);
+  g_signal_connect (GTK_WIDGET (*entrybox), "activate",
+                    G_CALLBACK(entrybox_event), (gpointer) changed);
 }
