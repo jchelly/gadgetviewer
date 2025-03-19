@@ -22,7 +22,8 @@ program gadgetviewer
   use partial_read_info
   use sampling
   use threads
-
+  use transform
+  
   implicit none
   type(result_type)           :: res
   character(len=fname_maxlen) :: snapshot_file, config_file, selection_file
@@ -82,6 +83,11 @@ program gadgetviewer
 
   ! Set default view parameters
   call view_parameters_initialise()
+
+  ! If we're loading a region, focus on the supplied centre coordinates
+  if(rinfo%do_sphere)then
+     call transform_modify(view_transform, centre=rinfo%pos)
+  endif
 
   ! Try to read any configuration file specified on the command line
   if(len_trim(config_file).gt.0)then
