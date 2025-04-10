@@ -55,7 +55,7 @@ generate the configure script which can be run as described above.
 ### Dependencies
 
 In order to compile the program you need at least a C compiler, a
-Fortran 90 compiler, and the GTK+ 2.0 GUI library. The program also has
+Fortran 90 compiler, and the GTK+ 3.0 GUI library. The program also has
 several optional dependencies:
 
 - HDF5  : allows reading of HDF5 snapshots
@@ -66,6 +66,20 @@ several optional dependencies:
 
 If any of these are missing, some features will be unavailable. The
 configure script generates a warning for each library which can't be found.
+
+#### On Ubuntu linux or similar
+
+Dependencies can be installed with
+```
+sudo apt install build-essential gfortran libhdf5-dev libgtk-3-dev
+```
+
+#### On CentOS/Rocky linux
+
+Dependencies can be installed with
+```
+sudo dnf install gfortran hdf5-devel gtk3-devel
+```
 
 ### Specifying compilers and flags
 
