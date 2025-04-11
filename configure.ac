@@ -286,7 +286,7 @@ AC_SUBST_FILE(ax_mod_deps_read_eagle)
 #
 # Output the Makefiles
 #
-AC_OUTPUT(Makefile drawing/Makefile drawing/src/Makefile main/Makefile main/src/Makefile f90_gui/Makefile f90_gui/src/Makefile f90_util/Makefile f90_util/src/Makefile hdf5/Makefile hdf5/src/Makefile conf/Makefile read_eagle/Makefile read_eagle/src/Makefile doc/Makefile)
+AC_OUTPUT(Makefile drawing/Makefile drawing/src/Makefile main/Makefile main/src/Makefile f90_gui/Makefile f90_gui/src/Makefile f90_util/Makefile f90_util/src/Makefile hdf5/Makefile hdf5/src/Makefile conf/Makefile read_eagle/Makefile read_eagle/src/Makefile)
 
 #
 # Configuration summary
