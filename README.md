@@ -151,10 +151,6 @@ Some points to note:
   library. It may be necessary to install a separate "dev" package with
   the headers.
 
-* gfortran will compile this program but you need at least version
-  4.2 to be able to read binary snapshots. Stream I/O is not
-  implemented in 4.1.
-
 ### Example compilation
 
 Compiling the code with the Intel compilers and installing to our own
