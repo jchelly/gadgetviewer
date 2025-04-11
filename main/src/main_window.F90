@@ -50,7 +50,7 @@ module main_window
   public :: main_window_update_controls
   public :: main_window_redraw
   public :: main_window_finalise
-
+  public :: main_window_update
 
   ! Version string (added to config.h by autoconf)
   character(len=20) :: version = VERSION
@@ -173,8 +173,9 @@ module main_window
   ! Optional extra libraries
   integer, parameter :: nextra = 3
   character(len=100), dimension(nextra) :: extra
-  
+
   ! Stereo separation control
+  logical :: stereo_created = .false.
   type (gui_box)    :: stereo_box
   type (gui_label)  :: label
   type (gui_slider) :: stereo_slider
@@ -190,6 +191,27 @@ module main_window
   character(len=80) :: plot_lib
 
 contains
+
+  subroutine stereo_create()
+
+    implicit none
+    real :: sep
+
+    if(stereo_created)return
+
+    ! Add slider for stereo separation
+    call gui_create_box(stereo_box, toolbar, gui_horizontal)
+    call gui_create_label(label, stereo_box, "Stereo sep. ")
+    call gui_create_slider(stereo_slider, stereo_box, &
+         range=(/ stereo_min_sep, stereo_max_sep/), &
+         step=stereo_sep_step, orientation=gui_horizontal, min_size=100)
+    call gui_slider_set_value(stereo_slider,stereo_default_sep)
+    call gui_slider_get_value(stereo_slider,sep)
+    call stereo_set_separation(sep)
+    stereo_created = .true.
+
+    return
+  end subroutine stereo_create
 
 !
 ! Create the main window
@@ -221,8 +243,8 @@ contains
 
     ! Make a new window
     call gui_create_window(mainwin, dimensions=(/600,550/), &
-         title="Gadget File Viewer", statusbar=.true., menubar=.true.)
-    
+         title="Gadgetviewer", statusbar=.true., menubar=.true.)
+
     ! Set widgets to fill all available space
     call gui_packing_mode(expand=.true., fill=.true., spacing=3, &
          position=gui_start)
@@ -574,22 +596,11 @@ contains
     end do
 #endif
 
-    ! Add slider for stereo separation
-    call gui_create_box(stereo_box, toolbar, gui_horizontal)
-    call gui_create_label(label, stereo_box, "Stereo sep. ")
-    call gui_create_slider(stereo_slider, stereo_box, &
-         range=(/ stereo_min_sep, stereo_max_sep/), &
-         step=stereo_sep_step, orientation=gui_horizontal, min_size=100)
-    call gui_slider_set_value(stereo_slider,stereo_default_sep)
-    call gui_slider_get_value(stereo_slider,sep)
-    call stereo_set_separation(sep)
-
     ! Update state of controls at the bottom of the window
     call main_window_update_controls()
 
     ! Display the window
     call gui_show_window(mainwin)
-    call progress_bar_init(mainwin)
 
     ! Clear the drawing area
     call gui_drawing_area_get_size(drawing_area,width,height)
@@ -597,9 +608,11 @@ contains
     allocate(image(0:3*width*height-1), stat=istat)
     if(istat.ne.0)image = char(0)
     call main_window_redraw()
-    call gui_set_visible(stereo_box,.false.)
 
     is_fullscreen = .false.
+
+    call gui_clear_events()
+    call progress_bar_init(mainwin)
 
     return
   end subroutine main_window_create
@@ -1138,9 +1151,10 @@ contains
     endif
 
     ! Menu items for mono/stereo modes
-    if(  gui_menu_item_changed(view_mono).or.&
+    if(gui_menu_item_changed(view_mono).or.&
          gui_menu_item_changed(view_anaglyph).or.&
          gui_menu_item_changed(view_stereo))then
+       call stereo_create()
        call gui_menu_item_get_state(view_stereo, stereo_enabled)
        call gui_menu_item_get_state(view_anaglyph, anaglyph_enabled)
        call gui_set_visible(stereo_box, stereo_enabled.or.anaglyph_enabled)
@@ -1251,10 +1265,12 @@ contains
     endif
 
     ! Stereo separation slider
-    if(gui_slider_changed(stereo_slider))then
-       call gui_slider_get_value(stereo_slider, sep)
-       call stereo_set_separation(sep)
-       call main_window_redraw()
+    if(stereo_created)then
+       if(gui_slider_changed(stereo_slider))then
+          call gui_slider_get_value(stereo_slider, sep)
+          call stereo_set_separation(sep)
+          call main_window_redraw()
+       endif
     endif
 
     ! Movie option
@@ -1418,13 +1434,13 @@ contains
 
     ! Set menu checkboxes
     if(stereo_enabled)then
-       call gui_set_visible(stereo_box,.true.)
+       if(stereo_created)call gui_set_visible(stereo_box,.true.)
        call gui_menu_item_set_state(view_stereo, .true.)
     else if(anaglyph_enabled)then
-       call gui_set_visible(stereo_box,.true.)
+       if(stereo_created)call gui_set_visible(stereo_box,.true.)
        call gui_menu_item_set_state(view_anaglyph, .true.)
     else
-       call gui_set_visible(stereo_box,.false.)
+       if(stereo_created)call gui_set_visible(stereo_box,.false.)
        call gui_menu_item_set_state(view_mono, .true.)
     endif
     call gui_menu_item_set_state(view_auto_resample,  auto_resample)
@@ -1469,18 +1485,23 @@ contains
     type (result_type) :: res
     character(len=10)  :: bt
     logical            :: did_sample
+    real               :: x_offset, y_offset
 
     if(.not.particle_store_loaded(pdata))then
        if(allocated(image))then
           image = char(0)
-          call gui_draw_image(drawing_area,image,width,height,0,0)
-          call gui_draw_text(drawing_area,10,20, &
-               "Gadget File Viewer v"//trim(version))
+          x_offset = 10.0/width
+          y_offset = 25.0/height
+          call draw_init_mem(image, width, height)
+          call draw_text("Gadgetviewer v"//trim(version), x_offset, 1.0-y_offset)
+
           do i = 1, nextra, 1
              iy = (25*i)+40
-             call gui_draw_text(drawing_area,20,iy,trim(extra(i)))
+             call draw_text(trim(extra(i)), x_offset, 1.0-((i+2)*y_offset))
           end do
-          call gui_draw_text(drawing_area,10,height-20,"No data loaded")
+          call draw_text("No data loaded", x_offset, 2.0*y_offset)
+          call draw_end()
+          call gui_draw_image(drawing_area,image,width,height,0,0)
           call gui_drawing_area_redraw(drawing_area)
        endif
     else

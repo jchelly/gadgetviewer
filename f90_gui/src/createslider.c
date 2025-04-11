@@ -22,15 +22,16 @@ void CREATEVSLIDER_F90(GtkWidget **slider, GtkWidget **box, int *changed,
 		    double *min, double *max, double *step, int *c_draw,
 		    int *c_size)
 {
-  *slider = gtk_vscale_new_with_range((gdouble) (*min), (gdouble) (*max),
-				      (gdouble) (*step));
+  *slider = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL,
+                                     (gdouble) (*min), (gdouble) (*max),
+                                     (gdouble) (*step));
 
   if(*c_size > 0)gtk_widget_set_size_request(*slider, 0, (gint) (*c_size));
 
   pack_box(*box, *slider);
 
-  gtk_signal_connect (GTK_OBJECT (*slider), "value_changed",
-		      GTK_SIGNAL_FUNC (slider_event), (gpointer) changed);
+  g_signal_connect (GTK_WIDGET (*slider), "value_changed",
+                    G_CALLBACK(slider_event), (gpointer) changed);
 
   if(*c_draw > 0)
     gtk_scale_set_draw_value(GTK_SCALE(*slider), TRUE);
@@ -43,15 +44,16 @@ void CREATEHSLIDER_F90(GtkWidget **slider, GtkWidget **box, int *changed,
 		    double *min, double *max, double *step, int *c_draw,
 		    int *c_size)
 {
-  *slider = gtk_hscale_new_with_range((gdouble) (*min), (gdouble) (*max),
-				      (gdouble) (*step));
+  *slider = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,
+                                     (gdouble) (*min), (gdouble) (*max),
+                                     (gdouble) (*step));
 
   if(*c_size > 0)gtk_widget_set_size_request(*slider, (gint) (*c_size), 0);
 
   pack_box(*box, *slider);
 
-  gtk_signal_connect (GTK_OBJECT (*slider), "value_changed",
-		      GTK_SIGNAL_FUNC (slider_event), (gpointer) changed);
+  g_signal_connect (GTK_WIDGET (*slider), "value_changed",
+                    G_CALLBACK(slider_event), (gpointer) changed);
 
   if(*c_draw > 0)
     gtk_scale_set_draw_value(GTK_SCALE(*slider), TRUE);

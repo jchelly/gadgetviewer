@@ -26,8 +26,8 @@ void NEWRADIOBUTTONGROUP_F90(GtkWidget **radiobutton, GtkWidget **box,
   *radiobutton = gtk_radio_button_new_with_label( NULL, (gchar *) label);
   pack_box(*box, *radiobutton);
 
-  gtk_signal_connect (GTK_OBJECT (*radiobutton), "toggled",
-		      GTK_SIGNAL_FUNC (radiobutton_event), (gpointer) changed);
+  g_signal_connect (GTK_WIDGET (*radiobutton), "toggled",
+                    G_CALLBACK(radiobutton_event), (gpointer) changed);
 }
 
 
@@ -39,6 +39,6 @@ void ADDRADIOBUTTON_F90(GtkWidget **radiobutton, GtkWidget **box, char *label,
 		     (gchar *) label);
   pack_box(*box, *radiobutton);
 
-  gtk_signal_connect (GTK_OBJECT (*radiobutton), "toggled",
-		      GTK_SIGNAL_FUNC (radiobutton_event), (gpointer) changed);
+  g_signal_connect (GTK_WIDGET (*radiobutton), "toggled",
+                    G_CALLBACK(radiobutton_event), (gpointer) changed);
 }

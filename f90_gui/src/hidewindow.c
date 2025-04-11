@@ -4,5 +4,5 @@
 
 void HIDEWINDOW_F90(void **win)
 {
-  gtk_widget_hide_all((GtkWidget *) (*win));
+  gtk_widget_hide((GtkWidget *) (*win));
 }

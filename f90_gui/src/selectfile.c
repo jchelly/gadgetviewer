@@ -24,8 +24,8 @@ void SELECTFILE_F90(GtkWidget **window, char *message, int *c_mode, int *c_ok,
       dialog = gtk_file_chooser_dialog_new ((gchar *) message,
 					    GTK_WINDOW(*window),
 					    GTK_FILE_CHOOSER_ACTION_OPEN,
-					    GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-					    GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+					    "_Cancel", GTK_RESPONSE_CANCEL,
+					    "_Open", GTK_RESPONSE_ACCEPT,
 					    NULL);
 
     }
@@ -34,8 +34,8 @@ void SELECTFILE_F90(GtkWidget **window, char *message, int *c_mode, int *c_ok,
       dialog = gtk_file_chooser_dialog_new ((gchar *) message,
 					    GTK_WINDOW(*window),
 					    GTK_FILE_CHOOSER_ACTION_SAVE,
-					    GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-					    GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+					    "_Cancel", GTK_RESPONSE_CANCEL,
+					    "_Save", GTK_RESPONSE_ACCEPT,
 					    NULL);
     }
 #else

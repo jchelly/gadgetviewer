@@ -9,4 +9,8 @@ void STARTGTK_F90(void)
   gtk_disable_setlocale();
 
   gtk_init(NULL,NULL);
+
+  // Animations make the UI dramatically slower on a remote display
+  GtkSettings *settings = gtk_settings_get_default();
+  g_object_set(settings, "gtk-enable-animations", FALSE, NULL);
 }
