@@ -60,9 +60,6 @@ several optional dependencies:
 
 - HDF5  : allows reading of HDF5 snapshots
 - libpng: required for writing out movie frames and screenshots
-- PlPlot: to make scatterplots and histograms of particle properties
-  (plplot is no longer necessary as gadgetviewer can use Cairo,
-  which is a dependency of Gtk, instead)
 
 If any of these are missing, some features will be unavailable. The
 configure script generates a warning for each library which can't be found.
@@ -117,7 +114,6 @@ configure where to find the libraries:
 
 ```
     --with-hdf5=...           - specify path to HDF5
-    --with-plplot=...         - specify path to PlPlot
     --with-png=...            - specify path to libpng
 ```
 
@@ -169,30 +165,6 @@ To configure for debugging with gdb:
             --disable-optimization
 ```
 
-### PlPlot configuration
-
-Note that PlPlot is not required if Cairo is available (which it usually is).
-
-If you're having problems compiling PlPlot then as a last resort you
-could try disabling features that the gadget file viewer doesn't
-need. To do this, pass the following parameters to cmake:
-
-```
-    -DENABLE_tcl=OFF
-    -DENABLE_cxx=OFF
-    -DENABLE_gnome2=OFF
-    -DENABLE_wxwidgets=OFF
-    -DENABLE_DYNDRIVERS=OFF
-    -DPLD_gcw=OFF
-    -DPLD_wxwidgets=OFF
-    -DPLD_hp7470=OFF
-    -DPLD_hp7580=OFF
-    -DPLD_lj_hpgl=OFF
-```
-
-Gadgetviewer just needs the Fortran interface and the 'mem' output driver,
-which is built in and can't be disabled.
-
 ### HDF5 configuration
 
 It should now be possible to use any HDF5 1.6 or later installation.
@@ -202,7 +174,7 @@ interface was not built or was built with a different compiler.
 If HDF5 is compiled without compression support then compressed HDF5 
 snapshots will be unreadable.
 
-## Using the Gadget file viewer
+## Using Gadgetviewer
 
 ### Command line flags
 
