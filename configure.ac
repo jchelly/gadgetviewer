@@ -43,7 +43,6 @@ AC_ARG_WITH(z,AC_HELP_STRING([--with-zlib=PATH],[specify location of zlib]),
 AC_CHECK_LIB(z, inflate, [], [], [])
 
 # Find Gtk
-#AM_PATH_GTK_2_0(2.0.0,[],[AC_MSG_ERROR(GTK+ 2.0 or later not found)])
 PKG_CHECK_MODULES([GTK3], [gtk+-3.0])
 
 # Find GLib
