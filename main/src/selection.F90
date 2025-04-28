@@ -880,7 +880,8 @@ contains
     integer :: nprops_common
     character(len=maxlen), dimension(maxprops) :: propnames_common
     integer :: jspecies
-
+    integer(kind=index_kind) :: np
+    
     ! Return true if main window needs to be redrawn
     selection_process_events = .false.
 
@@ -1020,6 +1021,10 @@ contains
           ! Skip this type if not selected and we're not doing all types
           if(ispecies.ne.jspecies.and.ispecies.ne.nspecies+1)cycle
 
+          ! Skip this type if there are no particles
+          call particle_store_species(pdata, jspecies, get_np=np)
+          if(np.eq.0)cycle
+
           ! Determine index of particle property to select on
           call gui_combo_box_get_index(prop_box, iprop)
           if(jspecies.eq.nspecies+1)then
@@ -1030,7 +1035,7 @@ contains
           endif
 
           call particle_store_species(psample, jspecies, get_nprops=nprops)
-          if(iprop.gt.nprops.or.iprop.lt.1)return
+          if(iprop.gt.nprops.or.iprop.lt.1)cycle
           call gui_checkbox_get_state(radius_checkbox, use_radius)
           call gui_checkbox_get_state(prop_checkbox,   use_prop)
           if(use_prop)then
