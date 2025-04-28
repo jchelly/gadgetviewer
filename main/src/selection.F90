@@ -11,6 +11,7 @@ module selection
 #include "../../config.h"
 
   use f90_gui
+  use f90_util
   use data_types
   use particle_store
   use sort
@@ -876,6 +877,9 @@ contains
     integer              :: nspecies, nprops
     logical              :: ok
     character(len=500)   :: fname
+    integer :: nprops_common
+    character(len=maxlen), dimension(maxprops) :: propnames_common
+    integer :: jspecies
 
     ! Return true if main window needs to be redrawn
     selection_process_events = .false.
@@ -994,121 +998,140 @@ contains
     ! Modify the current selection if the apply button is pressed
     if(particle_store_loaded(psample).and.&
          gui_button_clicked(apply_button))then
-       
-       ! Get information from gui widgets
+
+       call particle_store_contents(psample,get_nspecies=nspecies)
+
+       ! Get selection to use
        call gui_combo_box_get_index(selection_box, isel)
        isel = isel - 1
+       ! Get particle types to select
        call gui_combo_box_get_index(species_box, ispecies)
-       call particle_store_contents(psample,get_nspecies=nspecies)
-       if(ispecies.gt.nspecies)return
-       call gui_combo_box_get_index(prop_box,    iprop)
-       call particle_store_species(psample, ispecies, get_nprops=nprops)
-       if(iprop.gt.nprops)return
-       call gui_checkbox_get_state(radius_checkbox, use_radius)
-       call gui_checkbox_get_state(prop_checkbox,   use_prop)
-       if(use_prop)then
-          call particle_store_property(psample, ispecies, iprop, &
-               get_type=type)
-          call gui_entrybox_get_text(val_min_entry, str)
-          select case(type)
-          case("REAL")
-             read(str,*,iostat=ios)rval_min
+       if(ispecies.gt.nspecies+1)return
+
+       ! Loop over particle types to do
+       do jspecies = 1, nspecies, 1
+
+          ! Skip this type if not selected and we're not doing all types
+          if(ispecies.ne.jspecies.and.ispecies.ne.nspecies+1)cycle
+
+          ! Determine index of particle property to select on
+          call gui_combo_box_get_index(prop_box, iprop)
+          if(jspecies.eq.nspecies+1)then
+             ! Doing all types, so combo box contains common properties only.
+             ! Need to translate index.
+             call particle_store_common_properties(pdata, nprops_common, propnames_common)
+             iprop = particle_store_get_property_index(pdata, jspecies, propnames_common(iprop))
+          endif
+
+          call particle_store_species(psample, jspecies, get_nprops=nprops)
+          if(iprop.gt.nprops.or.iprop.lt.1)return
+          call gui_checkbox_get_state(radius_checkbox, use_radius)
+          call gui_checkbox_get_state(prop_checkbox,   use_prop)
+          if(use_prop)then
+             call particle_store_property(psample, jspecies, iprop, &
+                  get_type=type)
+             call gui_entrybox_get_text(val_min_entry, str)
+             select case(type)
+             case("REAL")
+                read(str,*,iostat=ios)rval_min
+                if(ios.ne.0)then
+                   bt=gui_display_dialog(window,"error",&
+                        "Unable to interpret minimum value as real")
+                   return
+                endif
+                call gui_entrybox_get_text(val_max_entry, str)
+                read(str,*,iostat=ios)rval_max
+                if(ios.ne.0)then
+                   bt=gui_display_dialog(window,"error",&
+                        "Unable to interpret maximum value as real")
+                   return
+                endif
+             case("INTEGER")
+                read(str,*,iostat=ios)ival_min
+                if(ios.ne.0)then
+                   bt=gui_display_dialog(window,"error",&
+                        "Unable to interpret minimum value as integer")
+                   return
+                endif
+                call gui_entrybox_get_text(val_max_entry, str)
+                read(str,*,iostat=ios)ival_max
+                if(ios.ne.0)then
+                   bt=gui_display_dialog(window,"error",&
+                        "Unable to interpret maximum value as integer")
+                   return
+                endif
+             end select
+          else
+             iprop = 0
+          endif
+          if(use_radius)then
+             call gui_entrybox_get_text(radius_entry, str)
+             read(str,*,iostat=ios)radius
              if(ios.ne.0)then
                 bt=gui_display_dialog(window,"error",&
-                     "Unable to interpret minimum value as real")
+                     "Unable to interpret radius value")
                 return
              endif
-             call gui_entrybox_get_text(val_max_entry, str)
-             read(str,*,iostat=ios)rval_max
-             if(ios.ne.0)then
-                bt=gui_display_dialog(window,"error",&
-                     "Unable to interpret maximum value as real")
-                return
-             endif
-          case("INTEGER")
-             read(str,*,iostat=ios)ival_min
-             if(ios.ne.0)then
-                bt=gui_display_dialog(window,"error",&
-                     "Unable to interpret minimum value as integer")
-                return
-             endif
-             call gui_entrybox_get_text(val_max_entry, str)
-             read(str,*,iostat=ios)ival_max
-             if(ios.ne.0)then
-                bt=gui_display_dialog(window,"error",&
-                     "Unable to interpret maximum value as integer")
-                return
-             endif
-          end select
-       else
-          iprop = 0
-       endif
-       if(use_radius)then
-          call gui_entrybox_get_text(radius_entry, str)
-          read(str,*,iostat=ios)radius
-          if(ios.ne.0)then
-             bt=gui_display_dialog(window,"error",&
-                  "Unable to interpret radius value")
+          else
+             radius = 0.0
+          endif
+
+          call gui_radio_button_get_state(full_radio,      use_full)
+          call gui_radio_button_get_state(new_radio,       clear)
+          call gui_radio_button_get_state(subset_radio,    subset)
+
+          ! Get currently selected point
+          centre(1:3) = view_transform%centre(1:3)
+
+          ! Make a selection based on the parameters from the gui
+          sel%nspecies = 0
+          sel%empty    = .true.
+          if(use_full)then
+             res = selection_find_particles(sel, pdata, jspecies, &
+                  centre, radius, iprop, rval_min, rval_max, &
+                  ival_min, ival_max)
+          else
+             res = selection_find_particles(sel, psample, jspecies, &
+                  centre, radius, iprop, rval_min, rval_max, &
+                  ival_min, ival_max)
+          endif
+
+          ! Display error message if anything went wrong
+          if(.not.res%success)then
+             bt=gui_display_dialog(mainwin,"error",res%string)
              return
           endif
-       else
-          radius = 0.0
-       endif
 
-       call gui_radio_button_get_state(full_radio,      use_full)
-       call gui_radio_button_get_state(new_radio,       clear)
-       call gui_radio_button_get_state(subset_radio,    subset)
+          ! Combine this with any existing selection according to the
+          ! gui settings
+          if(clear)call selection_clear(sample_sel(isel), psample)
+          if(subset)then
+             ! Only select from particles which are already selected
+             res = selection_subset(sample_sel(isel), sel)
+          else
+             ! Add these particles to the existing selection
+             res = selection_add(sample_sel(isel), sel)
+          endif
 
-       ! Get currently selected point
-       centre(1:3) = view_transform%centre(1:3)
+          ! Display error message if anything went wrong
+          if(.not.res%success)then
+             bt=gui_display_dialog(mainwin,"error",res%string)
+             return
+          endif
 
-       ! Make a selection based on the parameters from the gui
-       sel%nspecies = 0
-       sel%empty    = .true.
-       if(use_full)then
-          res = selection_find_particles(sel, pdata, ispecies, &
-               centre, radius, iprop, rval_min, rval_max, &
-               ival_min, ival_max)
-       else
-          res = selection_find_particles(sel, psample, ispecies, &
-               centre, radius, iprop, rval_min, rval_max, &
-               ival_min, ival_max)
-       endif
-       
-       ! Display error message if anything went wrong
-       if(.not.res%success)then
-          bt=gui_display_dialog(mainwin,"error",res%string)
-          return
-       endif
+          ! Deallocate temporary selection
+          call selection_clear(sel)
 
-       ! Combine this with any existing selection according to the
-       ! gui settings
-       if(clear)call selection_clear(sample_sel(isel), psample)
-       if(subset)then
-          ! Only select from particles which are already selected
-          res = selection_subset(sample_sel(isel), sel)
-       else
-          ! Add these particles to the existing selection
-          res = selection_add(sample_sel(isel), sel)
-       endif
+          ! Apply new selection to the particle data
+          res = selection_apply(sample_sel(isel), psample, isel)
 
-       ! Display error message if anything went wrong
-       if(.not.res%success)then
-          bt=gui_display_dialog(mainwin,"error",res%string)
-          return
-       endif
+          ! Display error message if anything went wrong
+          if(.not.res%success)then
+             bt=gui_display_dialog(mainwin,"error",res%string)
+             return
+          endif
 
-       ! Deallocate temporary selection
-       call selection_clear(sel)
-
-       ! Apply new selection to the particle data
-       res = selection_apply(sample_sel(isel), psample, isel)
-
-       ! Display error message if anything went wrong
-       if(.not.res%success)then
-          bt=gui_display_dialog(mainwin,"error",res%string)
-          return
-       endif
+       end do
 
        ! Will need to redraw the display
        selection_process_events = .true.
@@ -1128,22 +1151,26 @@ contains
 !
     implicit none
     integer :: nspecies
-    character(len=maxlen), dimension(maxspecies) :: species_names
+    character(len=maxlen), dimension(maxspecies+1) :: species_names
     integer :: nprops
     character(len=maxlen), dimension(maxprops)   :: propnames
+    logical :: found_particles
+    integer :: i
+    integer(kind=index_kind) :: np
 
     if(.not.is_open)return
 
     ! Get particle type names and update combo box
     call particle_store_contents(psample, get_nspecies=nspecies, &
          get_species_names=species_names)
-    if(ispecies.lt.1.or.ispecies.gt.nspecies)then
+    species_names(nspecies+1) = "All particle types"
+    if(ispecies.lt.1.or.ispecies.gt.nspecies+1)then
        ispecies = max(1,min(ispecies, nspecies))
     endif
     if(ispecies_read.lt.1.or.ispecies_read.gt.nspecies)then
        ispecies_read = max(1,min(ispecies_read, nspecies))
     endif
-    call gui_combo_box_set_text(species_box, species_names(1:nspecies))
+    call gui_combo_box_set_text(species_box, species_names(1:nspecies+1))
     call gui_combo_box_set_text(read_species_box, species_names(1:nspecies))
     call gui_combo_box_set_index(species_box, ispecies)
     call gui_combo_box_set_index(read_species_box, ispecies_read)
@@ -1156,8 +1183,15 @@ contains
 
     ! Set list of particle properties
     if(nspecies.gt.0)then
-       call particle_store_species(psample, ispecies, get_nprops=nprops, &
-            get_propnames=propnames)
+       if(ispecies.eq.nspecies+1)then
+          ! If we're selecting all types, then we can only select on properties
+          ! which exist for all types with >0 particles.
+          call particle_store_common_properties(pdata, nprops, propnames)
+       else
+          ! We're just selecting one particle type
+          call particle_store_species(psample, ispecies, get_nprops=nprops, &
+               get_propnames=propnames)
+       endif
        if(iprop.lt.1.or.iprop.gt.nprops)then
           iprop = max(1,min(nprops,iprop))
        endif
