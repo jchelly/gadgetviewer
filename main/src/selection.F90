@@ -859,7 +859,7 @@ contains
 ! Process events in the particle selection window
 !
     implicit none
-    type(selection_type) :: sel
+    type(selection_type) :: sel, sel_tmp
 
     real(kind=pos_kind)  :: radius
     real(kind=real8byte)   :: rval_min, rval_max
@@ -1008,6 +1008,12 @@ contains
        call gui_combo_box_get_index(species_box, ispecies)
        if(ispecies.gt.nspecies+1)return
 
+       ! Initialize an empty selection:
+       ! This will accumulate the selections from all particle types.
+       sel%nspecies = 0
+       sel%empty    = .true.
+       call selection_clear(sel, pdata)
+
        ! Loop over particle types to do
        do jspecies = 1, nspecies, 1
 
@@ -1084,14 +1090,15 @@ contains
           centre(1:3) = view_transform%centre(1:3)
 
           ! Make a selection based on the parameters from the gui
-          sel%nspecies = 0
-          sel%empty    = .true.
+          sel_tmp%nspecies = 0
+          sel_tmp%empty    = .true.
+          call selection_clear(sel_tmp, pdata)
           if(use_full)then
-             res = selection_find_particles(sel, pdata, jspecies, &
+             res = selection_find_particles(sel_tmp, pdata, jspecies, &
                   centre, radius, iprop, rval_min, rval_max, &
                   ival_min, ival_max)
           else
-             res = selection_find_particles(sel, psample, jspecies, &
+             res = selection_find_particles(sel_tmp, psample, jspecies, &
                   centre, radius, iprop, rval_min, rval_max, &
                   ival_min, ival_max)
           endif
@@ -1102,28 +1109,9 @@ contains
              return
           endif
 
-          ! Combine this with any existing selection according to the
-          ! gui settings
-          if(clear)call selection_clear(sample_sel(isel), psample)
-          if(subset)then
-             ! Only select from particles which are already selected
-             res = selection_subset(sample_sel(isel), sel)
-          else
-             ! Add these particles to the existing selection
-             res = selection_add(sample_sel(isel), sel)
-          endif
-
-          ! Display error message if anything went wrong
-          if(.not.res%success)then
-             bt=gui_display_dialog(mainwin,"error",res%string)
-             return
-          endif
-
-          ! Deallocate temporary selection
-          call selection_clear(sel)
-
-          ! Apply new selection to the particle data
-          res = selection_apply(sample_sel(isel), psample, isel)
+          ! Combine selections from different particle types
+          res = selection_add(sel, sel_tmp)
+          call selection_clear(sel_tmp)
 
           ! Display error message if anything went wrong
           if(.not.res%success)then
@@ -1132,6 +1120,35 @@ contains
           endif
 
        end do
+
+       ! Combine this with any existing selection according to the
+       ! gui settings
+       if(clear)call selection_clear(sample_sel(isel), psample)
+       if(subset)then
+          ! Only select from particles which are already selected
+          res = selection_subset(sample_sel(isel), sel)
+       else
+          ! Add these particles to the existing selection
+          res = selection_add(sample_sel(isel), sel)
+       endif
+
+       ! Display error message if anything went wrong
+       if(.not.res%success)then
+          bt=gui_display_dialog(mainwin,"error",res%string)
+          return
+       endif
+
+       ! Deallocate temporary selection
+       call selection_clear(sel)
+
+       ! Apply new selection to the particle data
+       res = selection_apply(sample_sel(isel), psample, isel)
+
+       ! Display error message if anything went wrong
+       if(.not.res%success)then
+          bt=gui_display_dialog(mainwin,"error",res%string)
+          return
+       endif
 
        ! Will need to redraw the display
        selection_process_events = .true.
