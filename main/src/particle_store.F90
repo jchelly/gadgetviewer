@@ -796,14 +796,16 @@ contains
     integer :: ispecies
     integer :: i
 
+    particle_store_get_property_index = -1
     if(ispecies.ge.1.and.ispecies.le.pdata%nspecies)then
        do i = 1, pdata%species(ispecies)%nprops, 1
           if(pdata%species(ispecies)%property(i)%name.eq.name)then
              particle_store_get_property_index = i
+             return
           endif
        end do
     endif
-    particle_store_get_property_index = -1
+
     return
   end function particle_store_get_property_index
 

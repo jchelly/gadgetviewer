@@ -881,6 +881,7 @@ contains
     character(len=maxlen), dimension(maxprops) :: propnames_common
     integer :: jspecies
     integer(kind=index_kind) :: np
+    integer :: jprop
     
     ! Return true if main window needs to be redrawn
     selection_process_events = .false.
@@ -1027,19 +1028,23 @@ contains
 
           ! Determine index of particle property to select on
           call gui_combo_box_get_index(prop_box, iprop)
-          if(jspecies.eq.nspecies+1)then
+          if(ispecies.eq.nspecies+1)then
              ! Doing all types, so combo box contains common properties only.
              ! Need to translate index.
              call particle_store_common_properties(pdata, nprops_common, propnames_common)
-             iprop = particle_store_get_property_index(pdata, jspecies, propnames_common(iprop))
+             jprop = particle_store_get_property_index(pdata, jspecies, propnames_common(iprop))
+          else
+             ! Doing one type, so no translation needed
+             jprop = iprop
           endif
 
           call particle_store_species(psample, jspecies, get_nprops=nprops)
-          if(iprop.gt.nprops.or.iprop.lt.1)cycle
+
+          if(jprop.gt.nprops.or.jprop.lt.1)cycle
           call gui_checkbox_get_state(radius_checkbox, use_radius)
           call gui_checkbox_get_state(prop_checkbox,   use_prop)
           if(use_prop)then
-             call particle_store_property(psample, jspecies, iprop, &
+             call particle_store_property(psample, jspecies, jprop, &
                   get_type=type)
              call gui_entrybox_get_text(val_min_entry, str)
              select case(type)
@@ -1100,11 +1105,11 @@ contains
           call selection_clear(sel_tmp, pdata)
           if(use_full)then
              res = selection_find_particles(sel_tmp, pdata, jspecies, &
-                  centre, radius, iprop, rval_min, rval_max, &
+                  centre, radius, jprop, rval_min, rval_max, &
                   ival_min, ival_max)
           else
              res = selection_find_particles(sel_tmp, psample, jspecies, &
-                  centre, radius, iprop, rval_min, rval_max, &
+                  centre, radius, jprop, rval_min, rval_max, &
                   ival_min, ival_max)
           endif
 
