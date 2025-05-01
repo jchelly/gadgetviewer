@@ -56,10 +56,12 @@ module particle_store
   public :: particle_store_property       ! Get data for one property
   public :: particle_store_loaded         ! Determine if data is loaded
   public :: particle_store_get_time       ! Return the time of this snapshot
-
+  public :: particle_store_common_properties ! Get names of properties common to all particles
+  public :: particle_store_get_property_index ! Get the index of a property given its name
+  
   ! Build octrees used for fast random sampling
   public :: particle_store_build_trees
-  
+
   ! Get property values at some point in space
   public :: particle_store_evaluate_property
 
@@ -588,6 +590,42 @@ contains
   end subroutine particle_store_contents
 
 !
+! Return the names of properties which exist for all particle types with particles
+!
+  subroutine particle_store_common_properties(pdata, nprops, propnames)
+
+    implicit none
+    type (pdata_type) :: pdata
+    integer, intent(out) :: nprops
+    character(len=*), dimension(:), intent(out) :: propnames
+    logical :: found_particles
+    integer :: i
+    integer :: nprops_tmp
+    character(len=maxlen), dimension(maxprops) :: propnames_tmp
+    integer(kind=index_kind) :: np
+
+    found_particles = .false.
+    nprops = 0
+    do i = 1, pdata%nspecies, 1
+       call particle_store_species(pdata, i, get_nprops=nprops_tmp, &
+            get_propnames=propnames_tmp, get_np=np)
+       if(np.gt.0)then
+          if(.not.found_particles)then
+             ! This is the first type with >0 particles
+             propnames = propnames_tmp
+             nprops = nprops_tmp
+             found_particles = .true.
+          else
+             ! Only keep properties which exist for both types
+             call intersect(nprops, propnames, nprops_tmp, propnames_tmp)
+          endif
+       endif
+    end do
+
+    return
+  end subroutine particle_store_common_properties
+
+!
 ! This returns information about a particle species
 !
   subroutine particle_store_species(pdata, ispecies, get_name, get_np, &
@@ -747,7 +785,30 @@ contains
 
     return
   end subroutine particle_store_property
-  
+!
+! Given a property name, find its index (or -1 if not found)
+!
+  integer function particle_store_get_property_index(pdata, ispecies, name)
+
+    implicit none
+    type (pdata_type) :: pdata
+    character(len=*) :: name
+    integer :: ispecies
+    integer :: i
+
+    particle_store_get_property_index = -1
+    if(ispecies.ge.1.and.ispecies.le.pdata%nspecies)then
+       do i = 1, pdata%species(ispecies)%nprops, 1
+          if(pdata%species(ispecies)%property(i)%name.eq.name)then
+             particle_store_get_property_index = i
+             return
+          endif
+       end do
+    endif
+
+    return
+  end function particle_store_get_property_index
+
 !
 ! This does a consistency check on the particle data. It should not
 ! be called until all the data has been loaded.

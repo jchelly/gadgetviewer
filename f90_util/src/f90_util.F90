@@ -476,9 +476,41 @@ contains
 
     ! Try to match to a file name
     call globfname(pattern, len(pattern))
-    
+
     return
   end subroutine glob
+
+  subroutine intersect(n1, arr1, n2, arr2)
+    !
+    ! Modify arr1 to contain just the intersection of arr1 and arr2.
+    ! Updates arr1 and n1.
+    !
+    implicit none
+    integer,          intent(inout) :: n1
+    character(len=*), dimension(:), intent(inout) :: arr1
+    integer,          intent(in) :: n2
+    character(len=*), dimension(:), intent(in) :: arr2
+    integer :: i1, i2, n
+    logical :: keep
+
+    n = 0
+    do i1 = 1, n1, 1
+       keep = .false.
+       do i2 = 1, n2, 1
+          if(arr1(i1).eq.arr2(i2))then
+             keep = .true.
+             exit
+          endif
+       end do
+       if(keep)then
+          n = n + 1
+          arr1(n) = arr1(i1)
+       endif
+    end do
+    n1 = n
+
+    return
+  end subroutine intersect
 
 end module f90_util
 
